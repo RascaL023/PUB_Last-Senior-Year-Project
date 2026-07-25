@@ -1,5 +1,5 @@
 spring:
   application:
-    name: sales-backend
+    name: core-backend
 server:
   port: 8081

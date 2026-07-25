@@ -22,9 +22,13 @@
         </dependency>
 
 
+        <!-- <dependency> -->
+        <!--     <groupId>id.my.rascal</groupId> -->
+        <!--     <artifactId>auth-api</artifactId> -->
+        <!-- </dependency> -->
         <dependency>
             <groupId>id.my.rascal</groupId>
-            <artifactId>auth-api</artifactId>
+            <artifactId>auth-core</artifactId>
         </dependency>
 
 
@@ -46,6 +50,7 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
+                    <mainClass>id.my.rascal.CoreAppApplication</mainClass>
                     <classifier>exec</classifier>
                 </configuration>
             </plugin>
