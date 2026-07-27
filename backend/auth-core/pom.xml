@@ -14,6 +14,11 @@
     <dependencies>
         <dependency>
             <groupId>id.my.rascal</groupId>
+            <artifactId>common</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>id.my.rascal</groupId>
             <artifactId>auth-api</artifactId>
         </dependency>
 

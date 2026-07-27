@@ -24,6 +24,7 @@
     </properties>
 
     <modules>
+        <module>common</module>
         <module>auth-api</module>
         <module>auth-core</module>
         <module>core-app</module>
@@ -31,6 +32,11 @@
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>id.my.rascal</groupId>
+                <artifactId>common</artifactId>
+                <version>${project.version}</version>
+            </dependency>
             <dependency>
                 <groupId>id.my.rascal</groupId>
                 <artifactId>auth-api</artifactId>
