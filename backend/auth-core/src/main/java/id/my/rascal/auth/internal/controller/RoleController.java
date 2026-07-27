@@ -5,10 +5,13 @@ import id.my.rascal.auth.internal.model.request.RolePutRequest;
 import id.my.rascal.auth.internal.model.request.RoleRequest;
 import id.my.rascal.auth.internal.model.response.RoleResponse;
 import id.my.rascal.auth.internal.service.RoleService;
+import id.my.rascal.common.ApiResponse;
+import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/roles")
@@ -21,34 +24,47 @@ public class RoleController {
     }
 
     @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public RoleResponse create(@RequestBody RoleRequest request) {
-        return roleService.create(request);
+    public ResponseEntity<?> create(@RequestBody @Valid RoleRequest request) {
+        RoleResponse data = roleService.create(request);
+        return ApiResponse.success(HttpStatus.CREATED, "Role created", data);
     }
 
     @GetMapping("/{id}")
-    public RoleResponse getById(@PathVariable Long id) {
-        return roleService.getById(id);
+    public ResponseEntity<?> getById(@PathVariable Long id) {
+        RoleResponse data = roleService.getById(id);
+        return ApiResponse.success(HttpStatus.OK, data);
     }
 
     @GetMapping
-    public List<RoleResponse> getAll() {
-        return roleService.getAll();
+    public ResponseEntity<?> getAll(Pageable pageable) {
+        Page<RoleResponse> page = roleService.getAllPaged(pageable);
+        return ApiResponse.paged(
+            HttpStatus.OK, "Roles retrieved",
+            page.getContent(),
+            page.getNumber() + 1,
+            page.getSize(),
+            page.getTotalElements(),
+            page.hasNext(),
+            page.hasPrevious()
+        );
     }
 
     @PutMapping("/{id}")
-    public RoleResponse updatePut(@PathVariable Long id, @RequestBody RolePutRequest request) {
-        return roleService.update(id, request);
+    public ResponseEntity<?> updatePut(@PathVariable Long id, @RequestBody @Valid RolePutRequest request) {
+        RoleResponse data = roleService.update(id, request);
+        return ApiResponse.success(HttpStatus.OK, "Role updated", data);
     }
 
     @PatchMapping("/{id}")
-    public RoleResponse updatePatch(@PathVariable Long id, @RequestBody RolePatchRequest request) {
-        return roleService.update(id, request);
+    public ResponseEntity<?> updatePatch(@PathVariable Long id, @RequestBody @Valid RolePatchRequest request) {
+        RoleResponse data = roleService.update(id, request);
+        return ApiResponse.success(HttpStatus.OK, "Role updated", data);
     }
 
     @DeleteMapping("/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable Long id) {
+    public ResponseEntity<?> delete(@PathVariable Long id) {
         roleService.delete(id);
+        return ResponseEntity.noContent().build();
     }
+
 }

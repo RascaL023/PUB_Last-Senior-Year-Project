@@ -6,12 +6,14 @@ import id.my.rascal.auth.internal.model.request.AuthorityPutRequest;
 import id.my.rascal.auth.internal.model.request.AuthorityRequest;
 import id.my.rascal.auth.internal.model.response.AuthorityResponse;
 import id.my.rascal.auth.internal.repository.AuthorityRepository;
+import id.my.rascal.common.exception.NotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -67,22 +69,23 @@ class AuthorityServiceTest {
     void getById_shouldThrowException_whenNotFound() {
         when(authorityRepository.findById(1L)).thenReturn(Optional.empty());
 
-        assertThrows(RuntimeException.class, () -> authorityService.getById(1L));
+        assertThrows(NotFoundException.class, () -> authorityService.getById(1L));
     }
 
     @Test
-    void getAll_shouldReturnListOfAuthorityResponse() {
-        when(authorityRepository.findAll()).thenReturn(List.of(sampleAuthority));
+    void getAllPaged_shouldReturnPageOfAuthorityResponse() {
+        when(authorityRepository.findAll(any(Pageable.class)))
+            .thenReturn(new org.springframework.data.domain.PageImpl<>(List.of(sampleAuthority)));
 
-        List<AuthorityResponse> responses = authorityService.getAll();
+        var page = authorityService.getAllPaged(Pageable.ofSize(10));
 
-        assertThat(responses).hasSize(1);
-        assertThat(responses.get(0).name()).isEqualTo("ROLE_ADMIN");
+        assertThat(page.getContent()).hasSize(1);
+        assertThat(page.getContent().get(0).name()).isEqualTo("ROLE_ADMIN");
     }
 
     @Test
     void updatePut_shouldUpdateAndReturnAuthorityResponse() {
-        AuthorityPutRequest request = new AuthorityPutRequest(1L, "ROLE_SUPER_ADMIN");
+        AuthorityPutRequest request = new AuthorityPutRequest("ROLE_SUPER_ADMIN");
         when(authorityRepository.findById(1L)).thenReturn(Optional.of(sampleAuthority));
         when(authorityRepository.save(any(Authority.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -94,7 +97,7 @@ class AuthorityServiceTest {
 
     @Test
     void updatePatch_shouldUpdateOnlyPresentFields() {
-        AuthorityPatchRequest request = new AuthorityPatchRequest(1L, "ROLE_PATCHED");
+        AuthorityPatchRequest request = new AuthorityPatchRequest("ROLE_PATCHED");
         when(authorityRepository.findById(1L)).thenReturn(Optional.of(sampleAuthority));
         when(authorityRepository.save(any(Authority.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -105,7 +108,7 @@ class AuthorityServiceTest {
 
     @Test
     void updatePatch_shouldNotUpdateIfOptionalEmpty() {
-        AuthorityPatchRequest request = new AuthorityPatchRequest(1L, Optional.empty());
+        AuthorityPatchRequest request = new AuthorityPatchRequest(Optional.empty());
         when(authorityRepository.findById(1L)).thenReturn(Optional.of(sampleAuthority));
         when(authorityRepository.save(any(Authority.class))).thenAnswer(invocation -> invocation.getArgument(0));
 

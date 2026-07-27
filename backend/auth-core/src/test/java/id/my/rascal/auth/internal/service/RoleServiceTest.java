@@ -8,6 +8,7 @@ import id.my.rascal.auth.internal.model.request.RoleRequest;
 import id.my.rascal.auth.internal.model.response.RoleResponse;
 import id.my.rascal.auth.internal.repository.AuthorityRepository;
 import id.my.rascal.auth.internal.repository.RoleRepository;
+import id.my.rascal.common.exception.NotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -88,12 +89,12 @@ class RoleServiceTest {
     void getById_shouldThrowException_whenNotFound() {
         when(roleRepository.findById(1L)).thenReturn(Optional.empty());
 
-        assertThrows(RuntimeException.class, () -> roleService.getById(1L));
+        assertThrows(NotFoundException.class, () -> roleService.getById(1L));
     }
 
     @Test
     void updatePut_shouldUpdateRoleAndAuthorities() {
-        RolePutRequest request = new RolePutRequest(1L, "ADMIN", Set.of(10L));
+        RolePutRequest request = new RolePutRequest("ADMIN", Set.of(10L));
         
         when(roleRepository.findById(1L)).thenReturn(Optional.of(sampleRole));
         when(authorityRepository.findAllById(request.authorityIds())).thenReturn(List.of(sampleAuthority));
@@ -107,7 +108,7 @@ class RoleServiceTest {
 
     @Test
     void updatePatch_shouldUpdateOnlyNameIfAuthorityIdsNotPresent() {
-        RolePatchRequest request = new RolePatchRequest(1L, Optional.of("SUPER_ADMIN"), Optional.empty());
+        RolePatchRequest request = new RolePatchRequest(Optional.of("SUPER_ADMIN"), Optional.empty());
         
         when(roleRepository.findById(1L)).thenReturn(Optional.of(sampleRole));
         when(roleRepository.save(any(Role.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -120,7 +121,7 @@ class RoleServiceTest {
 
     @Test
     void updatePatch_shouldUpdateAuthoritiesIfPresent() {
-        RolePatchRequest request = new RolePatchRequest(1L, Optional.empty(), Optional.of(Set.of(10L)));
+        RolePatchRequest request = new RolePatchRequest(Optional.empty(), Optional.of(Set.of(10L)));
         
         when(roleRepository.findById(1L)).thenReturn(Optional.of(sampleRole));
         when(authorityRepository.findAllById(Set.of(10L))).thenReturn(List.of(sampleAuthority));
