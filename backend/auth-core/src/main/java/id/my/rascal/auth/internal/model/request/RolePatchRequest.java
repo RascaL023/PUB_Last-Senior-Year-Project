@@ -10,4 +10,8 @@ public record RolePatchRequest(
     public RolePatchRequest(String name, Set<Long> authorityIds) {
         this(Optional.ofNullable(name), Optional.ofNullable(authorityIds));
     }
+
+    public boolean isEmptyPatch() {
+        return name.isEmpty() && authorityIds.isEmpty();
+    }
 }

@@ -15,8 +15,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class RoleServiceImpl implements RoleService {
@@ -32,45 +35,42 @@ public class RoleServiceImpl implements RoleService {
     @Override
     @Transactional
     public RoleResponse create(RoleRequest request) {
+        List<Authority> authorities = authorityRepository.findAllById(request.authorityIds());
+        validateAuthorityIds(authorities, request.authorityIds());
+
         Role role = RoleMapper.toEntity(request);
-        
-        if (request.authorityIds() != null && !request.authorityIds().isEmpty()) {
-            Set<Authority> authorities = new HashSet<>(authorityRepository.findAllById(request.authorityIds()));
-            role.setAuthorities(authorities);
-        }
-        
+        role.setAuthorities(new HashSet<>(authorities));
         role = roleRepository.save(role);
+
         return RoleMapper.toResponse(role);
     }
 
     @Override
     @Transactional(readOnly = true)
     public RoleResponse getById(Long id) {
-        Role role = roleRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Role not found with id: " + id));
+        Role role = validateAndGetRoleById(id);
         return RoleMapper.toResponse(role);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Page<RoleResponse> getAllPaged(Pageable pageable) {
-        return roleRepository.findAll(pageable).map(RoleMapper::toResponse);
+    public Page<RoleResponse> searchActiveRoles(String name, Pageable pageable) {
+        Page<Role> roles = roleRepository.searchActiveRole(normalizeSearchName(name), pageable);
+        return roles.map(RoleMapper::toResponse);
     }
 
     @Override
     @Transactional
     public RoleResponse update(Long id, RolePutRequest request) {
-        Role role = roleRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Role not found with id: " + id));
-        
+        Role role = validateAndGetRoleById(id);
         RoleMapper.updateEntity(role, request);
         
         if (request.authorityIds() != null) {
-            Set<Authority> authorities = new HashSet<>(authorityRepository.findAllById(request.authorityIds()));
-            role.setAuthorities(authorities);
-        } else {
-            role.getAuthorities().clear();
-        }
+            List<Authority> authorities = authorityRepository.findAllById(request.authorityIds());
+            validateAuthorityIds(authorities, request.authorityIds());
+
+            role.setAuthorities(new HashSet<>(authorities));
+        } else role.getAuthorities().clear();
         
         role = roleRepository.save(role);
         return RoleMapper.toResponse(role);
@@ -79,14 +79,15 @@ public class RoleServiceImpl implements RoleService {
     @Override
     @Transactional
     public RoleResponse update(Long id, RolePatchRequest request) {
-        Role role = roleRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Role not found with id: " + id));
-        
+        Role role = validateAndGetRoleById(id);
         RoleMapper.updateEntity(role, request);
         
         if (request.authorityIds() != null && request.authorityIds().isPresent()) {
-            Set<Authority> authorities = new HashSet<>(authorityRepository.findAllById(request.authorityIds().get()));
-            role.setAuthorities(authorities);
+            List<Authority> authorities = authorityRepository
+                .findAllById(request.authorityIds().get());
+            validateAuthorityIds(authorities, request.authorityIds().get());
+
+            role.setAuthorities(new HashSet<>(authorities));
         }
         
         role = roleRepository.save(role);
@@ -96,8 +97,35 @@ public class RoleServiceImpl implements RoleService {
     @Override
     @Transactional
     public void delete(Long id) {
-        Role role = roleRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Role not found with id: " + id));
-        roleRepository.delete(role);
+        Role role = validateAndGetRoleById(id);
+        role.setDeletedAt(LocalDateTime.now());
+        roleRepository.save(role);
     }
+
+
+    private void validateAuthorityIds(List<Authority> authorities, Set<Long> requestIds) {
+        if (authorities.size() != requestIds.size()) {
+            Set<Long> foundIds = authorities.stream()
+            .map(Authority::getId)
+            .collect(Collectors.toCollection(HashSet::new));
+
+            Set<Long> missingIds = new HashSet<>(requestIds);
+            missingIds.removeAll(foundIds);
+
+            throw new NotFoundException("Not found IDs: " + missingIds);
+        }
+    }
+
+    private Role validateAndGetRoleById(Long id) {
+        return roleRepository.findActiveById(id)
+            .orElseThrow(() -> new NotFoundException("Role not found with id: " + id));
+    }
+
+    private String normalizeSearchName(String name) {
+        if (name == null || name.isBlank())
+            return "";
+
+        return name.trim();
+    }
+
 }

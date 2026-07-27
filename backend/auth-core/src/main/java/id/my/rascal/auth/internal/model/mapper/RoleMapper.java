@@ -20,7 +20,7 @@ public class RoleMapper {
         if (request == null) return null;
         
         Role role = new Role();
-        role.setName(request.name());
+        role.setName(normalizeRoleName(request.name()));
         role.setCreatedAt(LocalDateTime.now());
         return role;
     }
@@ -42,7 +42,7 @@ public class RoleMapper {
     public static void updateEntity(Role role, RolePutRequest request) {
         if (request == null || role == null) return;
         
-        role.setName(request.name());
+        role.setName(normalizeRoleName(request.name()));
         role.setUpdatedAt(LocalDateTime.now());
     }
 
@@ -50,8 +50,13 @@ public class RoleMapper {
         if (request == null || role == null) return;
         
         if (request.name() != null && request.name().isPresent()) {
-            role.setName(request.name().get());
+            role.setName(normalizeRoleName(request.name().get()));
             role.setUpdatedAt(LocalDateTime.now());
         }
     }
+
+    private static String normalizeRoleName(String role) {
+        return role.trim().toUpperCase();
+    }
+
 }

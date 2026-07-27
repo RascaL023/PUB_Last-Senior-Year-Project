@@ -58,11 +58,11 @@ class RoleServiceTest {
     @Test
     void create_shouldReturnRoleResponse_withAuthorities() {
         RoleRequest request = new RoleRequest("MANAGER", Set.of(10L));
-        
+
         when(authorityRepository.findAllById(request.authorityIds())).thenReturn(List.of(sampleAuthority));
         when(roleRepository.save(any(Role.class))).thenAnswer(invocation -> {
             Role saved = invocation.getArgument(0);
-            saved.setId(1L); // Mock generated ID
+            saved.setId(1L);
             return saved;
         });
 
@@ -77,7 +77,7 @@ class RoleServiceTest {
 
     @Test
     void getById_shouldReturnRoleResponse_whenFound() {
-        when(roleRepository.findById(1L)).thenReturn(Optional.of(sampleRole));
+        when(roleRepository.findActiveById(1L)).thenReturn(Optional.of(sampleRole));
 
         RoleResponse response = roleService.getById(1L);
 
@@ -87,7 +87,7 @@ class RoleServiceTest {
 
     @Test
     void getById_shouldThrowException_whenNotFound() {
-        when(roleRepository.findById(1L)).thenReturn(Optional.empty());
+        when(roleRepository.findActiveById(1L)).thenReturn(Optional.empty());
 
         assertThrows(NotFoundException.class, () -> roleService.getById(1L));
     }
@@ -95,8 +95,8 @@ class RoleServiceTest {
     @Test
     void updatePut_shouldUpdateRoleAndAuthorities() {
         RolePutRequest request = new RolePutRequest("ADMIN", Set.of(10L));
-        
-        when(roleRepository.findById(1L)).thenReturn(Optional.of(sampleRole));
+
+        when(roleRepository.findActiveById(1L)).thenReturn(Optional.of(sampleRole));
         when(authorityRepository.findAllById(request.authorityIds())).thenReturn(List.of(sampleAuthority));
         when(roleRepository.save(any(Role.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -109,8 +109,8 @@ class RoleServiceTest {
     @Test
     void updatePatch_shouldUpdateOnlyNameIfAuthorityIdsNotPresent() {
         RolePatchRequest request = new RolePatchRequest(Optional.of("SUPER_ADMIN"), Optional.empty());
-        
-        when(roleRepository.findById(1L)).thenReturn(Optional.of(sampleRole));
+
+        when(roleRepository.findActiveById(1L)).thenReturn(Optional.of(sampleRole));
         when(roleRepository.save(any(Role.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         RoleResponse response = roleService.update(1L, request);
@@ -122,23 +122,25 @@ class RoleServiceTest {
     @Test
     void updatePatch_shouldUpdateAuthoritiesIfPresent() {
         RolePatchRequest request = new RolePatchRequest(Optional.empty(), Optional.of(Set.of(10L)));
-        
-        when(roleRepository.findById(1L)).thenReturn(Optional.of(sampleRole));
+
+        when(roleRepository.findActiveById(1L)).thenReturn(Optional.of(sampleRole));
         when(authorityRepository.findAllById(Set.of(10L))).thenReturn(List.of(sampleAuthority));
         when(roleRepository.save(any(Role.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         RoleResponse response = roleService.update(1L, request);
 
-        assertThat(response.name()).isEqualTo("MANAGER"); // Name should remain the same
+        assertThat(response.name()).isEqualTo("MANAGER");
         assertThat(response.authorities()).hasSize(1);
     }
 
     @Test
-    void delete_shouldCallRepositoryDelete() {
-        when(roleRepository.findById(1L)).thenReturn(Optional.of(sampleRole));
+    void delete_shouldSoftDeleteRole() {
+        when(roleRepository.findActiveById(1L)).thenReturn(Optional.of(sampleRole));
 
         roleService.delete(1L);
 
-        verify(roleRepository, times(1)).delete(sampleRole);
+        assertThat(sampleRole.getDeletedAt()).isNotNull();
+        verify(roleRepository, times(1)).save(sampleRole);
+        verify(roleRepository, never()).delete(any());
     }
 }

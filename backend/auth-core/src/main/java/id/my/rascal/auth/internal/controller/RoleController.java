@@ -6,6 +6,7 @@ import id.my.rascal.auth.internal.model.request.RoleRequest;
 import id.my.rascal.auth.internal.model.response.RoleResponse;
 import id.my.rascal.auth.internal.service.RoleService;
 import id.my.rascal.common.ApiResponse;
+import id.my.rascal.common.exception.BadRequestException;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -36,8 +37,12 @@ public class RoleController {
     }
 
     @GetMapping
-    public ResponseEntity<?> getAll(Pageable pageable) {
-        Page<RoleResponse> page = roleService.getAllPaged(pageable);
+    public ResponseEntity<?> getAll(
+        @RequestParam(required = false) String name,
+        Pageable pageable
+    ) {
+        Page<RoleResponse> page = roleService.searchActiveRoles(name, pageable);
+
         return ApiResponse.paged(
             HttpStatus.OK, "Roles retrieved",
             page.getContent(),
@@ -50,21 +55,34 @@ public class RoleController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updatePut(@PathVariable Long id, @RequestBody @Valid RolePutRequest request) {
+    public ResponseEntity<?> updatePut(
+        @PathVariable Long id, 
+        @RequestBody @Valid RolePutRequest request
+    ) {
         RoleResponse data = roleService.update(id, request);
         return ApiResponse.success(HttpStatus.OK, "Role updated", data);
     }
 
     @PatchMapping("/{id}")
-    public ResponseEntity<?> updatePatch(@PathVariable Long id, @RequestBody @Valid RolePatchRequest request) {
+    public ResponseEntity<?> updatePatch(
+        @PathVariable Long id, 
+        @RequestBody 
+        RolePatchRequest request
+    ) {
+        if (request.isEmptyPatch()) 
+            throw new BadRequestException("PATCH can't be empty");
+        
         RoleResponse data = roleService.update(id, request);
         return ApiResponse.success(HttpStatus.OK, "Role updated", data);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> delete(@PathVariable Long id) {
+        if (id <= 0) 
+            throw new BadRequestException("Invalid ID: " + id);
+
         roleService.delete(id);
-        return ResponseEntity.noContent().build();
+        return ApiResponse.success(HttpStatus.OK, "Role deleted", null);
     }
 
 }

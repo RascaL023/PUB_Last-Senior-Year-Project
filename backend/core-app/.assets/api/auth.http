@@ -1,2 +1,30 @@
 ### Login
 POST http://localhost:8081/api/auth/login?username=asep&password=qwe
+
+
+########## ROLES ##########
+### Create Role
+POST http://localhost:8081/api/v1/roles
+Content-Type: application/json
+
+{
+    "name": "ADMIN",
+    "authorityIds": [1]
+}
+
+### Get Role
+GET http://localhost:8081/api/v1/roles/1
+
+
+
+########## AUTHORITIES ##########
+### Create Authority
+POST http://localhost:8081/api/v1/authorities
+Content-Type: application/json
+
+{
+    "name": "role.create"
+}
+
+### Get authority by id
+GET http://localhost:8081/api/v1/authorities/1
