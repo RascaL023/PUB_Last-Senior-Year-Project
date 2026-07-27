@@ -10,7 +10,7 @@ import org.springframework.data.domain.Pageable;
 public interface AuthorityService {
     AuthorityResponse create(AuthorityRequest request);
     AuthorityResponse getById(Long id);
-    Page<AuthorityResponse> getAllPaged(Pageable pageable);
+    Page<AuthorityResponse> searchActiveAuthorities(String name, Pageable pageable);
     AuthorityResponse update(Long id, AuthorityPutRequest request);
     AuthorityResponse update(Long id, AuthorityPatchRequest request);
     void delete(Long id);

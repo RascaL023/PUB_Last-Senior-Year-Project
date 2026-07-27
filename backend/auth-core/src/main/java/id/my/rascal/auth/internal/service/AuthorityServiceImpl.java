@@ -13,6 +13,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+
 @Service
 public class AuthorityServiceImpl implements AuthorityService {
 
@@ -27,50 +29,68 @@ public class AuthorityServiceImpl implements AuthorityService {
     public AuthorityResponse create(AuthorityRequest request) {
         Authority authority = AuthorityMapper.toEntity(request);
         authority = authorityRepository.save(authority);
+
         return AuthorityMapper.toResponse(authority);
     }
 
     @Override
     @Transactional(readOnly = true)
     public AuthorityResponse getById(Long id) {
-        Authority authority = authorityRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Authority not found with id: " + id));
+        Authority authority = validateAndGetAuthorityById(id);
         return AuthorityMapper.toResponse(authority);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Page<AuthorityResponse> getAllPaged(Pageable pageable) {
-        return authorityRepository.findAll(pageable).map(AuthorityMapper::toResponse);
+    public Page<AuthorityResponse> searchActiveAuthorities(
+        String name,
+        Pageable pageable
+    ) {
+        return authorityRepository
+            .searchActive(normalizeSearchName(name), pageable)
+            .map(AuthorityMapper::toResponse);
     }
 
     @Override
     @Transactional
     public AuthorityResponse update(Long id, AuthorityPutRequest request) {
-        Authority authority = authorityRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Authority not found with id: " + id));
-        
+        Authority authority = validateAndGetAuthorityById(id);
         AuthorityMapper.updateEntity(authority, request);
         authority = authorityRepository.save(authority);
+        
         return AuthorityMapper.toResponse(authority);
     }
 
     @Override
     @Transactional
     public AuthorityResponse update(Long id, AuthorityPatchRequest request) {
-        Authority authority = authorityRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Authority not found with id: " + id));
-        
+        Authority authority = validateAndGetAuthorityById(id);
         AuthorityMapper.updateEntity(authority, request);
         authority = authorityRepository.save(authority);
+
         return AuthorityMapper.toResponse(authority);
     }
 
     @Override
     @Transactional
     public void delete(Long id) {
-        Authority authority = authorityRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Authority not found with id: " + id));
-        authorityRepository.delete(authority);
+        Authority authority = validateAndGetAuthorityById(id);
+        authority.setDeletedAt(LocalDateTime.now());
+        authorityRepository.save(authority);
     }
+
+    private Authority validateAndGetAuthorityById(Long id) {
+        return authorityRepository.findActiveById(id)
+            .orElseThrow(() ->
+                new NotFoundException("Authority not found with id: " + id)
+            );
+    }
+
+    private String normalizeSearchName(String name) {
+        if (name == null || name.isBlank())
+            return "";
+
+        return name.trim();
+    }
+
 }

@@ -8,4 +8,8 @@ public record AuthorityPatchRequest(
     public AuthorityPatchRequest(String name) {
         this(Optional.ofNullable(name));
     }
+
+    public boolean isEmptyPatch() {
+        return name.isEmpty();
+    }
 }

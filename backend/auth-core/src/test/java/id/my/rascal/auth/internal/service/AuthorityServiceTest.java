@@ -13,6 +13,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDateTime;
@@ -21,7 +22,6 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -57,7 +57,7 @@ class AuthorityServiceTest {
 
     @Test
     void getById_shouldReturnAuthorityResponse_whenFound() {
-        when(authorityRepository.findById(1L)).thenReturn(Optional.of(sampleAuthority));
+        when(authorityRepository.findActiveById(1L)).thenReturn(Optional.of(sampleAuthority));
 
         AuthorityResponse response = authorityService.getById(1L);
 
@@ -67,17 +67,17 @@ class AuthorityServiceTest {
 
     @Test
     void getById_shouldThrowException_whenNotFound() {
-        when(authorityRepository.findById(1L)).thenReturn(Optional.empty());
+        when(authorityRepository.findActiveById(1L)).thenReturn(Optional.empty());
 
         assertThrows(NotFoundException.class, () -> authorityService.getById(1L));
     }
 
     @Test
-    void getAllPaged_shouldReturnPageOfAuthorityResponse() {
-        when(authorityRepository.findAll(any(Pageable.class)))
-            .thenReturn(new org.springframework.data.domain.PageImpl<>(List.of(sampleAuthority)));
+    void searchActiveAuthorities_shouldReturnPage() {
+        when(authorityRepository.searchActive(any(), any(Pageable.class)))
+            .thenReturn(new PageImpl<>(List.of(sampleAuthority)));
 
-        var page = authorityService.getAllPaged(Pageable.ofSize(10));
+        var page = authorityService.searchActiveAuthorities("admin", Pageable.ofSize(10));
 
         assertThat(page.getContent()).hasSize(1);
         assertThat(page.getContent().get(0).name()).isEqualTo("ROLE_ADMIN");
@@ -86,7 +86,7 @@ class AuthorityServiceTest {
     @Test
     void updatePut_shouldUpdateAndReturnAuthorityResponse() {
         AuthorityPutRequest request = new AuthorityPutRequest("ROLE_SUPER_ADMIN");
-        when(authorityRepository.findById(1L)).thenReturn(Optional.of(sampleAuthority));
+        when(authorityRepository.findActiveById(1L)).thenReturn(Optional.of(sampleAuthority));
         when(authorityRepository.save(any(Authority.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         AuthorityResponse response = authorityService.update(1L, request);
@@ -98,7 +98,7 @@ class AuthorityServiceTest {
     @Test
     void updatePatch_shouldUpdateOnlyPresentFields() {
         AuthorityPatchRequest request = new AuthorityPatchRequest("ROLE_PATCHED");
-        when(authorityRepository.findById(1L)).thenReturn(Optional.of(sampleAuthority));
+        when(authorityRepository.findActiveById(1L)).thenReturn(Optional.of(sampleAuthority));
         when(authorityRepository.save(any(Authority.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         AuthorityResponse response = authorityService.update(1L, request);
@@ -109,20 +109,22 @@ class AuthorityServiceTest {
     @Test
     void updatePatch_shouldNotUpdateIfOptionalEmpty() {
         AuthorityPatchRequest request = new AuthorityPatchRequest(Optional.empty());
-        when(authorityRepository.findById(1L)).thenReturn(Optional.of(sampleAuthority));
+        when(authorityRepository.findActiveById(1L)).thenReturn(Optional.of(sampleAuthority));
         when(authorityRepository.save(any(Authority.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         AuthorityResponse response = authorityService.update(1L, request);
 
-        assertThat(response.name()).isEqualTo("ROLE_ADMIN"); // Name shouldn't change
+        assertThat(response.name()).isEqualTo("ROLE_ADMIN");
     }
 
     @Test
-    void delete_shouldCallRepositoryDelete() {
-        when(authorityRepository.findById(1L)).thenReturn(Optional.of(sampleAuthority));
+    void delete_shouldSoftDeleteAuthority() {
+        when(authorityRepository.findActiveById(1L)).thenReturn(Optional.of(sampleAuthority));
 
         authorityService.delete(1L);
 
-        verify(authorityRepository, times(1)).delete(sampleAuthority);
+        assertThat(sampleAuthority.getDeletedAt()).isNotNull();
+        verify(authorityRepository, times(1)).save(sampleAuthority);
+        verify(authorityRepository, never()).delete(any());
     }
 }
