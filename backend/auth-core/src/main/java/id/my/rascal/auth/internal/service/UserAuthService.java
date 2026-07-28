@@ -11,7 +11,7 @@ public interface UserAuthService {
     UserAuthResponse create(UserAuthRequest request);
     UserAuthResponse getById(Long id);
     UserAuthResponse getByEmail(String email);
-    Page<UserAuthResponse> getAllPaged(Pageable pageable);
+    Page<UserAuthResponse> searchActiveUsers(String email, Pageable pageable);
     UserAuthResponse update(Long id, UserAuthPutRequest request);
     UserAuthResponse update(Long id, UserAuthPatchRequest request);
     void delete(Long id);

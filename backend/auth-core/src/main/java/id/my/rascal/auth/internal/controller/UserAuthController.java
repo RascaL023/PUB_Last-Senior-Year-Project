@@ -6,6 +6,8 @@ import id.my.rascal.auth.internal.model.request.UserAuthRequest;
 import id.my.rascal.auth.internal.model.response.UserAuthResponse;
 import id.my.rascal.auth.internal.service.UserAuthService;
 import id.my.rascal.common.ApiResponse;
+import id.my.rascal.common.exception.BadRequestException;
+import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -23,7 +25,7 @@ public class UserAuthController {
     }
 
     @PostMapping
-    public ResponseEntity<?> create(@RequestBody UserAuthRequest request) {
+    public ResponseEntity<?> create(@RequestBody @Valid UserAuthRequest request) {
         UserAuthResponse data = userAuthService.create(request);
         return ApiResponse.success(HttpStatus.CREATED, "User created", data);
     }
@@ -35,8 +37,13 @@ public class UserAuthController {
     }
 
     @GetMapping
-    public ResponseEntity<?> getAll(Pageable pageable) {
-        Page<UserAuthResponse> page = userAuthService.getAllPaged(pageable);
+    public ResponseEntity<?> getAll(
+        @RequestParam(required = false) String email,
+        Pageable pageable
+    ) {
+        Page<UserAuthResponse> page = userAuthService
+            .searchActiveUsers(email, pageable);
+
         return ApiResponse.paged(
             HttpStatus.OK, "Users retrieved",
             page.getContent(),
@@ -49,19 +56,31 @@ public class UserAuthController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updatePut(@PathVariable Long id, @RequestBody UserAuthPutRequest request) {
+    public ResponseEntity<?> updatePut(
+        @PathVariable Long id,
+        @RequestBody @Valid UserAuthPutRequest request
+    ) {
         UserAuthResponse data = userAuthService.update(id, request);
         return ApiResponse.success(HttpStatus.OK, "User updated", data);
     }
 
     @PatchMapping("/{id}")
-    public ResponseEntity<?> updatePatch(@PathVariable Long id, @RequestBody UserAuthPatchRequest request) {
+    public ResponseEntity<?> updatePatch(
+        @PathVariable Long id,
+        @RequestBody UserAuthPatchRequest request
+    ) {
+        if (request.isEmptyPatch())
+            throw new BadRequestException("PATCH can't be empty");
+
         UserAuthResponse data = userAuthService.update(id, request);
         return ApiResponse.success(HttpStatus.OK, "User updated", data);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> delete(@PathVariable Long id) {
+        if (id <= 0)
+            throw new BadRequestException("Invalid ID: " + id);
+
         userAuthService.delete(id);
         return ApiResponse.success(HttpStatus.OK, "User deleted", null);
     }

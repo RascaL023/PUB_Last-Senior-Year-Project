@@ -11,4 +11,10 @@ public record UserAuthPatchRequest(
     public UserAuthPatchRequest(String email, String password, Set<Long> roleIds) {
         this(Optional.ofNullable(email), Optional.ofNullable(password), Optional.ofNullable(roleIds));
     }
+
+    public boolean isEmptyPatch() {
+        return (email == null || email.isEmpty())
+            && (password == null || password.isEmpty())
+            && (roleIds == null || roleIds.isEmpty());
+    }
 }
