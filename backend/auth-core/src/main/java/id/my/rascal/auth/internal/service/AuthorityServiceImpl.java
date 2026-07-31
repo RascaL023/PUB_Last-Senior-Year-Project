@@ -7,6 +7,7 @@ import id.my.rascal.auth.internal.model.request.AuthorityPutRequest;
 import id.my.rascal.auth.internal.model.request.AuthorityRequest;
 import id.my.rascal.auth.internal.model.response.AuthorityResponse;
 import id.my.rascal.auth.internal.repository.AuthorityRepository;
+import id.my.rascal.common.exception.BadRequestException;
 import id.my.rascal.common.exception.NotFoundException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -27,6 +28,7 @@ public class AuthorityServiceImpl implements AuthorityService {
     @Override
     @Transactional
     public AuthorityResponse create(AuthorityRequest request) {
+        rejectInvalidCharacter(request.name().toLowerCase());
         Authority authority = AuthorityMapper.toEntity(request);
         authority = authorityRepository.save(authority);
 
@@ -55,6 +57,7 @@ public class AuthorityServiceImpl implements AuthorityService {
     @Transactional
     public AuthorityResponse update(Long id, AuthorityPutRequest request) {
         Authority authority = validateAndGetAuthorityById(id);
+        rejectInvalidCharacter(request.name().toLowerCase());
         AuthorityMapper.updateEntity(authority, request);
         authority = authorityRepository.save(authority);
         
@@ -64,6 +67,7 @@ public class AuthorityServiceImpl implements AuthorityService {
     @Override
     @Transactional
     public AuthorityResponse update(Long id, AuthorityPatchRequest request) {
+        rejectInvalidCharacter(request.name().get().toLowerCase());
         Authority authority = validateAndGetAuthorityById(id);
         AuthorityMapper.updateEntity(authority, request);
         authority = authorityRepository.save(authority);
@@ -91,6 +95,16 @@ public class AuthorityServiceImpl implements AuthorityService {
             return "";
 
         return name.trim();
+    }
+
+    private void rejectInvalidCharacter(String name) {
+        for (char c : name.toCharArray()) {
+            boolean isLetter = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+            boolean isAllowedSymbol = (c == '.' || c == '-' || c == '*');
+
+            if (!isLetter && !isAllowedSymbol)
+                throw new BadRequestException("Authority name can only contains letter, -, and *");
+        }
     }
 
 }
