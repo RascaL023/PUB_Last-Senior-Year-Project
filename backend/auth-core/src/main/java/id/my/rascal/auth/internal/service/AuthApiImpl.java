@@ -21,13 +21,13 @@ public class AuthApiImpl implements AuthApi {
     @Override
     @Transactional(readOnly = true)
     public Optional<UserAuthResponse> getById(Long id) {
-        return userAuthRepository.findById(id)
+        return userAuthRepository.findActiveById(id)
             .map(u -> new UserAuthResponse(u.getId(), u.getEmail()));
     }
 
     @Override
     public Optional<UserAuthResponse> getByEmail(String email) {
-        return userAuthRepository.findByEmail(email)
+        return userAuthRepository.findActiveByEmail(email)
             .map(u -> new UserAuthResponse(u.getId(), u.getEmail()));
     }
     

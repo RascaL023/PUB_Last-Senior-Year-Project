@@ -43,11 +43,7 @@ public class Role {
         inverseJoinColumns = @JoinColumn(name = "authority_id")
     ) private Set<Authority> authorities = new HashSet<>();
 
-    @ManyToMany
-    @JoinTable(
-        name = "user_roles",
-        joinColumns = @JoinColumn(name = "role_id"),
-        inverseJoinColumns = @JoinColumn(name = "user_id")
-    ) private Set<UserAuth> users = new HashSet<>();
+    @ManyToMany(mappedBy = "roles")
+    private Set<UserAuth> users = new HashSet<>();
     
 }
