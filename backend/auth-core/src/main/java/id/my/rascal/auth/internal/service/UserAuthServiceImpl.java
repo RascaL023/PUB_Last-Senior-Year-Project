@@ -92,6 +92,9 @@ public class UserAuthServiceImpl implements UserAuthService {
     @Override
     @Transactional
     public UserAuthResponse update(Long id, UserAuthPatchRequest request) {
+        if (request.password().isPresent()) 
+            rejectInvalidPasswordLength(request.password().get());
+
         UserAuth userAuth = validateAndGetUserById(id);
 
         if (request.email() != null && request.email().isPresent()) {
@@ -168,6 +171,11 @@ public class UserAuthServiceImpl implements UserAuthService {
     private void validateEmailFormat(String email) {
         if (!EMAIL_PATTERN.matcher(email).matches())
             throw new BadRequestException("email must be a valid email address");
+    }
+
+    private void rejectInvalidPasswordLength(String password) {
+        if (password.length() < 8)
+            throw new BadRequestException("Password at least have 8 characters");
     }
 
 }

@@ -67,6 +67,9 @@ public class AuthorityServiceImpl implements AuthorityService {
     @Override
     @Transactional
     public AuthorityResponse update(Long id, AuthorityPatchRequest request) {
+        if (request.name().isPresent()) 
+            rejectInvalidLengthPatchName(request.name().get());
+
         rejectInvalidCharacter(request.name().get().toLowerCase());
         Authority authority = validateAndGetAuthorityById(id);
         AuthorityMapper.updateEntity(authority, request);
@@ -105,6 +108,12 @@ public class AuthorityServiceImpl implements AuthorityService {
             if (!isLetter && !isAllowedSymbol)
                 throw new BadRequestException("Authority name can only contains letter, -, and *");
         }
+    }
+
+    private void rejectInvalidLengthPatchName(String name) {
+        int length = name.length();
+        if (length < 3 || length > 30)
+            throw new BadRequestException("Valid authority name are between 3 to 30 characters");
     }
 
 }

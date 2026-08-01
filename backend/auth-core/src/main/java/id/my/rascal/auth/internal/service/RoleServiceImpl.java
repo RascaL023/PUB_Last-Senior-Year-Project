@@ -9,6 +9,7 @@ import id.my.rascal.auth.internal.model.request.RoleRequest;
 import id.my.rascal.auth.internal.model.response.RoleResponse;
 import id.my.rascal.auth.internal.repository.AuthorityRepository;
 import id.my.rascal.auth.internal.repository.RoleRepository;
+import id.my.rascal.common.exception.BadRequestException;
 import id.my.rascal.common.exception.NotFoundException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -79,6 +80,9 @@ public class RoleServiceImpl implements RoleService {
     @Override
     @Transactional
     public RoleResponse update(Long id, RolePatchRequest request) {
+        if (request.name().isPresent()) 
+            rejectInvalidLengthPatchName(request.name().get());
+
         Role role = validateAndGetRoleById(id);
         RoleMapper.updateEntity(role, request);
         
@@ -126,6 +130,12 @@ public class RoleServiceImpl implements RoleService {
             return "";
 
         return name.trim();
+    }
+
+    private void rejectInvalidLengthPatchName(String name) {
+        int length = name.length();
+        if (length < 3 || length > 20)
+            throw new BadRequestException("Valid role name are between 3 to 20 characters");
     }
 
 }
