@@ -14,7 +14,7 @@ public class ApiResponse {
     private static final String DEFAULT_PAGED_SUCCESS_MESSAGE = "Data retrieved successfully";
     private static final String DEFAULT_VALIDATION_MESSAGE = "Validation failed";
 
-    public static ResponseEntity<?> error(
+    public static ResponseEntity<ErrorTemplate> error(
         HttpStatus httpStatus,
         int status,
         String errorType,
@@ -39,13 +39,13 @@ public class ApiResponse {
         );
     }
 
-    public static ResponseEntity<?> validationError(
+    public static ResponseEntity<ErrorTemplate> validationError(
         List<FieldErrorTemplate> errors
     ) {
         return validationError(DEFAULT_VALIDATION_MESSAGE, errors);
     }
 
-    public static ResponseEntity<?> validationError(
+    public static ResponseEntity<ErrorTemplate> validationError(
         String message,
         List<FieldErrorTemplate> errors
     ) {
@@ -60,20 +60,20 @@ public class ApiResponse {
         );
     }
 
-    public static ResponseEntity<?> success(
+    public static <T> ResponseEntity<SuccessTemplate<T>> success(
         HttpStatus httpStatus,
-        Object data
+        T data
     ) {
         return success(httpStatus, DEFAULT_SUCCESS_MESSAGE, data);
     }
 
-    public static ResponseEntity<?> success(
+    public static <T> ResponseEntity<SuccessTemplate<T>> success(
         HttpStatus httpStatus,
         String message,
-        Object data
+        T data
     ) {
         return ResponseEntity.status(httpStatus).body(
-            new SuccessTemplate(
+            new SuccessTemplate<T>(
                 true,
                 message,
                 data,
@@ -82,10 +82,10 @@ public class ApiResponse {
         );
     }
 
-    public static ResponseEntity<?> paged(
+    public static <T> ResponseEntity<SuccessPagedTemplate<T>> paged(
         HttpStatus httpStatus,
         String message,
-        Object data,
+        T data,
         int currentPage,
         int perPage,
         long totalItems,
@@ -104,7 +104,7 @@ public class ApiResponse {
         ));
 
         return ResponseEntity.status(httpStatus).body(
-            new SuccessPagedTemplate(
+            new SuccessPagedTemplate<T>(
                 true,
                 message,
                 data,
