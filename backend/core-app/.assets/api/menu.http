@@ -1,0 +1,35 @@
+###### MODIFIERS ######
+### Create
+POST http://localhost:8081/api/v1/modifiers
+Content-Type: application/json
+
+{
+    "name": "Temperature",
+    "minSelection": 1,
+    "maxSelection": 1,
+    "options": [
+        { "name": "hot", "additionalPrice": 0 },
+        { "name": "ice", "additionalPrice": 500 }
+    ]
+}
+
+### Get
+GET http://localhost:8081/api/v1/modifiers/2
+
+### Update
+PUT http://localhost:8081/api/v1/modifiers/2
+Content-Type: application/json
+
+{
+    "name": "size",
+    "minSelection": 1,
+    "maxSelection": 1,
+    "options": [
+        { "name": "small", "additionalPrice": 0 },
+        { "name": "medium", "additionalPrice": 500 },
+        { "name": "large", "additionalPrice": 1000 }
+    ]
+}
+
+### Delete
+DELETE http://localhost:8081/api/v1/modifiers/2

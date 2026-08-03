@@ -88,8 +88,8 @@ public class ModifierService {
 
 
     @Transactional
-    public ModifierTypeResponse update(ModifierTypePutRequest request) {
-        ModifierType modifierType = assign(modifierHelper.getById(request.id()), request);
+    public ModifierTypeResponse update(Long id, ModifierTypePutRequest request) {
+        ModifierType modifierType = assign(modifierHelper.getById(id), request);
         modifierType.getModifierOptions().clear();
 
         for (ModifierOptionPutRequest req : request.options()) {

@@ -9,10 +9,6 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 public record ModifierTypePutRequest(
-    @NotNull(message = "ID must be filled")
-    @Min(value = 1, message = "Id can't be negative")
-    Long id,
-
     @NotBlank(message = "Name cannot be blank")
     @Size(min = 3, max = 20, message = "Name are between 3 and 20 characters")
     String name,
