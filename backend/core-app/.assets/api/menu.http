@@ -1,6 +1,9 @@
+@dev-url = http://localhost:8081/api/v1
+@base-url = {{dev-url}}
+
 ###### MODIFIERS ######
 ### Create
-POST http://localhost:8081/api/v1/modifiers
+POST {{base-url}}/modifiers
 Content-Type: application/json
 
 {
@@ -14,10 +17,13 @@ Content-Type: application/json
 }
 
 ### Get
-GET http://localhost:8081/api/v1/modifiers/2
+GET {{base-url}}/modifiers/1
+
+### Search active or GetAll
+GET {{base-url}}/modifiers
 
 ### Update
-PUT http://localhost:8081/api/v1/modifiers/2
+PUT {{base-url}}/modifiers/2
 Content-Type: application/json
 
 {
@@ -32,4 +38,79 @@ Content-Type: application/json
 }
 
 ### Delete
-DELETE http://localhost:8081/api/v1/modifiers/2
+DELETE {{base-url}}/modifiers/2
+
+
+###### MENU CATEGORIES ######
+### Create
+POST {{base-url}}/menu-categories
+Content-Type: application/json
+
+{
+    "displayName": "tea",
+    "categoryCode": "coffee",
+    "displayOrder": 1
+}
+
+### Get
+GET {{base-url}}/menu-categories/1
+
+### Search active or GetAll
+GET {{base-url}}/menu-categories?displayName=cof&showDeleted=false
+
+### Update
+PUT {{base-url}}/menu-categories/1
+Content-Type: application/json
+
+{
+    "displayName": "Hot Beverages",
+    "categoryCode": "COffee",
+    "displayOrder": 1
+}
+
+### Delete
+DELETE {{base-url}}/menu-categories/2
+
+
+###### MENUS ######
+### Create
+POST {{base-url}}/menus
+Content-Type: application/json
+
+{
+    "name": "Cappuccino",
+    "categoryIds": [1],
+    "description": "Espresso with steamed milk",
+    "imageUrls": ["/assets/images/menus/hot-drinks/cappuccino.jpg"],
+    "basePrice": 20000,
+    "isAvailable": true,
+    "ModifierTypeIds": [1]
+}
+
+### Get
+GET {{base-url}}/menus/1
+
+### Search active or GetAll
+GET {{base-url}}/menus?name=cap&categoryId=1&showDeleted=false
+
+### Update
+PUT {{base-url}}/menus/1
+Content-Type: application/json
+
+{
+    "name": "Cappuccino",
+    "categoryIds": [1],
+    "description": "Espresso with steamed milk and foam",
+    "imageUrls": ["/assets/images/menus/hot-drinks/cappuccino.jpg"],
+    "basePrice": 22000,
+    "isAvailable": true,
+    "ModifierTypeIds": [1]
+}
+
+### Delete
+DELETE {{base-url}}/menus/1
+
+
+###### UPLOADS ######
+### Get Upload Auth
+GET {{base-url}}/images/auth

@@ -4,12 +4,9 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-import id.my.rascal.menu.internal.model.enums.MenuCategoryEnum;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -19,6 +16,7 @@ import jakarta.persistence.ManyToMany;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.BatchSize;
 
 @Entity
 @Getter @Setter
@@ -31,16 +29,12 @@ public class Menu {
     @Column(name = "name", nullable = false)
     private String name;
 
-    @Column(name = "category", nullable = false)
-    @Enumerated(EnumType.STRING)
-    private MenuCategoryEnum categoryEnum;
-
     @Column(name = "description")
     private String description;
 
     @ElementCollection
+    @BatchSize(size = 50)
     private List<String> imageUrls = new ArrayList<>();
-
 
     @Column(name = "base_price", nullable = false)
     private Integer basePrice;
@@ -58,6 +52,15 @@ public class Menu {
     private LocalDateTime deletedAt;
 
     @ManyToMany
+    @BatchSize(size = 50)
+    @JoinTable(
+        name = "menu_to_categories",
+        joinColumns = @JoinColumn(name = "menu_id"),
+        inverseJoinColumns = @JoinColumn(name = "menu_category_id")
+    ) private List<MenuCategory> categories;
+
+    @ManyToMany
+    @BatchSize(size = 50)
     @JoinTable(
         name = "menu_modifier_types",
         joinColumns = @JoinColumn(name = "menu_id"),

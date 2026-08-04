@@ -8,7 +8,7 @@ import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
-public record MenuRequest(
+public record MenuPutRequest(
     @NotBlank(message = "Menu name must be filled")
     @Size(min = 3, max = 30, message = "Menu name are between 3 to 30 characters")
     String name,
