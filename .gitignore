@@ -7,6 +7,13 @@ temp
 env*
 **.bak
 
+### Docker - CI/CD?
+redis_data
+docker-compose.yml
+
+### FUTURE PLAN ###
+CACHE.md
+
 ### JAVA ###
 HELP.md
 target/
