@@ -14,6 +14,7 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.BatchSize;
 
 @Entity
 @Getter @Setter
@@ -35,7 +36,8 @@ public class ModifierType {
     @OneToMany(
         mappedBy = "modifierType", 
         cascade = CascadeType.ALL, orphanRemoval = true
-    ) private List<ModifierOption> modifierOptions = new ArrayList<>();
+    ) @BatchSize(size = 50)
+    private List<ModifierOption> modifierOptions = new ArrayList<>();
 
     @ManyToMany(mappedBy = "modifierTypes")
     private List<Menu> menus = new ArrayList<>();

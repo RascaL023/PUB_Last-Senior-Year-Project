@@ -20,7 +20,6 @@ public interface ModifierTypeRepository extends JpaRepository<ModifierType, Long
         select mt from ModifierType mt
         where (lower(mt.name) like lower(concat('%', cast(:name as string), '%')))
     """)
-    @EntityGraph(attributePaths = "modifierOptions")
     Page<ModifierType> search(@Param("name") String name, Pageable pageable);
 
 
