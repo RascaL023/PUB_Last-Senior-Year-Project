@@ -4,6 +4,7 @@ import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
@@ -19,6 +20,7 @@ import id.my.rascal.common.template.FieldErrorTemplate;
 @Order(Ordered.LOWEST_PRECEDENCE)
 public class GlobalExceptionHandler {
 
+    // TODO: Masking error message
     @ExceptionHandler(ConflictException.class)
     public ResponseEntity<?> handleConflict(ConflictException ex) {
         return ApiResponse.error(HttpStatus.CONFLICT, 409, "Conflict", ex.getMessage());
@@ -66,6 +68,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MissingServletRequestParameterException.class)
     public ResponseEntity<?> handleMissingParam(MissingServletRequestParameterException ex) {
         return ApiResponse.error(HttpStatus.BAD_REQUEST, 400, "Missing Parameter", ex.getMessage());
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<?> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
+        return ApiResponse.error(HttpStatus.CONFLICT, 409, "Duplicate entry", ex.getMessage());
     }
 
     @ExceptionHandler(Exception.class)
