@@ -9,25 +9,31 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import id.my.rascal.common.exception.ConflictException;
+import id.my.rascal.common.exception.NotFoundException;
 import id.my.rascal.common.util.StringUtil;
+import id.my.rascal.menu.internal.entity.Menu;
 import id.my.rascal.menu.internal.entity.MenuCategory;
 import id.my.rascal.menu.internal.model.request.MenuCategoryPutRequest;
 import id.my.rascal.menu.internal.model.request.MenuCategoryRequest;
 import id.my.rascal.menu.internal.model.response.MenuCategoryResponse;
 import id.my.rascal.menu.internal.repository.MenuCategoryRepository;
+import id.my.rascal.menu.internal.repository.MenuRepository;
 
 @Service
 public class MenuCategoryService {
 
     private final MenuCategoryRepository menuCategoryRepository;
     private final MenuCategoryHelper menuCategoryHelper;
+    private final MenuRepository menuRepository;
 
     public MenuCategoryService(
         MenuCategoryRepository menuCategoryRepository,
-        MenuCategoryHelper menuCategoryHelper
+        MenuCategoryHelper menuCategoryHelper,
+        MenuRepository menuRepository
     ) {
         this.menuCategoryRepository = menuCategoryRepository;
         this.menuCategoryHelper = menuCategoryHelper;
+        this.menuRepository = menuRepository;
     }
 
     @Transactional
@@ -73,9 +79,28 @@ public class MenuCategoryService {
     public void delete(Long id) {
         MenuCategory menuCategory = menuCategoryHelper.getActiveById(id);
 
+        for (Menu menu : menuRepository.findByCategoryId(id)) {
+            menu.getCategories().remove(menuCategory);
+            menuRepository.save(menu);
+        }
+
         menuCategory.setDeletedAt(LocalDateTime.now());
         menuCategoryRepository.save(menuCategory);
     }
+
+
+    @Transactional
+    public MenuCategoryResponse restore(Long id) {
+        MenuCategory menuCategory = menuCategoryRepository.findActiveById(id, true)
+            .orElseThrow(() -> new NotFoundException("Menu with id " + id + " is not deleted"));
+
+        menuCategory.setDeletedAt(null);
+        menuCategory.setUpdatedAt(LocalDateTime.now());
+        menuCategory = menuCategoryRepository.save(menuCategory);
+
+        return this.toResponse(menuCategory);
+    }
+
 
     private void validateDuplicateCode(String code) {
         if (menuCategoryRepository.existsByCategoryCode(StringUtil.toSlug(code)))

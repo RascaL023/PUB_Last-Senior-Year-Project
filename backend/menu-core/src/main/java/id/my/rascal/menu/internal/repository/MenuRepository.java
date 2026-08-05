@@ -85,4 +85,11 @@ public interface MenuRepository extends JpaRepository<Menu, Long> {
     """)
     List<Menu> findByModifierTypeId(@Param("id") Long id);
 
+    @Query("""
+        select distinct m from Menu m
+        join m.categories mc
+        where mc.id = :id
+    """)
+    List<Menu> findByCategoryId(@Param("id") Long id);
+
 }
