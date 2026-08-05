@@ -14,6 +14,7 @@ import java.util.Optional;
 
 @Repository
 public interface AuthorityRepository extends JpaRepository<Authority, Long> {
+
     Optional<Authority> findByName(String name);
 
     @Query("""
@@ -30,4 +31,5 @@ public interface AuthorityRepository extends JpaRepository<Authority, Long> {
         and (lower(a.name) like lower(concat('%', cast(:name as string), '%')))
     """)
     Page<Authority> searchActive(@Param("name") String name, Pageable pageable);
+
 }
