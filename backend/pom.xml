@@ -27,7 +27,9 @@
         <module>common</module>
         <module>auth-api</module>
         <module>auth-core</module>
+        <module>menu-api</module>
         <module>menu-core</module>
+        <module>order-core</module>
         <module>core-app</module>
     </modules>
 
@@ -50,7 +52,17 @@
             </dependency>
             <dependency>
                 <groupId>id.my.rascal</groupId>
+                <artifactId>menu-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>id.my.rascal</groupId>
                 <artifactId>menu-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>id.my.rascal</groupId>
+                <artifactId>order-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
         </dependencies>

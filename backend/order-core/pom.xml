@@ -8,16 +8,16 @@
         <version>0.0.1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
-    <artifactId>menu-core</artifactId>
+    <artifactId>order-core</artifactId>
     <packaging>jar</packaging>
-    
+
     <dependencies>
         <dependency>
             <groupId>id.my.rascal</groupId>
             <artifactId>common</artifactId>
         </dependency>
 
-        <!-- Menu API (contract antar-module) -->
+        <!-- Menu API (snapshot menu untuk order) -->
         <dependency>
             <groupId>id.my.rascal</groupId>
             <artifactId>menu-api</artifactId>
@@ -70,4 +70,3 @@
         </dependency>
     </dependencies>
 </project>
-
