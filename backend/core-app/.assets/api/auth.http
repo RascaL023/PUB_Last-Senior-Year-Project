@@ -2,9 +2,17 @@
 POST http://localhost:8081/api/auth/login?username=asep&password=qwe
 
 
+########## AUTHORITIES ##########
+### Get by ID
+GET http://localhost:8081/api/v1/auths/authorities/1
+
+### Search active or GetAll
+GET http://localhost:8081/api/v1/auths/authorities?name=create
+
+
 ########## ROLES ##########
 ### Create
-POST http://localhost:8081/api/v1/roles
+POST http://localhost:8081/api/v1/auths/roles
 Content-Type: application/json
 
 {
@@ -13,20 +21,22 @@ Content-Type: application/json
 }
 
 ### Get By ID
-GET http://localhost:8081/api/v1/roles/1
+GET http://localhost:8081/api/v1/auths/roles/1
 
 ### Search active or GetAll
-GET http://localhost:8081/api/v1/roles?name=admin
+GET http://localhost:8081/api/v1/auths/roles?name=admin
 
 
 
-########## AUTHORITIES ##########
+########## USERS ##########
 ### Create
-POST http://localhost:8081/api/v1/authorities
+POST http://localhost:8081/api/v1/auths/users
 Content-Type: application/json
 
 {
-    "name": "role.create"
+    "email": "admin@examlple.com",
+    "password": "atmin123",
+    "roleIds": [1]
 }
 
 ### Get by ID
@@ -34,3 +44,6 @@ GET http://localhost:8081/api/v1/authorities/1
 
 ### Search active or GetAll
 GET http://localhost:8081/api/v1/authorities?name=create
+
+### Delete
+DELETE http://localhost:8081/api/v1/auths/users/1

@@ -15,7 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/v1/roles")
+@RequestMapping("/api/v1/auths/roles")
 public class RoleController {
 
     private final RoleService roleService;
@@ -32,7 +32,7 @@ public class RoleController {
 
     @GetMapping("/{id}")
     public ResponseEntity<?> getById(@PathVariable Long id) {
-        RoleResponse data = roleService.getById(id);
+        RoleResponse data = roleService.getById(id, false);
         return ApiResponse.success(HttpStatus.OK, data);
     }
 
@@ -41,7 +41,7 @@ public class RoleController {
         @RequestParam(required = false) String name,
         Pageable pageable
     ) {
-        Page<RoleResponse> page = roleService.searchActiveRoles(name, pageable);
+        Page<RoleResponse> page = roleService.searchRoles(name, false, pageable);
 
         return ApiResponse.paged(
             HttpStatus.OK, "Roles retrieved",

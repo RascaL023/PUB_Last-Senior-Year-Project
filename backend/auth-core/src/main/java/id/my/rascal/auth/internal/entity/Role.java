@@ -4,6 +4,8 @@ import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.hibernate.annotations.BatchSize;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Entity;
@@ -37,6 +39,7 @@ public class Role {
     private LocalDateTime deletedAt;
 
     @ManyToMany
+    @BatchSize(size = 20)
     @JoinTable(
         name = "role_authorities",
         joinColumns = @JoinColumn(name = "role_id"),

@@ -1,9 +1,6 @@
 package id.my.rascal.auth.internal.service;
 
 import id.my.rascal.auth.internal.entity.Authority;
-import id.my.rascal.auth.internal.model.request.AuthorityPatchRequest;
-import id.my.rascal.auth.internal.model.request.AuthorityPutRequest;
-import id.my.rascal.auth.internal.model.request.AuthorityRequest;
 import id.my.rascal.auth.internal.model.response.AuthorityResponse;
 import id.my.rascal.auth.internal.repository.AuthorityRepository;
 import id.my.rascal.common.exception.NotFoundException;
@@ -44,18 +41,6 @@ class AuthorityServiceTest {
     }
 
     @Test
-    void create_shouldReturnAuthorityResponse() {
-        AuthorityRequest request = new AuthorityRequest("ROLE_ADMIN");
-        when(authorityRepository.save(any(Authority.class))).thenReturn(sampleAuthority);
-
-        AuthorityResponse response = authorityService.create(request);
-
-        assertThat(response.id()).isEqualTo(1L);
-        assertThat(response.name()).isEqualTo("ROLE_ADMIN");
-        verify(authorityRepository, times(1)).save(any(Authority.class));
-    }
-
-    @Test
     void getById_shouldReturnAuthorityResponse_whenFound() {
         when(authorityRepository.findActiveById(1L)).thenReturn(Optional.of(sampleAuthority));
 
@@ -81,40 +66,6 @@ class AuthorityServiceTest {
 
         assertThat(page.getContent()).hasSize(1);
         assertThat(page.getContent().get(0).name()).isEqualTo("ROLE_ADMIN");
-    }
-
-    @Test
-    void updatePut_shouldUpdateAndReturnAuthorityResponse() {
-        AuthorityPutRequest request = new AuthorityPutRequest("ROLE_SUPER_ADMIN");
-        when(authorityRepository.findActiveById(1L)).thenReturn(Optional.of(sampleAuthority));
-        when(authorityRepository.save(any(Authority.class))).thenAnswer(invocation -> invocation.getArgument(0));
-
-        AuthorityResponse response = authorityService.update(1L, request);
-
-        assertThat(response.name()).isEqualTo("ROLE_SUPER_ADMIN");
-        verify(authorityRepository).save(sampleAuthority);
-    }
-
-    @Test
-    void updatePatch_shouldUpdateOnlyPresentFields() {
-        AuthorityPatchRequest request = new AuthorityPatchRequest("ROLE_PATCHED");
-        when(authorityRepository.findActiveById(1L)).thenReturn(Optional.of(sampleAuthority));
-        when(authorityRepository.save(any(Authority.class))).thenAnswer(invocation -> invocation.getArgument(0));
-
-        AuthorityResponse response = authorityService.update(1L, request);
-
-        assertThat(response.name()).isEqualTo("ROLE_PATCHED");
-    }
-
-    @Test
-    void updatePatch_shouldNotUpdateIfOptionalEmpty() {
-        AuthorityPatchRequest request = new AuthorityPatchRequest(Optional.empty());
-        when(authorityRepository.findActiveById(1L)).thenReturn(Optional.of(sampleAuthority));
-        when(authorityRepository.save(any(Authority.class))).thenAnswer(invocation -> invocation.getArgument(0));
-
-        AuthorityResponse response = authorityService.update(1L, request);
-
-        assertThat(response.name()).isEqualTo("ROLE_ADMIN");
     }
 
     @Test

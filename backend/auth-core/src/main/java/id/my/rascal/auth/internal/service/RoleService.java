@@ -9,8 +9,8 @@ import org.springframework.data.domain.Pageable;
 
 public interface RoleService {
     RoleResponse create(RoleRequest request);
-    RoleResponse getById(Long id);
-    Page<RoleResponse> searchActiveRoles(String name, Pageable pageable);
+    RoleResponse getById(Long id, boolean showDeleted);
+    Page<RoleResponse> searchRoles(String name, boolean showDeleted, Pageable pageable);
     RoleResponse update(Long id, RolePutRequest request);
     RoleResponse update(Long id, RolePatchRequest request);
     void delete(Long id);
