@@ -36,7 +36,7 @@ public class RoleServiceImpl implements RoleService {
     @Override
     @Transactional
     public RoleResponse create(RoleRequest request) {
-        List<Authority> authorities = authorityRepository.findAllById(request.authorityIds());
+        List<Authority> authorities = authorityRepository.findActiveByIds(request.authorityIds());
         validateAuthorityIds(authorities, request.authorityIds());
 
         Role role = RoleMapper.toEntity(request);
@@ -48,26 +48,26 @@ public class RoleServiceImpl implements RoleService {
 
     @Override
     @Transactional(readOnly = true)
-    public RoleResponse getById(Long id) {
-        Role role = validateAndGetRoleById(id);
+    public RoleResponse getById(Long id, boolean showDeleted) {
+        Role role = validateAndGetRoleById(id, showDeleted);
         return RoleMapper.toResponse(role);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Page<RoleResponse> searchActiveRoles(String name, Pageable pageable) {
-        Page<Role> roles = roleRepository.searchActiveRole(normalizeSearchName(name), pageable);
+    public Page<RoleResponse> searchRoles(String name, boolean showDeleted, Pageable pageable) {
+        Page<Role> roles = roleRepository.searchRole(normalizeSearchName(name), showDeleted, pageable);
         return roles.map(RoleMapper::toResponse);
     }
 
     @Override
     @Transactional
     public RoleResponse update(Long id, RolePutRequest request) {
-        Role role = validateAndGetRoleById(id);
+        Role role = validateAndGetRoleById(id, false);
         RoleMapper.updateEntity(role, request);
         
         if (request.authorityIds() != null) {
-            List<Authority> authorities = authorityRepository.findAllById(request.authorityIds());
+            List<Authority> authorities = authorityRepository.findActiveByIds(request.authorityIds());
             validateAuthorityIds(authorities, request.authorityIds());
 
             role.setAuthorities(new HashSet<>(authorities));
@@ -83,12 +83,12 @@ public class RoleServiceImpl implements RoleService {
         if (request.name().isPresent()) 
             rejectInvalidLengthPatchName(request.name().get());
 
-        Role role = validateAndGetRoleById(id);
+        Role role = validateAndGetRoleById(id, false);
         RoleMapper.updateEntity(role, request);
         
         if (request.authorityIds() != null && request.authorityIds().isPresent()) {
             List<Authority> authorities = authorityRepository
-                .findAllById(request.authorityIds().get());
+                .findActiveByIds(request.authorityIds().get());
             validateAuthorityIds(authorities, request.authorityIds().get());
 
             role.setAuthorities(new HashSet<>(authorities));
@@ -101,7 +101,7 @@ public class RoleServiceImpl implements RoleService {
     @Override
     @Transactional
     public void delete(Long id) {
-        Role role = validateAndGetRoleById(id);
+        Role role = validateAndGetRoleById(id, false);
         role.setDeletedAt(LocalDateTime.now());
         roleRepository.save(role);
     }
@@ -120,8 +120,8 @@ public class RoleServiceImpl implements RoleService {
         }
     }
 
-    private Role validateAndGetRoleById(Long id) {
-        return roleRepository.findActiveById(id)
+    private Role validateAndGetRoleById(Long id, boolean showDeleted) {
+        return roleRepository.findById(id, showDeleted)
             .orElseThrow(() -> new NotFoundException("Role not found with id: " + id));
     }
 

@@ -14,22 +14,26 @@ import java.util.Optional;
 
 @Repository
 public interface RoleRepository extends JpaRepository<Role, Long> {
+
     Optional<Role> findByName(String name);
 
     @Query("""
         select r from Role r
-        where r.deletedAt is null
-        and r.id = :id
+        where r.id = :id
+            and (:showDeleted = true and r.deletedAt is not null)
+            or (:showDeleted = false and r.deletedAt is null)
     """)
     @EntityGraph(attributePaths = "authorities")
-    Optional<Role> findActiveById(@Param("id") Long id);
+    Optional<Role> findById(@Param("id") Long id, @Param("showDeleted") boolean showDeleted);
 
     @Query("""
         select r from Role r
-        where r.deletedAt is null
-        and (lower(r.name) like lower(concat('%', cast(:name as string), '%')))
+        where (lower(r.name) like lower(concat('%', cast(:name as string), '%')))
+            and (
+                (:showDeleted = true and r.deletedAt is not null)
+                or (:showDeleted = false and r.deletedAt is null)
+            )
     """)
-    @EntityGraph(attributePaths = "authorities")
-    Page<Role> searchActiveRole(@Param("name") String name, Pageable pageable);
+    Page<Role> searchRole(@Param("name") String name, boolean showDeleted, Pageable pageable);
 
 }

@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -31,5 +32,11 @@ public interface AuthorityRepository extends JpaRepository<Authority, Long> {
         and (lower(a.name) like lower(concat('%', cast(:name as string), '%')))
     """)
     Page<Authority> searchActive(@Param("name") String name, Pageable pageable);
+
+    @Query("""
+        select a from Authority a
+        where a.deletedAt is null and a.id in :ids
+    """)
+    List<Authority> findActiveByIds(Iterable<Long> ids);
 
 }
