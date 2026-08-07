@@ -14,6 +14,7 @@ import id.my.rascal.common.exception.ConflictException;
 import id.my.rascal.common.exception.NotFoundException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,10 +33,14 @@ public class UserAuthServiceImpl implements UserAuthService {
 
     private final UserAuthRepository userAuthRepository;
     private final RoleRepository roleRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public UserAuthServiceImpl(UserAuthRepository userAuthRepository, RoleRepository roleRepository) {
+    public UserAuthServiceImpl(UserAuthRepository userAuthRepository,
+                               RoleRepository roleRepository,
+                               PasswordEncoder passwordEncoder) {
         this.userAuthRepository = userAuthRepository;
         this.roleRepository = roleRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
@@ -45,6 +50,9 @@ public class UserAuthServiceImpl implements UserAuthService {
             throw new ConflictException("Email already exists: " + request.email());
 
         UserAuth userAuth = UserAuthMapper.toEntity(request);
+
+        if (request.password() != null && !request.password().isBlank())
+            userAuth.setHashedPassword(passwordEncoder.encode(request.password()));
 
         if (request.roleIds() != null && !request.roleIds().isEmpty())
             userAuth.setRoles(resolveActiveRoles(request.roleIds()));
@@ -83,6 +91,10 @@ public class UserAuthServiceImpl implements UserAuthService {
         checkEmailConflict(userAuth.getEmail(), request.email());
 
         UserAuthMapper.updateEntity(userAuth, request);
+
+        if (request.password() != null && !request.password().isBlank())
+            userAuth.setHashedPassword(passwordEncoder.encode(request.password()));
+
         applyRoles(userAuth, request.roleIds());
 
         userAuth = userAuthRepository.save(userAuth);
@@ -108,6 +120,10 @@ public class UserAuthServiceImpl implements UserAuthService {
             throw new BadRequestException("password must be at least 8 characters");
 
         UserAuthMapper.updateEntity(userAuth, request);
+
+        if (request.password() != null && request.password().isPresent()
+            && !request.password().get().isBlank())
+            userAuth.setHashedPassword(passwordEncoder.encode(request.password().get()));
 
         if (request.roleIds() != null && request.roleIds().isPresent())
             userAuth.setRoles(resolveActiveRoles(request.roleIds().get()));

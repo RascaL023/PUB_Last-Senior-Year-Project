@@ -12,16 +12,13 @@ import java.util.stream.Collectors;
 
 public class UserAuthMapper {
 
-    private UserAuthMapper() {
-        // utility class
-    }
+    private UserAuthMapper() { }
 
     public static UserAuth toEntity(UserAuthRequest request) {
         if (request == null) return null;
         
         UserAuth userAuth = new UserAuth();
         userAuth.setEmail(request.email());
-        userAuth.setHashedPassword(request.password()); // TODO: Implement PasswordEncoder later
         userAuth.setCreatedAt(LocalDateTime.now());
         return userAuth;
     }
@@ -44,9 +41,6 @@ public class UserAuthMapper {
         if (request == null || userAuth == null) return;
         
         userAuth.setEmail(request.email());
-        if (request.password() != null && !request.password().isEmpty()) {
-            userAuth.setHashedPassword(request.password());
-        }
         userAuth.setUpdatedAt(LocalDateTime.now());
     }
 
@@ -55,9 +49,6 @@ public class UserAuthMapper {
         
         if (request.email() != null && request.email().isPresent()) {
             userAuth.setEmail(request.email().get());
-        }
-        if (request.password() != null && request.password().isPresent() && !request.password().get().isEmpty()) {
-            userAuth.setHashedPassword(request.password().get());
         }
         userAuth.setUpdatedAt(LocalDateTime.now());
     }
