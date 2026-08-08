@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -38,5 +39,8 @@ public interface AuthorityRepository extends JpaRepository<Authority, Long> {
         where a.deletedAt is null and a.id in :ids
     """)
     List<Authority> findActiveByIds(Iterable<Long> ids);
+
+    @Query("select a.name from Authority a where a.name in :names")
+    List<String> findExistingNames(@Param("names") Collection<String> names);
 
 }

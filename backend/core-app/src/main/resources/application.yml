@@ -2,8 +2,8 @@ spring:
   application:
     name: core-backend
   profiles:
-    # active: mysql
-    default: postgres
+    active: postgres, dev-seed
+    default: postgres, dev-formal
   jpa:
     hibernate:
       ddl-auto: update
