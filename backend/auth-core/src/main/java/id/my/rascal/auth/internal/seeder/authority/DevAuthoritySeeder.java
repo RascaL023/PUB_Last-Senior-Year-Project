@@ -1,41 +1,46 @@
 package id.my.rascal.auth.internal.seeder.authority;
 
 import java.time.LocalDateTime;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 import org.springframework.context.annotation.Profile;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import id.my.rascal.auth.internal.entity.Authority;
 import id.my.rascal.auth.internal.repository.AuthorityRepository;
-import id.my.rascal.auth.internal.seeder.Seeder;
+import id.my.rascal.common.seed.ChunkedSeederSupport;
+import id.my.rascal.common.seed.Seeder;
 
 @Component
 @Profile("dev-seed")
+@Order(10)
 public class DevAuthoritySeeder implements Seeder {
 
-    private static final Map<String, String> AUTHORITIES = Map.of(
-        "user.create", "Can create user",
-        "user.read", "Can read user",
-        "user.update", "Can update user",
-        "user.delete", "Can delete user",
-        "user.*", "Have all authorities to user",
+    private static final List<AuthoritySeed> AUTHORITIES = List.of(
+        new AuthoritySeed("user.create", "Can create user"),
+        new AuthoritySeed("user.read", "Can read user"),
+        new AuthoritySeed("user.update", "Can update user"),
+        new AuthoritySeed("user.delete", "Can delete user"),
+        new AuthoritySeed("user.*", "Have all authorities to user"),
 
-        "role.create", "Can create role",
-        "role.read", "Can read role",
-        "role.update", "Can update role",
-        "role.delete", "Can delete role",
-        "role.*", "Have all authorities to role"
+        new AuthoritySeed("role.create", "Can create role"),
+        new AuthoritySeed("role.read", "Can read role"),
+        new AuthoritySeed("role.update", "Can update role"),
+        new AuthoritySeed("role.delete", "Can delete role"),
+        new AuthoritySeed("role.*", "Have all authorities to role")
     );
 
     private final AuthorityRepository authorityRepository;
+    private final ChunkedSeederSupport seedSupport;
 
-    public DevAuthoritySeeder(AuthorityRepository authorityRepository) {
+    public DevAuthoritySeeder(
+        AuthorityRepository authorityRepository, 
+        ChunkedSeederSupport seedSupport
+    ) {
         this.authorityRepository = authorityRepository;
+        this.seedSupport = seedSupport;
     }
 
     @Override
@@ -43,23 +48,19 @@ public class DevAuthoritySeeder implements Seeder {
     public void seed() {
         LocalDateTime now = LocalDateTime.now();
 
-        Set<String> existingNames = new HashSet<>(
-            authorityRepository.findExistingNames(AUTHORITIES.keySet())
-        );
-
-        List<Authority> authorities = AUTHORITIES.entrySet()
-            .stream()
-            .filter(entry -> !existingNames.contains(entry.getKey()))
-            .map(entry -> {
+        seedSupport.seedInChunks(
+            AUTHORITIES,
+            AuthoritySeed::name,
+            item -> {
                 Authority authority = new Authority();
-                authority.setName(entry.getKey());
-                authority.setDescription(entry.getValue());
+                authority.setName(item.name());
+                authority.setDescription(item.description());
                 authority.setCreatedAt(now);
                 return authority;
-            })
-            .toList();
-
-        authorityRepository.saveAll(authorities);
+            },
+            authorityRepository::findExistingNames,
+            authorityRepository::saveAll
+        );
     }
 
 }

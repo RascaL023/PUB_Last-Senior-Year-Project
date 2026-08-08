@@ -1,12 +1,10 @@
-package id.my.rascal.auth.internal.infrastructure.seed;
+package id.my.rascal.common.seed;
 
 import java.util.List;
 
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
-
-import id.my.rascal.auth.internal.seeder.Seeder;
 
 @Component
 @Profile({"dev-seed", "formal-seed"})
@@ -19,8 +17,8 @@ public class DatabaseSeeder implements CommandLineRunner {
     }
 
     @Override
-    public void run(String... args) throws Exception {
+    public void run(String... args) {
         seeders.forEach(Seeder::seed);
     }
-    
+
 }
