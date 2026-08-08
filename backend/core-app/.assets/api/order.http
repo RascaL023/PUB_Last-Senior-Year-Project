@@ -1,0 +1,46 @@
+###### ORDERS ######
+### Create
+POST {{baseUrl}}/orders
+Content-Type: application/json
+
+{
+    "customerId": null,
+    "customerName": "Budi",
+    "notes": "Less sugar",
+    "items": [
+        { "menuId": 1, "quantity": 2, "modifierOptionIds": [3] }
+    ]
+}
+
+### Get by ID
+GET {{baseUrl}}/orders/1
+
+### Search active or GetAll
+GET {{baseUrl}}/orders?keyword=ORD&status=PENDING&paymentStatus=UNPAID
+
+### Update (full replace)
+PUT {{baseUrl}}/orders/1
+Content-Type: application/json
+
+{
+    "customerId": null,
+    "customerName": "Budi Updated",
+    "notes": "Extra hot",
+    "items": [
+        { "menuId": 1, "quantity": 1, "modifierOptionIds": [1] }
+    ]
+}
+
+### Patch (partial)
+PATCH {{baseUrl}}/orders/1
+Content-Type: application/json
+
+{
+    "notes": "Extra sugar"
+}
+
+### Update status
+PATCH {{baseUrl}}/orders/1/status?status=CONFIRMED
+
+### Delete (soft delete)
+DELETE {{baseUrl}}/orders/1

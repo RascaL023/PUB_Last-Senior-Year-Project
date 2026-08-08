@@ -1,9 +1,6 @@
-@dev-url = http://localhost:8081/api/v1
-@base-url = {{dev-url}}
-
 ###### MODIFIERS ######
 ### Create
-POST {{base-url}}/modifiers
+POST {{baseUrl}}/modifiers
 Content-Type: application/json
 
 {
@@ -17,13 +14,13 @@ Content-Type: application/json
 }
 
 ### Get
-GET {{base-url}}/modifiers/1
+GET {{baseUrl}}/modifiers/1
 
 ### Search active or GetAll
-GET {{base-url}}/modifiers
+GET {{baseUrl}}/modifiers
 
 ### Update
-PUT {{base-url}}/modifiers/2
+PUT {{baseUrl}}/modifiers/2
 Content-Type: application/json
 
 {
@@ -38,12 +35,12 @@ Content-Type: application/json
 }
 
 ### Delete
-DELETE {{base-url}}/modifiers/2
+DELETE {{baseUrl}}/modifiers/2
 
 
 ###### MENU CATEGORIES ######
 ### Create
-POST {{base-url}}/menu-categories
+POST {{baseUrl}}/menu-categories
 Content-Type: application/json
 
 {
@@ -53,13 +50,13 @@ Content-Type: application/json
 }
 
 ### Get
-GET {{base-url}}/menu-categories/1
+GET {{baseUrl}}/menu-categories/1
 
 ### Search active or GetAll
-GET {{base-url}}/menu-categories?displayName=cof&showDeleted=false
+GET {{baseUrl}}/menu-categories?displayName=cof&showDeleted=false
 
 ### Update
-PUT {{base-url}}/menu-categories/1
+PUT {{baseUrl}}/menu-categories/1
 Content-Type: application/json
 
 {
@@ -69,12 +66,15 @@ Content-Type: application/json
 }
 
 ### Delete
-DELETE {{base-url}}/menu-categories/2
+DELETE {{baseUrl}}/menu-categories/2
+
+### Restore
+PATCH {{baseUrl}}/menu-categories/1/restore
 
 
 ###### MENUS ######
 ### Create
-POST {{base-url}}/menus
+POST {{baseUrl}}/menus
 Content-Type: application/json
 
 {
@@ -88,13 +88,13 @@ Content-Type: application/json
 }
 
 ### Get
-GET {{base-url}}/menus/1
+GET {{baseUrl}}/menus/1
 
 ### Search active or GetAll
-GET {{base-url}}/menus?name=cap&categoryId=1&showDeleted=false
+GET {{baseUrl}}/menus?name=cap&categoryId=1&showDeleted=false
 
 ### Update
-PUT {{base-url}}/menus/1
+PUT {{baseUrl}}/menus/1
 Content-Type: application/json
 
 {
@@ -108,9 +108,9 @@ Content-Type: application/json
 }
 
 ### Delete
-DELETE {{base-url}}/menus/1
+DELETE {{baseUrl}}/menus/1
 
 
 ###### UPLOADS ######
 ### Get Upload Auth
-GET {{base-url}}/images/auth
+GET {{baseUrl}}/images/auth

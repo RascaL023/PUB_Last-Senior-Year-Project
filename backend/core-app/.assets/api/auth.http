@@ -1,18 +1,28 @@
+###### AUTH ######
 ### Login
-POST http://localhost:8081/api/auth/login?username=asep&password=qwe
+POST {{baseUrl}}/auths/login
+Content-Type: application/json
+
+{
+    "email": "faiqemilzzz@gmail.com",
+    "password": "asdqwe123"
+}
 
 
-########## AUTHORITIES ##########
+###### AUTHORITIES ######
 ### Get by ID
-GET http://localhost:8081/api/v1/auths/authorities/1
+GET {{baseUrl}}/auths/authorities/1
 
 ### Search active or GetAll
-GET http://localhost:8081/api/v1/auths/authorities?name=create
+GET {{baseUrl}}/auths/authorities
+
+### Delete
+DELETE {{baseUrl}}/auths/authorities/1
 
 
-########## ROLES ##########
+###### ROLES ######
 ### Create
-POST http://localhost:8081/api/v1/auths/roles
+POST {{baseUrl}}/auths/roles
 Content-Type: application/json
 
 {
@@ -21,29 +31,28 @@ Content-Type: application/json
 }
 
 ### Get By ID
-GET http://localhost:8081/api/v1/auths/roles/1
+GET {{baseUrl}}/auths/roles/1
 
 ### Search active or GetAll
-GET http://localhost:8081/api/v1/auths/roles?name=admin
+GET {{baseUrl}}/auths/roles
 
 
-
-########## USERS ##########
+###### USERS ######
 ### Create
-POST http://localhost:8081/api/v1/auths/users
+POST {{baseUrl}}/auths/users
 Content-Type: application/json
 
 {
-    "email": "admin@examlple.com",
-    "password": "atmin123",
+    "email": "faiqemilzzz@gmail.com",
+    "password": "asdqwe123",
     "roleIds": [1]
 }
 
 ### Get by ID
-GET http://localhost:8081/api/v1/authorities/1
+GET {{baseUrl}}/auths/users/1
 
 ### Search active or GetAll
-GET http://localhost:8081/api/v1/authorities?name=create
+GET {{baseUrl}}/auths/users?email=admin
 
 ### Delete
-DELETE http://localhost:8081/api/v1/auths/users/1
+DELETE {{baseUrl}}/auths/users/1
