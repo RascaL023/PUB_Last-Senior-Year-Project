@@ -1,7 +1,6 @@
 package id.my.rascal.auth.internal.seeder.authority;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.annotation.Order;
@@ -17,20 +16,6 @@ import id.my.rascal.common.seed.Seeder;
 @Profile("dev-seed")
 @Order(10)
 public class DevAuthoritySeeder implements Seeder {
-
-    private static final List<AuthoritySeed> AUTHORITIES = List.of(
-        new AuthoritySeed("user.create", "Can create user"),
-        new AuthoritySeed("user.read", "Can read user"),
-        new AuthoritySeed("user.update", "Can update user"),
-        new AuthoritySeed("user.delete", "Can delete user"),
-        new AuthoritySeed("user.*", "Have all authorities to user"),
-
-        new AuthoritySeed("role.create", "Can create role"),
-        new AuthoritySeed("role.read", "Can read role"),
-        new AuthoritySeed("role.update", "Can update role"),
-        new AuthoritySeed("role.delete", "Can delete role"),
-        new AuthoritySeed("role.*", "Have all authorities to role")
-    );
 
     private final AuthorityRepository authorityRepository;
     private final ChunkedSeederSupport seedSupport;
@@ -49,7 +34,7 @@ public class DevAuthoritySeeder implements Seeder {
         LocalDateTime now = LocalDateTime.now();
 
         seedSupport.seedInChunks(
-            AUTHORITIES,
+            AuthorityCatalog.ALL,
             AuthoritySeed::name,
             item -> {
                 Authority authority = new Authority();

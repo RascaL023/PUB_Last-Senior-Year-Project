@@ -43,4 +43,10 @@ public interface AuthorityRepository extends JpaRepository<Authority, Long> {
     @Query("select a.name from Authority a where a.name in :names")
     List<String> findExistingNames(@Param("names") Collection<String> names);
 
+    @Query("""
+        select a from Authority a
+        where a.deletedAt is null and a.name in :names
+    """)
+    List<Authority> findAllByNameIn(@Param("names") Collection<String> names);
+
 }
