@@ -53,7 +53,7 @@ public class FormalRoleSeeder implements Seeder {
             RoleSeed::name,
             item -> {
                 Role role = new Role();
-                role.setName(item.name());
+                role.setName(item.name().toUpperCase());
                 role.setDescription(item.description());
                 role.setCreatedAt(now);
                 role.setAuthorities(new HashSet<>(authorityRepository.findAllByNameIn(item.authorityNames())));
