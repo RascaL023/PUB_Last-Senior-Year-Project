@@ -40,7 +40,6 @@ public class OrderController {
     private final String DEFAULT_GET_SUCCESS_MESSAGE = "Order successfully retrieved";
     private final String DEFAULT_CREATE_SUCCESS_MESSAGE = "Order successfully created";
     private final String DEFAULT_UPDATE_SUCCESS_MESSAGE = "Order successfully updated";
-    private final String DEFAULT_DELETE_SUCCESS_MESSAGE = "Order successfully deleted";
 
     public OrderController(OrderService orderService) {
         this.orderService = orderService;

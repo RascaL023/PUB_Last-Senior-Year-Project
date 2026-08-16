@@ -6,11 +6,13 @@ import id.my.rascal.common.util.StringUtil;
 import id.my.rascal.menu.api.MenuDataProvider;
 import id.my.rascal.menu.api.MenuSnapshot;
 import id.my.rascal.menu.api.ModifierOptionSnapshot;
+import id.my.rascal.menu.api.ModifierTypeSnapshot;
 import id.my.rascal.order.internal.entity.Order;
 import id.my.rascal.order.internal.entity.OrderItem;
 import id.my.rascal.order.internal.entity.OrderItemModifier;
 import id.my.rascal.order.internal.model.enums.OrderStatus;
 import id.my.rascal.order.internal.model.enums.PaymentStatus;
+import id.my.rascal.order.internal.model.request.OrderItemModifierRequest;
 import id.my.rascal.order.internal.model.request.OrderItemRequest;
 import id.my.rascal.order.internal.model.request.OrderPatchRequest;
 import id.my.rascal.order.internal.model.request.OrderPutRequest;
@@ -26,6 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Optional;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -172,36 +175,19 @@ public class OrderService {
     }
 
     private void replaceItems(Order order, List<OrderItemRequest> itemRequests) {
-        List<OrderItem> newItems = buildItems(order, itemRequests);
-        order.getOrderItems().clear();
-        order.getOrderItems().addAll(newItems);
-        order.setTotalPrice(computeTotalPrice(newItems));
+        Snapshots snapshots = fetchSnapshots(itemRequests);
+        reconcileItems(order, itemRequests, snapshots);
+        order.setTotalPrice(computeTotalPrice(order.getOrderItems()));
     }
 
     private List<OrderItem> buildItems(Order order, List<OrderItemRequest> itemRequests) {
-        List<Long> menuIds = itemRequests.stream()
-            .map(OrderItemRequest::menuId)
-            .distinct()
-            .toList();
-
-        Map<Long, MenuSnapshot> menuMap = menuDataProvider.getMenuSnapshots(menuIds).stream()
-            .collect(Collectors.toMap(MenuSnapshot::id, Function.identity()));
-        validateSnapshots(menuMap.keySet(), new HashSet<>(menuIds), "Menu");
-
-        List<Long> optionIds = itemRequests.stream()
-            .map(OrderItemRequest::modifierOptionIds)
-            .filter(java.util.Objects::nonNull)
-            .flatMap(Collection::stream)
-            .distinct()
-            .toList();
-
-        Map<Long, ModifierOptionSnapshot> optionMap = menuDataProvider.getModifierOptionSnapshots(optionIds).stream()
-            .collect(Collectors.toMap(ModifierOptionSnapshot::id, Function.identity()));
-        validateSnapshots(optionMap.keySet(), new HashSet<>(optionIds), "Modifier option");
+        Snapshots snapshots = fetchSnapshots(itemRequests);
+        Map<Long, Long> optionToTypeId = snapshots.optionToTypeId();
 
         List<OrderItem> items = new ArrayList<>();
         for (OrderItemRequest itemRequest : itemRequests) {
-            MenuSnapshot menu = menuMap.get(itemRequest.menuId());
+            MenuSnapshot menu = snapshots.menuMap().get(itemRequest.menuId());
+            validateItemModifiers(menu, optionToTypeId, itemRequest.modifiers());
 
             OrderItem item = new OrderItem();
             item.setOrder(order);
@@ -212,9 +198,9 @@ public class OrderService {
 
             int modifierTotal = 0;
             List<OrderItemModifier> modifiers = new ArrayList<>();
-            if (itemRequest.modifierOptionIds() != null) {
-                for (Long optionId : itemRequest.modifierOptionIds()) {
-                    ModifierOptionSnapshot option = optionMap.get(optionId);
+            if (itemRequest.modifiers() != null) {
+                for (OrderItemModifierRequest mReq : itemRequest.modifiers()) {
+                    ModifierOptionSnapshot option = snapshots.optionMap().get(mReq.modifierOptionId());
 
                     OrderItemModifier modifier = new OrderItemModifier();
                     modifier.setOrderItem(item);
@@ -235,6 +221,146 @@ public class OrderService {
 
         return items;
     }
+
+    private void reconcileItems(Order order, List<OrderItemRequest> itemRequests, Snapshots snapshots) {
+        Map<Long, Long> optionToTypeId = snapshots.optionToTypeId();
+
+        Set<Long> incomingItemIds = itemRequests.stream()
+            .map(OrderItemRequest::id)
+            .filter(java.util.Objects::nonNull)
+            .collect(Collectors.toSet());
+        order.getOrderItems().removeIf(item -> item.getId() != null && !incomingItemIds.contains(item.getId()));
+
+        for (OrderItemRequest itemRequest : itemRequests) {
+            MenuSnapshot menu = snapshots.menuMap().get(itemRequest.menuId());
+            validateItemModifiers(menu, optionToTypeId, itemRequest.modifiers());
+
+            OrderItem item;
+            if (itemRequest.id() != null) {
+                item = order.getOrderItems().stream()
+                    .filter(i -> itemRequest.id().equals(i.getId()))
+                    .findFirst()
+                    .orElseThrow(() -> new BadRequestException(
+                        "Order item " + itemRequest.id() + " not found in order " + order.getId()));
+                item.setMenuId(menu.id());
+                item.setItemName(menu.name());
+                item.setUnitPrice(menu.basePrice());
+                item.setQuantity(itemRequest.quantity());
+            } else {
+                item = new OrderItem();
+                item.setOrder(order);
+                item.setMenuId(menu.id());
+                item.setItemName(menu.name());
+                item.setUnitPrice(menu.basePrice());
+                item.setQuantity(itemRequest.quantity());
+                order.getOrderItems().add(item);
+            }
+
+            Set<Long> incomingModIds = itemRequest.modifiers() == null ? Set.of()
+                : itemRequest.modifiers().stream()
+                    .map(OrderItemModifierRequest::id)
+                    .filter(java.util.Objects::nonNull)
+                    .collect(Collectors.toSet());
+            item.getModifiers().removeIf(m -> m.getId() != null && !incomingModIds.contains(m.getId()));
+
+            int modifierTotal = 0;
+            if (itemRequest.modifiers() != null) {
+                for (OrderItemModifierRequest mReq : itemRequest.modifiers()) {
+                    ModifierOptionSnapshot option = snapshots.optionMap().get(mReq.modifierOptionId());
+                    OrderItemModifier mod;
+                    if (mReq.id() != null) {
+                        mod = item.getModifiers().stream()
+                            .filter(m -> mReq.id().equals(m.getId()))
+                            .findFirst()
+                            .orElseThrow(() -> new BadRequestException(
+                                "Order item modifier " + mReq.id() + " not found in order " + order.getId()));
+                    } else {
+                        mod = new OrderItemModifier();
+                        mod.setOrderItem(item);
+                    }
+                    mod.setModifierTypeId(option.modifierTypeId());
+                    mod.setModifierOptionId(option.id());
+                    mod.setName(option.name());
+                    mod.setAdditionalPrice(option.additionalPrice());
+                    if (mReq.id() == null) {
+                        item.getModifiers().add(mod);
+                    }
+                    modifierTotal += option.additionalPrice();
+                }
+            }
+
+            item.setSubtotal((menu.basePrice() + modifierTotal) * itemRequest.quantity());
+        }
+    }
+
+    private void validateItemModifiers(
+        MenuSnapshot menu,
+        Map<Long, Long> optionToTypeId,
+        List<OrderItemModifierRequest> modifiers
+    ) {
+        Map<Long, ModifierTypeSnapshot> allowedTypes = Optional.ofNullable(menu.modifierTypes())
+            .orElse(List.of()).stream()
+            .collect(Collectors.toMap(ModifierTypeSnapshot::id, Function.identity()));
+
+        Map<Long, Long> typeCounts = modifiers == null
+            ? Map.of()
+            : modifiers.stream()
+                .map(m -> optionToTypeId.get(m.modifierOptionId()))
+                .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+
+        for (Long typeId : typeCounts.keySet()) {
+            if (!allowedTypes.containsKey(typeId)) {
+                throw new BadRequestException(
+                    "Modifier option of type " + typeId + " is not available for menu " + menu.id());
+            }
+        }
+
+        for (ModifierTypeSnapshot type : allowedTypes.values()) {
+            long count = typeCounts.getOrDefault(type.id(), 0L);
+            if (count > type.maxSelection()) {
+                throw new BadRequestException(
+                    "Modifier type " + type.id() + " allows at most " + type.maxSelection() + " selection(s)");
+            }
+            if (count < type.minSelection()) {
+                throw new BadRequestException(
+                    "Modifier type " + type.id() + " requires at least " + type.minSelection() + " selection(s)");
+            }
+        }
+    }
+
+    private Snapshots fetchSnapshots(List<OrderItemRequest> itemRequests) {
+        List<Long> menuIds = itemRequests.stream()
+            .map(OrderItemRequest::menuId)
+            .distinct()
+            .toList();
+
+        Map<Long, MenuSnapshot> menuMap = menuDataProvider.getMenuSnapshots(menuIds).stream()
+            .collect(Collectors.toMap(MenuSnapshot::id, Function.identity()));
+        validateSnapshots(menuMap.keySet(), new HashSet<>(menuIds), "Menu");
+
+        List<Long> optionIds = itemRequests.stream()
+            .map(OrderItemRequest::modifiers)
+            .filter(java.util.Objects::nonNull)
+            .flatMap(Collection::stream)
+            .map(OrderItemModifierRequest::modifierOptionId)
+            .distinct()
+            .toList();
+
+        Map<Long, ModifierOptionSnapshot> optionMap = menuDataProvider.getModifierOptionSnapshots(optionIds).stream()
+            .collect(Collectors.toMap(ModifierOptionSnapshot::id, Function.identity()));
+        validateSnapshots(optionMap.keySet(), new HashSet<>(optionIds), "Modifier option");
+
+        Map<Long, Long> optionToTypeId = optionMap.values().stream()
+            .collect(Collectors.toMap(ModifierOptionSnapshot::id, ModifierOptionSnapshot::modifierTypeId));
+
+        return new Snapshots(menuMap, optionMap, optionToTypeId);
+    }
+
+    private record Snapshots(
+        Map<Long, MenuSnapshot> menuMap,
+        Map<Long, ModifierOptionSnapshot> optionMap,
+        Map<Long, Long> optionToTypeId
+    ) {}
 
     private void validateSnapshots(Set<Long> foundIds, Set<Long> requestedIds, String label) {
         if (foundIds.size() != requestedIds.size()) {

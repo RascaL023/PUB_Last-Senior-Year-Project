@@ -3,6 +3,7 @@ package id.my.rascal.menu.internal.service;
 import id.my.rascal.menu.api.MenuDataProvider;
 import id.my.rascal.menu.api.MenuSnapshot;
 import id.my.rascal.menu.api.ModifierOptionSnapshot;
+import id.my.rascal.menu.api.ModifierTypeSnapshot;
 import id.my.rascal.menu.internal.repository.MenuRepository;
 import id.my.rascal.menu.internal.repository.ModifierOptionRepository;
 import org.springframework.stereotype.Service;
@@ -10,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class MenuDataProviderImpl implements MenuDataProvider {
@@ -35,7 +37,14 @@ public class MenuDataProviderImpl implements MenuDataProvider {
             .map(menu -> new MenuSnapshot(
                 menu.getId(),
                 menu.getName(),
-                menu.getBasePrice()
+                menu.getBasePrice(),
+                Optional.ofNullable(menu.getModifierTypes()).orElse(List.of()).stream()
+                    .map(type -> new ModifierTypeSnapshot(
+                        type.getId(),
+                        type.getMinSelection(),
+                        type.getMaxSelection()
+                    ))
+                    .toList()
             ))
             .toList();
     }
