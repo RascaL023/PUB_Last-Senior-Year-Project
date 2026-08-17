@@ -133,6 +133,16 @@ public class MenuService {
     }
 
     @Transactional
+    public MenuResponse restore(Long id) {
+        Menu menu = menuRepository.findWithRelationsById(id, true)
+            .orElseThrow(() -> new NotFoundException("Menu with id " + id + " not found or not deleted"));
+        
+        menu.setDeletedAt(null);
+        menu.setUpdatedAt(LocalDateTime.now());
+        return toResponse(menuRepository.save(menu));
+    }
+
+    @Transactional
     public void delete(Long id) {
         Menu menu = menuRepository.findWithRelationsById(id, false)
             .orElseThrow(() -> new NotFoundException("Menu with id " + id + " not found"));

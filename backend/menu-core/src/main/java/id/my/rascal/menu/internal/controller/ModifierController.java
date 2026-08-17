@@ -26,7 +26,7 @@ import id.my.rascal.menu.internal.service.ModifierService;
 import jakarta.validation.Valid;
 
 @RestController
-@RequestMapping("/api/v1/modifiers")
+@RequestMapping("/api/v1/menus/modifiers")
 public class ModifierController {
 
     private final ModifierService modifierService;

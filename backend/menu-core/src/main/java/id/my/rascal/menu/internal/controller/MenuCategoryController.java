@@ -29,7 +29,7 @@ import id.my.rascal.menu.internal.service.MenuCategoryService;
 import jakarta.validation.Valid;
 
 @RestController
-@RequestMapping("/api/v1/menu-categories")
+@RequestMapping("/api/v1/menus/categories")
 public class MenuCategoryController {
 
     private final MenuCategoryService menuCategoryService;
