@@ -3,27 +3,6 @@
 
 
 ###### ORDERS ######
-### Create
-POST {{base-url}}/orders
-Content-Type: application/json
-
-{
-    "customerId": 1,
-    "customerName": "Budi",
-    "notes": "Less sugar please",
-    "items": [
-        {
-            "menuId": 1,
-            "quantity": 2,
-            "modifiers": [
-                { "modifierOptionId": 2 },
-                { "modifierOptionId": 4 }
-            ]
-        }
-    ]
-}
-
-
 ### Create - invalid (exceeds max selection of a modifier type)
 ### Temperature (modifier type 1) has maxSelection = 1, so picking both hot(1) and ice(2) must be rejected.
 POST {{base-url}}/orders
@@ -61,13 +40,43 @@ Content-Type: application/json
     ]
 }
 
+### Create
+POST {{base-url}}/orders
+Content-Type: application/json
 
-### Search active or GetAll
-GET {{base-url}}/orders?keyword=BUDI&status=PENDING&paymentStatus=UNPAID
+{
+    "customerId": 1,
+    "customerName": "Asep",
+    "notes": "Less sugar please",
+    "items": [
+        {
+            "menuId": 1,
+            "quantity": 2,
+            "modifiers": [
+                { "modifierOptionId": 2 }
+            ]
+        }
+    ]
+}
+
+### Mark preparing
+POST {{base-url}}/orders/2/prepare
+
+### Mark ready
+POST {{base-url}}/orders/2/ready
+
+### Mark complete
+POST {{base-url}}/orders/2/complete
+
+### Mark cancel
+POST {{base-url}}/orders/2/cancel
 
 
 ### Get by ID
-GET {{base-url}}/orders/1
+GET {{base-url}}/orders/2
+
+### Search active or GetAll
+GET {{base-url}}/orders?keyword=BUDI&status=PENDING
 
 
 ### Update (PUT) - item & modifier IDs are preserved
@@ -99,36 +108,26 @@ Content-Type: application/json
 
 {
     "customerId": 1,
-    "customerName": "Budi Santoso",
+    "customerName": "Siapa ajaa...",
     "notes": "No ice",
     "items": [
         {
-            "id": 1,
+            "id": 4,
             "menuId": 1,
             "quantity": 3,
             "modifiers": [
-                { "id": 1, "modifierOptionId": 2 }
+                { "id": 4, "modifierOptionId": 2 }
             ]
         },
         {
             "menuId": 1,
             "quantity": 1,
             "modifiers": [
-                { "modifierOptionId": 3 }
+                { "modifierOptionId": 1 }
             ]
         }
     ]
 }
-
-
-### Patch - status only
-PATCH {{base-url}}/orders/1
-Content-Type: application/json
-
-{
-    "status": "CONFIRMED"
-}
-
 
 ### Patch - notes and items (preserve item/modifier ids)
 PATCH {{base-url}}/orders/1
@@ -148,10 +147,6 @@ Content-Type: application/json
         }
     ]
 }
-
-
-### Update status
-PATCH {{base-url}}/orders/1/status?status=PREPARING
 
 
 ### Delete

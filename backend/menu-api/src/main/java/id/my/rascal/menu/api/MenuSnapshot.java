@@ -6,5 +6,6 @@ public record MenuSnapshot(
     Long id,
     String name,
     Integer basePrice,
+    boolean isAvailable,
     List<ModifierTypeSnapshot> modifierTypes
 ) {}

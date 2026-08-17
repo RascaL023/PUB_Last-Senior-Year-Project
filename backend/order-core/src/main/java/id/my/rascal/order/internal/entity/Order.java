@@ -19,7 +19,6 @@ import lombok.Setter;
 import org.hibernate.annotations.BatchSize;
 
 import id.my.rascal.order.internal.model.enums.OrderStatus;
-import id.my.rascal.order.internal.model.enums.PaymentStatus;
 
 @Entity
 @Getter @Setter
@@ -35,10 +34,6 @@ public class Order {
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private OrderStatus status;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "payment_status", nullable = false)
-    private PaymentStatus paymentStatus;
 
     @Column(name = "customer_id")
     private Long customerId;
@@ -67,5 +62,25 @@ public class Order {
         orphanRemoval = true
     ) @BatchSize(size = 50)
     private List<OrderItem> orderItems = new ArrayList<>();
+
+    public void markCreated() {
+        this.status = OrderStatus.CREATED;
+    }
+
+    public void markPreparing() {
+        this.status = OrderStatus.PREPARING;
+    }
+
+    public void markReady() {
+        this.status = OrderStatus.READY;
+    }
+
+    public void markCompleted() {
+        this.status = OrderStatus.COMPLETED;
+    }
+
+    public void markCancelled() {
+        this.status = OrderStatus.CANCELLED;
+    }
 
 }

@@ -24,7 +24,6 @@ import id.my.rascal.common.exception.BadRequestException;
 import id.my.rascal.common.template.SuccessPagedTemplate;
 import id.my.rascal.common.template.SuccessTemplate;
 import id.my.rascal.order.internal.model.enums.OrderStatus;
-import id.my.rascal.order.internal.model.enums.PaymentStatus;
 import id.my.rascal.order.internal.model.request.OrderPatchRequest;
 import id.my.rascal.order.internal.model.request.OrderPutRequest;
 import id.my.rascal.order.internal.model.request.OrderRequest;
@@ -54,14 +53,53 @@ public class OrderController {
         );
     }
 
+    @PostMapping("/{id}/prepare")
+    public ResponseEntity<SuccessTemplate<OrderResponse>> prepare(@PathVariable Long id) {
+        validateId(id);
+        return ApiResponse.success(
+            HttpStatus.OK,
+            "Order marked to preparing",
+            orderService.preparing(id)
+        );
+    }
+
+    @PostMapping("/{id}/ready")
+    public ResponseEntity<SuccessTemplate<OrderResponse>> ready(@PathVariable Long id) {
+        validateId(id);
+        return ApiResponse.success(
+            HttpStatus.OK,
+            "Order marked to ready",
+            orderService.ready(id)
+        );
+    }
+
+    @PostMapping("/{id}/complete")
+    public ResponseEntity<SuccessTemplate<OrderResponse>> complete(@PathVariable Long id) {
+        validateId(id);
+        return ApiResponse.success(
+            HttpStatus.OK,
+            "Order marked to complete",
+            orderService.complete(id)
+        );
+    }
+
+    @PostMapping("/{id}/cancel")
+    public ResponseEntity<SuccessTemplate<OrderResponse>> cancel(@PathVariable Long id) {
+        validateId(id);
+        return ApiResponse.success(
+            HttpStatus.OK,
+            DEFAULT_CREATE_SUCCESS_MESSAGE,
+            orderService.cancel(id)
+        );
+    }
+
     @GetMapping
     public ResponseEntity<SuccessPagedTemplate<List<OrderResponse>>> getAll(
         @RequestParam(required = false) String keyword,
         @RequestParam(required = false) OrderStatus status,
-        @RequestParam(required = false) PaymentStatus paymentStatus,
         @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        Page<OrderResponse> page = orderService.search(keyword, status, paymentStatus, pageable);
+        Page<OrderResponse> page = orderService.search(keyword, status, pageable);
 
         return ApiResponse.paged(
             HttpStatus.OK,
@@ -111,22 +149,14 @@ public class OrderController {
         );
     }
 
-    @PatchMapping("/{id}/status")
-    public ResponseEntity<SuccessTemplate<OrderResponse>> updateStatus(
-        @PathVariable("id") Long id,
-        @RequestParam OrderStatus status
-    ) {
-        return ApiResponse.success(
-            HttpStatus.OK,
-            DEFAULT_UPDATE_SUCCESS_MESSAGE,
-            orderService.updateStatus(id, status)
-        );
-    }
-
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable("id") Long id) {
         orderService.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    private void validateId(Long id) {
+        if (id < 0) throw new BadRequestException("Invalid order ID");
     }
 
 }

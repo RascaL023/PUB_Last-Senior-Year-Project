@@ -11,7 +11,6 @@ import id.my.rascal.order.internal.entity.Order;
 import id.my.rascal.order.internal.entity.OrderItem;
 import id.my.rascal.order.internal.entity.OrderItemModifier;
 import id.my.rascal.order.internal.model.enums.OrderStatus;
-import id.my.rascal.order.internal.model.enums.PaymentStatus;
 import id.my.rascal.order.internal.model.request.OrderItemModifierRequest;
 import id.my.rascal.order.internal.model.request.OrderItemRequest;
 import id.my.rascal.order.internal.model.request.OrderPatchRequest;
@@ -45,22 +44,26 @@ public class OrderService {
     private static final String ORDER_PREFIX = "ORD-";
     private static final String RANDOM_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     private static final Random RANDOM = new Random();
-    private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("yyyyMMdd");
+    private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("ddMMyyyy");
 
     private final OrderRepository orderRepository;
     private final MenuDataProvider menuDataProvider;
+    private final OrderStatusFlowPolicy orderStatusFlowPolicy;
 
-    public OrderService(OrderRepository orderRepository, MenuDataProvider menuDataProvider) {
+    public OrderService(
+        OrderRepository orderRepository, 
+        MenuDataProvider menuDataProvider,
+        OrderStatusFlowPolicy orderStatusFlowPolicy
+    ) {
         this.orderRepository = orderRepository;
         this.menuDataProvider = menuDataProvider;
+        this.orderStatusFlowPolicy = orderStatusFlowPolicy;
     }
 
     @Transactional
     public OrderResponse create(OrderRequest request) {
         Order order = new Order();
         order.setOrderNumber(generateOrderNumber());
-        order.setStatus(OrderStatus.PENDING);
-        order.setPaymentStatus(PaymentStatus.UNPAID);
         applyCustomer(order, request.customerId(), request.customerName());
         applyNotes(order, request.notes());
 
@@ -68,7 +71,45 @@ public class OrderService {
         order.setOrderItems(items);
         order.setTotalPrice(computeTotalPrice(items));
         order.setCreatedAt(LocalDateTime.now());
+        order.markCreated();
 
+        return toResponse(orderRepository.save(order));
+    }
+
+    @Transactional
+    public OrderResponse preparing(Long id) {
+        Order order = findActiveOrder(id);
+        orderStatusFlowPolicy.validateFlow(order.getStatus(), OrderStatus.PREPARING);
+
+        order.markPreparing();
+        return toResponse(orderRepository.save(order));
+    }
+
+    @Transactional
+    public OrderResponse ready(Long id) {
+        Order order = findActiveOrder(id);
+        orderStatusFlowPolicy.validateFlow(order.getStatus(), OrderStatus.READY);
+
+        order.markReady();
+        return toResponse(orderRepository.save(order));
+    }
+
+    @Transactional
+    public OrderResponse complete(Long id) {
+        Order order = findActiveOrder(id);
+        orderStatusFlowPolicy.validateFlow(order.getStatus(), OrderStatus.COMPLETED);
+
+        order.markCompleted();
+        return toResponse(orderRepository.save(order));
+    }
+
+    @Transactional
+    public OrderResponse cancel(Long id) {
+        Order order = findActiveOrder(id);
+        orderStatusFlowPolicy.validateFlow(order.getStatus(), OrderStatus.CANCELLED);
+        // TODO: restore stock if exists
+
+        order.markCancelled();
         return toResponse(orderRepository.save(order));
     }
 
@@ -81,11 +122,10 @@ public class OrderService {
     public Page<OrderResponse> search(
         String keyword,
         OrderStatus status,
-        PaymentStatus paymentStatus,
         Pageable pageable
     ) {
         return orderRepository
-            .searchActive(StringUtil.normalizeSearch(keyword), status, paymentStatus, pageable)
+            .searchActive(StringUtil.normalizeSearch(keyword), status, pageable)
             .map(this::toResponse);
     }
 
@@ -99,20 +139,6 @@ public class OrderService {
 
         replaceItems(order, request.items());
 
-        order.setUpdatedAt(LocalDateTime.now());
-        return toResponse(orderRepository.save(order));
-    }
-
-    @Transactional
-    public OrderResponse updateStatus(Long id, OrderStatus status) {
-        if (status == null)
-            throw new BadRequestException("Status is required");
-
-        Order order = findActiveOrder(id);
-        if (order.getStatus() == OrderStatus.COMPLETED || order.getStatus() == OrderStatus.CANCELLED)
-            throw new BadRequestException("Cannot change status of a " + order.getStatus() + " order");
-
-        order.setStatus(status);
         order.setUpdatedAt(LocalDateTime.now());
         return toResponse(orderRepository.save(order));
     }
@@ -150,6 +176,8 @@ public class OrderService {
     @Transactional
     public void delete(Long id) {
         Order order = findActiveOrder(id);
+        // TODO: restore stock if exists
+
         order.setDeletedAt(LocalDateTime.now());
         orderRepository.save(order);
     }
@@ -187,6 +215,8 @@ public class OrderService {
         List<OrderItem> items = new ArrayList<>();
         for (OrderItemRequest itemRequest : itemRequests) {
             MenuSnapshot menu = snapshots.menuMap().get(itemRequest.menuId());
+            if (!menu.isAvailable()) throw new BadRequestException("Menu " + menu.name() + " is not available");
+
             validateItemModifiers(menu, optionToTypeId, itemRequest.modifiers());
 
             OrderItem item = new OrderItem();
@@ -399,7 +429,6 @@ public class OrderService {
             order.getId(),
             order.getOrderNumber(),
             order.getStatus(),
-            order.getPaymentStatus(),
             order.getCustomerId(),
             order.getCustomerName(),
             order.getNotes(),

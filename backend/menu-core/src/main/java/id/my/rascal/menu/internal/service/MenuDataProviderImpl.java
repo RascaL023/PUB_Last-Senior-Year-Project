@@ -38,6 +38,7 @@ public class MenuDataProviderImpl implements MenuDataProvider {
                 menu.getId(),
                 menu.getName(),
                 menu.getBasePrice(),
+                menu.getIsAvailable(),
                 Optional.ofNullable(menu.getModifierTypes()).orElse(List.of()).stream()
                     .map(type -> new ModifierTypeSnapshot(
                         type.getId(),
