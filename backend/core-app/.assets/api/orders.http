@@ -1,0 +1,153 @@
+@dev-url = http://localhost:8081/api/v1
+@base-url = {{dev-url}}
+
+
+###### ORDERS ######
+### Create - invalid (exceeds max selection of a modifier type)
+### Temperature (modifier type 1) has maxSelection = 1, so picking both hot(1) and ice(2) must be rejected.
+POST {{base-url}}/orders
+Content-Type: application/json
+
+{
+    "customerId": 1,
+    "items": [
+        {
+            "menuId": 1,
+            "quantity": 1,
+            "modifiers": [
+                { "modifierOptionId": 1 },
+                { "modifierOptionId": 2 }
+            ]
+        }
+    ]
+}
+
+
+### Create - invalid (modifier option not attached to the menu)
+POST {{base-url}}/orders
+Content-Type: application/json
+
+{
+    "customerId": 1,
+    "items": [
+        {
+            "menuId": 1,
+            "quantity": 1,
+            "modifiers": [
+                { "modifierOptionId": 999 }
+            ]
+        }
+    ]
+}
+
+### Create
+POST {{base-url}}/orders
+Content-Type: application/json
+
+{
+    "customerId": 1,
+    "customerName": "Asep",
+    "notes": "Less sugar please",
+    "items": [
+        {
+            "menuId": 1,
+            "quantity": 2,
+            "modifiers": [
+                { "modifierOptionId": 2 }
+            ]
+        }
+    ]
+}
+
+### Mark preparing
+POST {{base-url}}/orders/2/prepare
+
+### Mark ready
+POST {{base-url}}/orders/2/ready
+
+### Mark complete
+POST {{base-url}}/orders/2/complete
+
+### Mark cancel
+POST {{base-url}}/orders/2/cancel
+
+
+### Get by ID
+GET {{base-url}}/orders/2
+
+### Search active or GetAll
+GET {{base-url}}/orders?keyword=BUDI&status=PENDING
+
+
+### Update (PUT) - item & modifier IDs are preserved
+### Echo the id from the GET response so existing rows are updated in place
+### (adjust ids to match the created order)
+PUT {{base-url}}/orders/1
+Content-Type: application/json
+
+{
+    "customerId": 1,
+    "customerName": "Budi Santoso",
+    "notes": "No ice",
+    "items": [
+        {
+            "id": 4,
+            "menuId": 1,
+            "quantity": 3,
+            "modifiers": [
+                { "id": 4, "modifierOptionId": 2 }
+            ]
+        }
+    ]
+}
+
+
+### Update (PUT) - add a new line (no id -> inserted with new id)
+PUT {{base-url}}/orders/1
+Content-Type: application/json
+
+{
+    "customerId": 1,
+    "customerName": "Siapa ajaa...",
+    "notes": "No ice",
+    "items": [
+        {
+            "id": 4,
+            "menuId": 1,
+            "quantity": 3,
+            "modifiers": [
+                { "id": 4, "modifierOptionId": 2 }
+            ]
+        },
+        {
+            "menuId": 1,
+            "quantity": 1,
+            "modifiers": [
+                { "modifierOptionId": 1 }
+            ]
+        }
+    ]
+}
+
+### Patch - notes and items (preserve item/modifier ids)
+PATCH {{base-url}}/orders/1
+Content-Type: application/json
+
+{
+    "notes": "Take away",
+    "items": [
+        {
+            "id": 1,
+            "menuId": 1,
+            "quantity": 1,
+            "modifiers": [
+                { "id": 1, "modifierOptionId": 1 },
+                { "id": 2, "modifierOptionId": 3 }
+            ]
+        }
+    ]
+}
+
+
+### Delete
+DELETE {{base-url}}/orders/1
