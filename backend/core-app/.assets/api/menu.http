@@ -107,6 +107,9 @@ Content-Type: application/json
     "ModifierTypeIds": [1]
 }
 
+### Restore Deleted
+PATCH {{base-url}}/menus/1/restore
+
 ### Delete
 DELETE {{base-url}}/menus/1
 

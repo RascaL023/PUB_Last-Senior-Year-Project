@@ -34,7 +34,7 @@ public interface MenuRepository extends JpaRepository<Menu, Long> {
     );
 
     @Query("select m from Menu m where m.id in :ids")
-    List<Menu> findAllWithRelationsByIds(@Param("ids") Collection<Long> ids);
+    List<Menu> findAllByIds(@Param("ids") Collection<Long> ids);
 
     @Query("""
         select m from Menu m
@@ -53,7 +53,17 @@ public interface MenuRepository extends JpaRepository<Menu, Long> {
         where m.id in :ids
           and ((:showDeleted = true and m.deletedAt is not null) or (:showDeleted = false and m.deletedAt is null))
     """)
-    List<MenuIdView> findIdViews(@Param("ids") Collection<Long> ids, @Param("showDeleted") boolean showDeleted);
+    List<MenuIdView> findViewByIds(@Param("ids") Collection<Long> ids, @Param("showDeleted") boolean showDeleted);
+
+    @Query("""
+        select distinct m.id as menuId, c.id as categoryId, mt.id as modifierTypeId
+        from Menu m
+        left join m.categories c
+        left join m.modifierTypes mt
+        where m.id = :id
+          and ((:showDeleted = true and m.deletedAt is not null) or (:showDeleted = false and m.deletedAt is null))
+    """)
+    List<MenuIdView> findViewById(@Param("id") Long id, @Param("showDeleted") boolean showDeleted);
 
     // ---- util ----
 
