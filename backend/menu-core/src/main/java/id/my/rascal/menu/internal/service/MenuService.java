@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -16,18 +17,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import id.my.rascal.common.exception.NotFoundException;
-import id.my.rascal.common.image.ImageService;
 import id.my.rascal.common.util.StringUtil;
 import id.my.rascal.menu.internal.entity.Menu;
 import id.my.rascal.menu.internal.entity.MenuCategory;
-import id.my.rascal.menu.internal.entity.ModifierOption;
 import id.my.rascal.menu.internal.entity.ModifierType;
 import id.my.rascal.menu.internal.model.request.MenuPutRequest;
 import id.my.rascal.menu.internal.model.request.MenuRequest;
-import id.my.rascal.menu.internal.model.response.MenuCategoryResponse;
-import id.my.rascal.menu.internal.model.response.MenuResponse;
-import id.my.rascal.menu.internal.model.response.ModifierOptionResponse;
-import id.my.rascal.menu.internal.model.response.ModifierTypeResponse;
+import id.my.rascal.menu.internal.repository.MenuIdView;
 import id.my.rascal.menu.internal.repository.MenuRepository;
 
 @Service
@@ -36,22 +32,19 @@ public class MenuService {
     private final MenuRepository menuRepository;
     private final ModifierHelper modifierHelper;
     private final MenuCategoryHelper menuCategoryHelper;
-    private final ImageService imageService;
 
     public MenuService(
         MenuRepository menuRepository,
         ModifierHelper modifierHelper,
-        MenuCategoryHelper menuCategoryHelper,
-        ImageService imageService
+        MenuCategoryHelper menuCategoryHelper
     ) {
         this.menuRepository = menuRepository;
         this.modifierHelper = modifierHelper;
         this.menuCategoryHelper = menuCategoryHelper;
-        this.imageService = imageService;
     }
 
     @Transactional
-    public MenuResponse create(MenuRequest request) {
+    public Menu create(MenuRequest request) {
         List<ModifierType> modifierTypes = modifierHelper.getByIds(request.ModifierTypeIds());
         validateModifierTypes(modifierTypes, request.ModifierTypeIds());
 
@@ -69,44 +62,77 @@ public class MenuService {
         );
 
         menu.setCreatedAt(LocalDateTime.now());
-        return toResponse(menuRepository.save(menu));
+        return menuRepository.save(menu);
     }
 
     @Transactional(readOnly = true)
-    public MenuResponse getById(Long id) {
-        Menu menu = menuRepository.findWithRelationsById(id, false)
+    public Menu getById(Long id) {
+        return menuRepository.findWithRelationsById(id, false)
             .orElseThrow(() -> new NotFoundException("Menu with id " + id + " not found"));
-
-        return toResponse(menu);
     }
 
     @Transactional(readOnly = true)
-    public Page<MenuResponse> getAllPaged(String name, Long categoryId, Pageable pageable) {
+    public List<MenuIdView> getByIdCached(Long id) {
+        List<MenuIdView> menu = menuRepository.findViewById(id, false);
+        if (menu.isEmpty())
+            throw new NotFoundException("Menu with id " + id + " not found");
+
+        return menu;
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Menu> getAllPaged(String name, Long categoryId, Pageable pageable) {
         name = StringUtil.normalizeSearch(name);
 
         Page<Long> idPage = menuRepository.findSearchIds(name, categoryId, false, pageable);
         if (idPage.getContent().isEmpty())
             return Page.empty(pageable);
 
-        List<Menu> menus = menuRepository.findAllWithRelationsByIds(idPage.getContent());
-        if (!idPage.getContent().isEmpty()) {
-            List<Menu> ordered = new ArrayList<>();
-            for (Long id : idPage.getContent()) {
-                menus.stream()
-                    .filter(m -> m.getId().equals(id))
-                    .findFirst()
-                    .ifPresent(ordered::add);
-            }
-            menus = ordered;
+        List<Menu> menus = menuRepository.findAllByIds(idPage.getContent());
+        List<Menu> ordered = new ArrayList<>();
+        for (Long id : idPage.getContent()) {
+            menus.stream()
+                .filter(m -> m.getId().equals(id))
+                .findFirst()
+                .ifPresent(ordered::add);
         }
+        menus = ordered;
 
-        List<MenuResponse> content = menus.stream().map(this::toResponse).toList();
+        return new PageImpl<>(menus, pageable, idPage.getTotalElements());
+    }
 
-        return new PageImpl<>(content, pageable, idPage.getTotalElements());
+    @Transactional(readOnly = true)
+    public Page<List<MenuIdView>> getAllPagedCached(
+        String name,
+        Long categoryId,
+        Pageable pageable
+    ) {
+        name = StringUtil.normalizeSearch(name);
+
+        Page<Long> idPage = menuRepository.findSearchIds(name, categoryId, false, pageable);
+
+        if (idPage.isEmpty())
+            return Page.empty(pageable);
+
+        List<MenuIdView> rows = menuRepository.findViewByIds(idPage.getContent(), false);
+
+        Map<Long, List<MenuIdView>> grouped = rows.stream()
+            .collect(Collectors.groupingBy(MenuIdView::getMenuId));
+
+        List<List<MenuIdView>> content = idPage.getContent().stream()
+            .map(id -> grouped.get(id))
+            .filter(Objects::nonNull)
+            .toList();
+
+        return new PageImpl<>(
+            content,
+            pageable,
+            idPage.getTotalElements()
+        );
     }
 
     @Transactional
-    public MenuResponse update(Long id, MenuPutRequest request) {
+    public Menu update(Long id, MenuPutRequest request) {
         Menu menu = menuRepository.findWithRelationsById(id, false)
             .orElseThrow(() -> new NotFoundException("Menu with id " + id + " not found"));
 
@@ -129,7 +155,17 @@ public class MenuService {
         );
 
         menu.setUpdatedAt(LocalDateTime.now());
-        return toResponse(menuRepository.save(menu));
+        return menuRepository.save(menu);
+    }
+
+    @Transactional
+    public Menu restore(Long id) {
+        Menu menu = menuRepository.findWithRelationsById(id, true)
+            .orElseThrow(() -> new NotFoundException("Menu with id " + id + " not found or not deleted"));
+        
+        menu.setDeletedAt(null);
+        menu.setUpdatedAt(LocalDateTime.now());
+        return menuRepository.save(menu);
     }
 
     @Transactional
@@ -201,49 +237,6 @@ public class MenuService {
 
             throw new NotFoundException("Not found category IDs: " + missingIds);
         }
-    }
-
-    private MenuResponse toResponse(Menu menu) {
-        return new MenuResponse(
-            menu.getId(),
-            menu.getName(),
-            menu.getDescription(),
-            menu.getCategories().stream().map(this::toCategoryResponse).toList(),
-            menu.getImageUrls().stream().map(imageService::resolveUrl).toList(),
-            menu.getBasePrice(),
-            menu.getIsAvailable(),
-            menu.getCreatedAt(),
-            menu.getUpdatedAt(),
-            menu.getModifierTypes().stream().map(this::toModifierTypeResponse).toList()
-        );
-    }
-
-    private MenuCategoryResponse toCategoryResponse(MenuCategory category) {
-        return new MenuCategoryResponse(
-            category.getId(),
-            category.getDisplayName(),
-            category.getCategoryCode(),
-            category.getDisplayOrder()
-        );
-    }
-
-    private ModifierTypeResponse toModifierTypeResponse(ModifierType modifierType) {
-        return new ModifierTypeResponse(
-            modifierType.getId(),
-            modifierType.getName(),
-            modifierType.getMinSelection(),
-            modifierType.getMaxSelection(),
-            modifierType.getModifierOptions().stream()
-                .map(this::toOptionResponse).toList()
-        );
-    }
-
-    private ModifierOptionResponse toOptionResponse(ModifierOption option) {
-        return new ModifierOptionResponse(
-            option.getId(),
-            option.getName(),
-            option.getAdditionalPrice()
-        );
     }
 
 }

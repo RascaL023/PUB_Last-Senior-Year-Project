@@ -1,6 +1,6 @@
 ###### MODIFIERS ######
 ### Create
-POST {{baseUrl}}/modifiers
+POST {{base-url}}/menus/modifiers
 Content-Type: application/json
 
 {
@@ -14,13 +14,13 @@ Content-Type: application/json
 }
 
 ### Get
-GET {{baseUrl}}/modifiers/1
+GET {{base-url}}/menus/modifiers/1
 
 ### Search active or GetAll
-GET {{baseUrl}}/modifiers
+GET {{base-url}}/menus/modifiers
 
 ### Update
-PUT {{baseUrl}}/modifiers/2
+PUT {{base-url}}/menus/modifiers/2
 Content-Type: application/json
 
 {
@@ -35,12 +35,12 @@ Content-Type: application/json
 }
 
 ### Delete
-DELETE {{baseUrl}}/modifiers/2
+DELETE {{base-url}}/menus/modifiers/2
 
 
 ###### MENU CATEGORIES ######
 ### Create
-POST {{baseUrl}}/menu-categories
+POST {{base-url}}/menus/categories
 Content-Type: application/json
 
 {
@@ -50,13 +50,13 @@ Content-Type: application/json
 }
 
 ### Get
-GET {{baseUrl}}/menu-categories/1
+GET {{base-url}}/menus/categories/1
 
 ### Search active or GetAll
-GET {{baseUrl}}/menu-categories?displayName=cof&showDeleted=false
+GET {{base-url}}/menus/categories?displayName=cof&showDeleted=false
 
 ### Update
-PUT {{baseUrl}}/menu-categories/1
+PUT {{base-url}}/menus/categories/1
 Content-Type: application/json
 
 {
@@ -66,10 +66,10 @@ Content-Type: application/json
 }
 
 ### Delete
-DELETE {{baseUrl}}/menu-categories/2
+DELETE {{base-url}}/menus/categories/2
 
 ### Restore
-PATCH {{baseUrl}}/menu-categories/1/restore
+PATCH {{baseUrl}}/menus/categories/1/restore
 
 
 ###### MENUS ######
@@ -106,6 +106,9 @@ Content-Type: application/json
     "isAvailable": true,
     "ModifierTypeIds": [1]
 }
+
+### Restore Deleted
+PATCH {{base-url}}/menus/1/restore
 
 ### Delete
 DELETE {{baseUrl}}/menus/1
