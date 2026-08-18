@@ -29,6 +29,9 @@ public class Role {
     @Column(name = "name", nullable = false)
     private String name;
 
+    @Column(name = "description")
+    private String description;
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
     

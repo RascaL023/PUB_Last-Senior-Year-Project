@@ -9,11 +9,16 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
 public interface UserAuthRepository extends JpaRepository<UserAuth, Long> {
     Optional<UserAuth> findByEmail(String email);
+
+    @Query("select u.email from UserAuth u where u.deletedAt is null and u.email in :emails")
+    List<String> findExistingEmails(@Param("emails") Collection<String> emails);
 
     @Query("select u from UserAuth u where u.deletedAt is null and u.id = :id")
     @EntityGraph(attributePaths = "roles")
