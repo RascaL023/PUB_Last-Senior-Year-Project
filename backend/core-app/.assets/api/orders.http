@@ -1,11 +1,7 @@
-@dev-url = http://localhost:8081/api/v1
-@base-url = {{dev-url}}
-
-
 ###### ORDERS ######
 ### Create - invalid (exceeds max selection of a modifier type)
 ### Temperature (modifier type 1) has maxSelection = 1, so picking both hot(1) and ice(2) must be rejected.
-POST {{base-url}}/orders
+POST {{baseUrl}}/orders
 Content-Type: application/json
 
 {
@@ -24,7 +20,7 @@ Content-Type: application/json
 
 
 ### Create - invalid (modifier option not attached to the menu)
-POST {{base-url}}/orders
+POST {{baseUrl}}/orders
 Content-Type: application/json
 
 {
@@ -41,7 +37,7 @@ Content-Type: application/json
 }
 
 ### Create
-POST {{base-url}}/orders
+POST {{baseUrl}}/orders
 Content-Type: application/json
 
 {
@@ -60,29 +56,29 @@ Content-Type: application/json
 }
 
 ### Mark preparing
-POST {{base-url}}/orders/2/prepare
+POST {{baseUrl}}/orders/2/prepare
 
 ### Mark ready
-POST {{base-url}}/orders/2/ready
+POST {{baseUrl}}/orders/2/ready
 
 ### Mark complete
-POST {{base-url}}/orders/2/complete
+POST {{baseUrl}}/orders/2/complete
 
 ### Mark cancel
-POST {{base-url}}/orders/2/cancel
+POST {{baseUrl}}/orders/2/cancel
 
 
 ### Get by ID
-GET {{base-url}}/orders/2
+GET {{baseUrl}}/orders/2
 
 ### Search active or GetAll
-GET {{base-url}}/orders?keyword=BUDI&status=PENDING
+GET {{baseUrl}}/orders?keyword=BUDI&status=PENDING
 
 
 ### Update (PUT) - item & modifier IDs are preserved
 ### Echo the id from the GET response so existing rows are updated in place
 ### (adjust ids to match the created order)
-PUT {{base-url}}/orders/1
+PUT {{baseUrl}}/orders/1
 Content-Type: application/json
 
 {
@@ -103,7 +99,7 @@ Content-Type: application/json
 
 
 ### Update (PUT) - add a new line (no id -> inserted with new id)
-PUT {{base-url}}/orders/1
+PUT {{baseUrl}}/orders/1
 Content-Type: application/json
 
 {
@@ -130,7 +126,7 @@ Content-Type: application/json
 }
 
 ### Patch - notes and items (preserve item/modifier ids)
-PATCH {{base-url}}/orders/1
+PATCH {{baseUrl}}/orders/1
 Content-Type: application/json
 
 {
@@ -150,4 +146,4 @@ Content-Type: application/json
 
 
 ### Delete
-DELETE {{base-url}}/orders/1
+DELETE {{baseUrl}}/orders/1

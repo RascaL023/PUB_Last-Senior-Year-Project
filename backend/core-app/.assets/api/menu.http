@@ -1,26 +1,27 @@
 ###### MODIFIERS ######
 ### Create
-POST {{base-url}}/menus/modifiers
+POST {{baseUrl}}/menus/modifiers
 Content-Type: application/json
 
 {
-    "name": "Temperature",
+    "name": "Size",
     "minSelection": 1,
     "maxSelection": 1,
     "options": [
-        { "name": "hot", "additionalPrice": 0 },
-        { "name": "ice", "additionalPrice": 500 }
+        { "name": "small", "additionalPrice": 0 },
+        { "name": "medium", "additionalPrice": 500 },
+        { "name": "big", "additionalPrice": 1000 }
     ]
 }
 
 ### Get
-GET {{base-url}}/menus/modifiers/1
+GET {{baseUrl}}/menus/modifiers/1
 
 ### Search active or GetAll
-GET {{base-url}}/menus/modifiers
+GET {{baseUrl}}/menus/modifiers
 
 ### Update
-PUT {{base-url}}/menus/modifiers/2
+PUT {{baseUrl}}/menus/modifiers/2
 Content-Type: application/json
 
 {
@@ -35,28 +36,28 @@ Content-Type: application/json
 }
 
 ### Delete
-DELETE {{base-url}}/menus/modifiers/2
+DELETE {{baseUrl}}/menus/modifiers/2
 
 
 ###### MENU CATEGORIES ######
 ### Create
-POST {{base-url}}/menus/categories
+POST {{baseUrl}}/menus/categories
 Content-Type: application/json
 
 {
-    "displayName": "tea",
+    "displayName": "coffee",
     "categoryCode": "coffee",
     "displayOrder": 1
 }
 
 ### Get
-GET {{base-url}}/menus/categories/1
+GET {{baseUrl}}/menus/categories/1
 
 ### Search active or GetAll
-GET {{base-url}}/menus/categories?displayName=cof&showDeleted=false
+GET {{baseUrl}}/menus/categories?displayName=cof&showDeleted=false
 
 ### Update
-PUT {{base-url}}/menus/categories/1
+PUT {{baseUrl}}/menus/categories/1
 Content-Type: application/json
 
 {
@@ -66,7 +67,7 @@ Content-Type: application/json
 }
 
 ### Delete
-DELETE {{base-url}}/menus/categories/2
+DELETE {{baseUrl}}/menus/categories/2
 
 ### Restore
 PATCH {{baseUrl}}/menus/categories/1/restore
@@ -78,11 +79,11 @@ POST {{baseUrl}}/menus
 Content-Type: application/json
 
 {
-    "name": "Cappuccino",
+    "name": "Americano",
     "categoryIds": [1],
-    "description": "Espresso with steamed milk",
-    "imageUrls": ["/assets/images/menus/hot-drinks/cappuccino.jpg"],
-    "basePrice": 20000,
+    "description": "Strong coffee shot",
+    "imageUrls": ["/assets/images/menus/coffee/americano.jpg"],
+    "basePrice": 7000,
     "isAvailable": true,
     "ModifierTypeIds": [1]
 }
@@ -91,7 +92,7 @@ Content-Type: application/json
 GET {{baseUrl}}/menus/1
 
 ### Search active or GetAll
-GET {{baseUrl}}/menus?name=cap&categoryId=1&showDeleted=false
+GET {{baseUrl}}/menus?categoryId=1&showDeleted=false
 
 ### Update
 PUT {{baseUrl}}/menus/1
@@ -108,7 +109,7 @@ Content-Type: application/json
 }
 
 ### Restore Deleted
-PATCH {{base-url}}/menus/1/restore
+PATCH {{baseUrl}}/menus/1/restore
 
 ### Delete
 DELETE {{baseUrl}}/menus/1
