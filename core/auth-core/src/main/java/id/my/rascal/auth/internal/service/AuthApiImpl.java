@@ -26,6 +26,7 @@ public class AuthApiImpl implements AuthApi {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Optional<UserAuthResponse> getByEmail(String email) {
         return userAuthRepository.findActiveByEmail(email)
             .map(u -> new UserAuthResponse(u.getId(), u.getEmail()));

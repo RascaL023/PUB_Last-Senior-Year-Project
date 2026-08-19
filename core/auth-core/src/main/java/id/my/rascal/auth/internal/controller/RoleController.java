@@ -12,6 +12,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -25,18 +26,21 @@ public class RoleController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyAuthority('role.create', 'role.*')")
     public ResponseEntity<?> create(@RequestBody @Valid RoleRequest request) {
         RoleResponse data = roleService.create(request);
         return ApiResponse.success(HttpStatus.CREATED, "Role created", data);
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('role.read', 'role.*')")
     public ResponseEntity<?> getById(@PathVariable Long id) {
         RoleResponse data = roleService.getById(id, false);
         return ApiResponse.success(HttpStatus.OK, data);
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyAuthority('role.read', 'role.*')")
     public ResponseEntity<?> getAll(
         @RequestParam(required = false) String name,
         Pageable pageable
@@ -55,6 +59,7 @@ public class RoleController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('role.update', 'role.*')")
     public ResponseEntity<?> updatePut(
         @PathVariable Long id, 
         @RequestBody @Valid RolePutRequest request
@@ -64,6 +69,7 @@ public class RoleController {
     }
 
     @PatchMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('role.update', 'role.*')")
     public ResponseEntity<?> updatePatch(
         @PathVariable Long id, 
         @RequestBody 
@@ -77,6 +83,7 @@ public class RoleController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('role.delete', 'role.*')")
     public ResponseEntity<?> delete(@PathVariable Long id) {
         if (id <= 0) 
             throw new BadRequestException("Invalid ID: " + id);
