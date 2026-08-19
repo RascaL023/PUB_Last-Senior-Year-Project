@@ -4,7 +4,6 @@ import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
 
-import org.springframework.context.annotation.Profile;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,9 +14,9 @@ import id.my.rascal.auth.internal.repository.RoleRepository;
 import id.my.rascal.auth.internal.seeder.authority.AuthorityCatalog;
 import id.my.rascal.common.seed.ChunkedSeederSupport;
 import id.my.rascal.common.seed.Seeder;
+import id.my.rascal.common.seed.SeedType;
 
 @Component
-@Profile("dev-seed")
 @Order(20)
 public class DevRoleSeeder implements Seeder {
 
@@ -28,7 +27,7 @@ public class DevRoleSeeder implements Seeder {
             AuthorityCatalog.names()
         ),
         new RoleSeed(
-            "kasir",
+            "cashier",
             "Cashier handling orders and payments",
             List.of(
                 "order.create", "order.read", "order.update",
@@ -36,7 +35,7 @@ public class DevRoleSeeder implements Seeder {
                 "customer.read",
                 "menu.read",
                 "menu-category.read",
-                "modifier.read",
+                "menu-modifier.read",
                 "report.read"
             )
         ),
@@ -47,7 +46,7 @@ public class DevRoleSeeder implements Seeder {
                 "order.create", "order.read", "order.update",
                 "menu.read",
                 "menu-category.read",
-                "modifier.read",
+                "menu-modifier.read",
                 "table.read", "table.update"
             )
         ),
@@ -87,13 +86,18 @@ public class DevRoleSeeder implements Seeder {
     }
 
     @Override
+    public SeedType seedType() {
+        return SeedType.DEV;
+    }
+
+    @Override
     @Transactional
     public void seed() {
         LocalDateTime now = LocalDateTime.now();
 
         seedSupport.seedInChunks(
             ROLES,
-            RoleSeed::name,
+            item -> item.name().toUpperCase(),
             item -> {
                 Role role = new Role();
                 role.setName(item.name().toUpperCase());
