@@ -14,6 +14,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToMany;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
@@ -48,5 +49,8 @@ public class UserAuth {
         joinColumns = @JoinColumn(name = "user_id"),
         inverseJoinColumns = @JoinColumn(name = "role_id")
     ) private Set<Role> roles = new HashSet<>();
+
+    @OneToMany(mappedBy = "userAuth")
+    private Set<RefreshToken> refreshToken;
     
 }
