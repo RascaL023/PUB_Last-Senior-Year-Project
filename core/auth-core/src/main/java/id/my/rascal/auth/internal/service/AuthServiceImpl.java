@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import id.my.rascal.auth.internal.entity.Authority;
 import id.my.rascal.auth.internal.entity.RefreshToken;
@@ -45,6 +46,8 @@ public class AuthServiceImpl implements AuthService {
         this.refreshTokenRepository = refreshTokenRepository;
     }
 
+    @Override
+    @Transactional
     public LoginResultResponse login(LoginRequest request) {
         UserAuth userAuth = userAuthRepository.findForLoginByEmail(request.email().toLowerCase().trim())
             .orElseThrow(() -> new BadRequestException("Username/password salah"));
@@ -67,7 +70,9 @@ public class AuthServiceImpl implements AuthService {
         );
     }
     
-    // TODO: add Unauthorized exception, refresh token rotation
+    // TODO: add Unauthorized exception, refresh token rotation(delete readOnly)
+    @Override
+    @Transactional(readOnly = true)
     public RefreshResultResponse refresh(String rawRefreshToken) {
         String hashRefreshToken = refreshTokenProvider.hash(rawRefreshToken);
         RefreshToken refreshToken = refreshTokenRepository.findByTokenHash(hashRefreshToken)
@@ -86,6 +91,21 @@ public class AuthServiceImpl implements AuthService {
         );
     }
 
+    @Override
+    @Transactional
+    public void logout(String rawRefreshToken) {
+        String hash = refreshTokenProvider.hash(rawRefreshToken);
+
+        RefreshToken refreshToken = refreshTokenRepository.findByTokenHash(hash)
+            .orElseThrow(() -> new NotFoundException("Token not found"));
+
+        refreshToken.setRevokedAt(Instant.now());
+    }
+
+    @Override
+    public void logoutAll(Long userId) {
+        refreshTokenRepository.revokeAllByUserId(userId, Instant.now());
+    }
 
     private record UserAuthData(
         String userId,
