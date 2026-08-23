@@ -19,7 +19,7 @@ import id.my.rascal.auth.internal.model.response.RefreshResultResponse;
 import id.my.rascal.auth.internal.repository.RefreshTokenRepository;
 import id.my.rascal.auth.internal.repository.UserAuthRepository;
 import id.my.rascal.common.exception.BadRequestException;
-import id.my.rascal.common.exception.NotFoundException;
+import id.my.rascal.common.exception.UnauthorizedException;
 import id.rascal.filter.inteface.RefreshTokenProvider;
 import id.rascal.filter.service.JwtService;
 
@@ -70,13 +70,13 @@ public class AuthServiceImpl implements AuthService {
         );
     }
     
-    // TODO: add Unauthorized exception, refresh token rotation(delete readOnly)
+    // TODO: refresh token rotation(delete readOnly)
     @Override
     @Transactional(readOnly = true)
     public RefreshResultResponse refresh(String rawRefreshToken) {
         String hashRefreshToken = refreshTokenProvider.hash(rawRefreshToken);
         RefreshToken refreshToken = refreshTokenRepository.findByTokenHash(hashRefreshToken)
-            .orElseThrow(() -> new NotFoundException("Token not found"));
+            .orElseThrow(() -> new UnauthorizedException("Token not found"));
         validateRefreshToken(refreshToken);
 
         UserAuth userAuth = refreshToken.getUserAuth();
@@ -97,7 +97,7 @@ public class AuthServiceImpl implements AuthService {
         String hash = refreshTokenProvider.hash(rawRefreshToken);
 
         RefreshToken refreshToken = refreshTokenRepository.findByTokenHash(hash)
-            .orElseThrow(() -> new NotFoundException("Token not found"));
+            .orElseThrow(() -> new UnauthorizedException("Token not found"));
 
         refreshToken.setRevokedAt(Instant.now());
     }
@@ -141,10 +141,10 @@ public class AuthServiceImpl implements AuthService {
         Instant now = Instant.now();
 
         if (refreshToken.getExpiresAt().isBefore(now))
-            throw new BadRequestException("Token expired");
+            throw new UnauthorizedException("Token expired");
 
         if (refreshToken.getRevokedAt() != null)
-            throw new BadRequestException("Token revoked");
+            throw new UnauthorizedException("Token revoked");
     }
 
 }

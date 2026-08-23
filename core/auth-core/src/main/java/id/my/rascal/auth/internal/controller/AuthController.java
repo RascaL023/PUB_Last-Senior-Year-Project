@@ -20,7 +20,7 @@ import id.my.rascal.auth.internal.model.response.RefreshResultResponse;
 import id.my.rascal.auth.internal.service.AuthService;
 import id.my.rascal.auth.internal.service.RefreshTokenCookieFactory;
 import id.my.rascal.common.ApiResponse;
-import id.my.rascal.common.exception.BadRequestException;
+import id.my.rascal.common.exception.UnauthorizedException;
 import id.my.rascal.common.template.MetaTemplate;
 import id.my.rascal.common.template.SuccessTemplate;
 import jakarta.validation.Valid;
@@ -77,7 +77,7 @@ public class AuthController {
         ) String rawRefreshToken
     ) {
         if (rawRefreshToken == null || rawRefreshToken.isBlank())
-            throw new BadRequestException("Token cannot be resolved");
+            throw new UnauthorizedException("Refresh token is missing");
 
         RefreshResultResponse result = authService.refresh(rawRefreshToken);
 
