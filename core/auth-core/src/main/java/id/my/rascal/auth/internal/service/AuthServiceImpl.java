@@ -103,6 +103,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
+    @Transactional
     public void logoutAll(Long userId) {
         refreshTokenRepository.revokeAllByUserId(userId, Instant.now());
     }
