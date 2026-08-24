@@ -30,7 +30,9 @@
         <module>auth-core</module>
         <module>menu-api</module>
         <module>menu-core</module>
+        <module>order-api</module>
         <module>order-core</module>
+        <module>payment-core</module>
         <module>core-app</module>
     </modules>
 
@@ -64,6 +66,16 @@
             <dependency>
                 <groupId>id.my.rascal</groupId>
                 <artifactId>order-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>id.my.rascal</groupId>
+                <artifactId>order-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>id.my.rascal</groupId>
+                <artifactId>payment-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
 

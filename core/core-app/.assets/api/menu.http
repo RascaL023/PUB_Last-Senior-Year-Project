@@ -1,6 +1,9 @@
+@token = eyJraWQiOiJhdGxhbnRhIiwiYWxnIjoiSFMyNTYifQ.eyJyb2xlcyI6WyJBRE1JTiJdLCJhdXRob3JpdGllcyI6WyJvcmRlci5jcmVhdGUiLCJtZW51LW1vZGlmaWVyLmNyZWF0ZSIsIm1lbnUuY3JlYXRlIiwiaW1hZ2UucmVhZCIsImtpdGNoZW4udXBkYXRlIiwicm9sZS51cGRhdGUiLCJvcmRlci4qIiwiY3VzdG9tZXIuY3JlYXRlIiwicm9sZS5kZWxldGUiLCJtZW51LWNhdGVnb3J5LmNyZWF0ZSIsIm1lbnUucmVhZCIsIm1lbnUtY2F0ZWdvcnkucmVhZCIsInJlcG9ydC5yZWFkIiwibWVudS1jYXRlZ29yeS4qIiwicGF5bWVudC4qIiwidGFibGUucmVhZCIsIm1lbnUuKiIsInVzZXIuZGVsZXRlIiwidGFibGUuY3JlYXRlIiwiY3VzdG9tZXIucmVhZCIsImltYWdlLioiLCJpbWFnZS5kZWxldGUiLCJraXRjaGVuLnJlYWQiLCJjdXN0b21lci5kZWxldGUiLCJhdXRob3JpdHkuKiIsIm1lbnUudXBkYXRlIiwidGFibGUudXBkYXRlIiwibWVudS1tb2RpZmllci5kZWxldGUiLCJraXRjaGVuLioiLCJhdXRob3JpdHkudXBkYXRlIiwibWVudS1tb2RpZmllci51cGRhdGUiLCJtZW51LW1vZGlmaWVyLnJlYWQiLCJhdXRob3JpdHkuZGVsZXRlIiwidXNlci5yZWFkIiwib3JkZXIuZGVsZXRlIiwicGF5bWVudC5yZWFkIiwib3JkZXIucmVhZCIsInBheW1lbnQuY3JlYXRlIiwib3JkZXIudXBkYXRlIiwibWVudS1jYXRlZ29yeS51cGRhdGUiLCJtZW51LWNhdGVnb3J5LmRlbGV0ZSIsImltYWdlLmNyZWF0ZSIsImN1c3RvbWVyLioiLCJyb2xlLnJlYWQiLCJyb2xlLmNyZWF0ZSIsInVzZXIudXBkYXRlIiwicm9sZS4qIiwibWVudS5kZWxldGUiLCJhdXRob3JpdHkucmVhZCIsInVzZXIuKiIsInVzZXIuY3JlYXRlIiwidGFibGUuZGVsZXRlIiwibWVudS1tb2RpZmllci4qIiwidGFibGUuKiIsImN1c3RvbWVyLnVwZGF0ZSIsInBheW1lbnQudXBkYXRlIiwiYXV0aG9yaXR5LmNyZWF0ZSJdLCJzdWIiOiIxIiwiaWF0IjoxNzg3NTg0MDY4LCJleHAiOjE3ODc1ODQ5Njh9.pKc-kcjNiPZB_WFJrHffPtyaMTH9ZE1zKBetsNhTobw
+
 ###### MODIFIERS ######
 ### Create
 POST {{baseUrl}}/menus/modifiers
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -42,6 +45,7 @@ DELETE {{baseUrl}}/menus/modifiers/2
 ###### MENU CATEGORIES ######
 ### Create
 POST {{baseUrl}}/menus/categories
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -76,6 +80,7 @@ PATCH {{baseUrl}}/menus/categories/1/restore
 ###### MENUS ######
 ### Create
 POST {{baseUrl}}/menus
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
