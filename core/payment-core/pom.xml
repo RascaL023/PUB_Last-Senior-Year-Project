@@ -8,7 +8,7 @@
         <version>0.0.1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
-    <artifactId>order-core</artifactId>
+    <artifactId>payment-core</artifactId>
     <packaging>jar</packaging>
 
     <dependencies>
@@ -17,13 +17,7 @@
             <artifactId>common</artifactId>
         </dependency>
 
-        <!-- Menu API (snapshot menu untuk order) -->
-        <dependency>
-            <groupId>id.my.rascal</groupId>
-            <artifactId>menu-api</artifactId>
-        </dependency>
-
-        <!-- Order API (contract order untuk module lain, mis. payment) -->
+        <!-- Order API (satu-satunya akses ke data order) -->
         <dependency>
             <groupId>id.my.rascal</groupId>
             <artifactId>order-api</artifactId>
@@ -60,7 +54,7 @@
             <artifactId>postgresql</artifactId>
             <scope>runtime</scope>
         </dependency>
-        
+
         <!-- Hibernate -->
         <dependency>
             <groupId>com.h2database</groupId>

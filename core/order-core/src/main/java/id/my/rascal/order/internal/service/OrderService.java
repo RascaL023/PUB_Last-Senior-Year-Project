@@ -71,6 +71,8 @@ public class OrderService {
         order.setOrderItems(items);
         order.setTotalPrice(computeTotalPrice(items));
         order.setCreatedAt(LocalDateTime.now());
+        order.setType(request.type());
+        order.markUnpaid();
         order.markCreated();
 
         return toResponse(orderRepository.save(order));
@@ -78,8 +80,10 @@ public class OrderService {
 
     @Transactional
     public OrderResponse preparing(Long id) {
+        OrderStatus nextStatus = OrderStatus.PREPARING;
         Order order = findActiveOrder(id);
-        orderStatusFlowPolicy.validateFlow(order.getStatus(), OrderStatus.PREPARING);
+        orderStatusFlowPolicy.validateFlow(order.getStatus(), nextStatus);
+        orderStatusFlowPolicy.validateTransitionRequirements(order.getType(), order.getPaidStatus(), nextStatus);
 
         order.markPreparing();
         return toResponse(orderRepository.save(order));
@@ -96,8 +100,10 @@ public class OrderService {
 
     @Transactional
     public OrderResponse complete(Long id) {
+        OrderStatus nextStatus = OrderStatus.COMPLETED;
         Order order = findActiveOrder(id);
-        orderStatusFlowPolicy.validateFlow(order.getStatus(), OrderStatus.COMPLETED);
+        orderStatusFlowPolicy.validateFlow(order.getStatus(), nextStatus);
+        orderStatusFlowPolicy.validateTransitionRequirements(order.getType(), order.getPaidStatus(), nextStatus);
 
         order.markCompleted();
         return toResponse(orderRepository.save(order));
@@ -139,6 +145,7 @@ public class OrderService {
 
         replaceItems(order, request.items());
 
+        order.setType(request.type());
         order.setUpdatedAt(LocalDateTime.now());
         return toResponse(orderRepository.save(order));
     }
@@ -167,6 +174,11 @@ public class OrderService {
         if (request.items().isPresent()) {
             ensureEditable(order);
             replaceItems(order, request.items().get());
+        }
+
+        if (request.type().isPresent()) {
+            ensureEditable(order);
+            order.setType(request.type().get());
         }
 
         order.setUpdatedAt(LocalDateTime.now());
@@ -429,6 +441,7 @@ public class OrderService {
             order.getId(),
             order.getOrderNumber(),
             order.getStatus(),
+            order.getType(),
             order.getCustomerId(),
             order.getCustomerName(),
             order.getNotes(),

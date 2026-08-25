@@ -42,5 +42,11 @@ public class StringUtil {
         return Character.toUpperCase(s.charAt(0))
                 + s.substring(1);
     }
+
+    public static String toUnderscoredEnum(String s) {
+        if (safeIsBlank(s)) return "";
+
+        return normalizeSpaces(s).replace(' ', '_').replace('-', '_');
+    }
     
 }
