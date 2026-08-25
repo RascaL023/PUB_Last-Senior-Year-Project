@@ -1,4 +1,4 @@
-package id.my.rascal.payment.internal.model.enums;
+package id.my.rascal.order.internal.model.enums;
 
 import com.fasterxml.jackson.annotation.JsonValue;
 
@@ -10,30 +10,30 @@ import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 
-public enum PaymentTargetType {
-    ORDER("ORDER");
-    // DINE_IN("DINE_IN")
+public enum OrderType {
+    // DINE_IN("DINE_IN"),
+    TAKEAWAY("TAKEAWAY");
 
-    private final String targetType;
+    private final String type;
 
-    PaymentTargetType(String targetType) {
-        this.targetType = targetType;
+    OrderType(String type) {
+        this.type = type;
     }
 
     @JsonValue
     public String getTargetType() {
-        return targetType;
+        return type;
     }
 
     @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
-    public static PaymentTargetType fromString(String value) {
+    public static OrderType fromString(String value) {
         if (value == null) return null;
 
         String normalized = StringUtil.toUnderscoredEnum(value).toUpperCase();
 
         return switch (normalized) {
-            case "ORDER" -> ORDER;
-            // case "DINEIN" -> DINE_IN;      // Alias
+            case "TAKEAWAY" -> TAKEAWAY;
+            case "TAKE_AWAY" -> TAKEAWAY;
             // case "DINE_IN" -> DINE_IN;     // Standard
             default -> throw new BadRequestException( 
                 "Invalid PaymentTargetType: '" + value + "'. Allowed: " + allowedValues()
