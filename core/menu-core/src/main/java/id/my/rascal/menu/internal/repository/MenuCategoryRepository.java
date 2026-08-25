@@ -49,4 +49,6 @@ public interface MenuCategoryRepository extends JpaRepository<MenuCategory, Long
 
     boolean existsByCategoryCode(String categoryCode);
 
+    Optional<MenuCategory> findByCategoryCode(String categoryCode);
+
 }

@@ -22,5 +22,8 @@ public interface ModifierTypeRepository extends JpaRepository<ModifierType, Long
     """)
     Page<ModifierType> search(@Param("name") String name, Pageable pageable);
 
+    boolean existsByName(String name);
+
+    Optional<ModifierType> findByName(String name);
 
 }
