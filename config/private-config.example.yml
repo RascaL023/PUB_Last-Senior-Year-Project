@@ -1,0 +1,13 @@
+# Config ini akan override public-config.yml
+# Contoh:
+# services:
+#   core:
+#     port: 8081
+
+database:
+  username: your_db_username
+  password: your_db_password
+
+external:
+  image_service:
+      private-key: image_kit_private_key

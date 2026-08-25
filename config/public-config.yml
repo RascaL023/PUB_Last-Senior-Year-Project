@@ -1,0 +1,27 @@
+database:
+  provider: postgres
+  username: postgres
+  password: ""
+  names:
+    core_backend: projekan
+  postgresql:
+    host: localhost
+    port: 5555
+    sslmode: disable
+  mariadb:
+    host: localhost
+    port: 3306
+
+seed:
+  active: none
+
+services:
+  core:
+    host: localhost
+    port: 8081
+
+external:
+  image_service:
+    imagekit:
+      url-endpoint:
+      public-key:

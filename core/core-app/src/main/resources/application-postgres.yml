@@ -1,13 +1,9 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5555/projekan
-    username: rascal
-    password: ""
+    url: jdbc:postgresql://${database.postgresql.host:localhost}:${database.postgresql.port:5555}/${database.names.core_backend:projekan}?sslmode=${database.postgresql.sslmode:disable}
+    username: ${database.username:rascal}
+    password: ${database.password:}
     driver-class-name: org.postgresql.Driver
-  # jpa:
-  #   properties:
-  #     hibernate:
-  #       dialect: org.hibernate.dialect.PostgreSQLDialect
   sql:
     init:
       schema-locations: classpath:ddl/postgres/schema-extra.sql

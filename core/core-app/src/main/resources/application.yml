@@ -2,9 +2,17 @@ spring:
   application:
     name: core-backend
   profiles:
-    active: postgres
+    active: ${database.provider:postgres}, ${seed.active:none}
     # active: postgres, dev-seed
-    default: postgres, dev-formal
+    default: ${database.provider:postgres}, dev-formal
+  config:
+    import:
+      - optional:file:./config/public-config.yml
+      - optional:file:./config/private-config.yml
+      - optional:file:../config/public-config.yml
+      - optional:file:../config/private-config.yml
+      - optional:file:../../config/public-config.yml
+      - optional:file:../../config/private-config.yml
   jpa:
     hibernate:
       ddl-auto: update
@@ -21,4 +29,9 @@ spring:
     exclude: org.springframework.boot.security.autoconfigure.UserDetailsServiceAutoConfiguration
 
 server:
-  port: 8081
+  address: ${services.core.host:localhost}
+  port: ${services.core.port:8081}
+
+imagekit.url-endpoint: ${external.image_service.imagekit.url-endpoint:""}
+imagekit.public-key: ${external.image_service.imagekit.public-key:""}
+imagekit.private-key: ${external.image_service.imagekit.private-key:""}

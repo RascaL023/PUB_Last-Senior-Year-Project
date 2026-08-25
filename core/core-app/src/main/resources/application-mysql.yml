@@ -1,13 +1,9 @@
 spring:
   datasource:
-    url: jdbc:mariadb://localhost:3306/projekan?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&connectionCollation=utf8mb4_unicode_ci
-    username: rascal
-    password: atmin123
+    url: jdbc:mariadb://${database.mariadb.host:localhost}:${database.mariadb.port:3306}/${database.names.core_backend:projekan}?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&connectionCollation=utf8mb4_unicode_ci
+    username: ${database.username:rascal}
+    password: ${database.password:atmin123}
     driver-class-name: org.mariadb.jdbc.Driver
-  # jpa:
-  #   properties:
-  #     hibernate:
-  #       dialect: org.hibernate.dialect.MariaDBDialect
   sql:
     init:
       schema-locations: classpath:ddl/mysql/schema-extra.sql

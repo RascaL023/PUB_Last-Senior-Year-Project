@@ -1,6 +1,7 @@
 .myenv
 
 private
+config/private-config.yml
 temp
 **tmp**
 .env*
