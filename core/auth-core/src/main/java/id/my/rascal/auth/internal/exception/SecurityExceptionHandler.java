@@ -4,7 +4,9 @@ import java.io.IOException;
 
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authorization.AuthorizationDeniedException;
@@ -14,7 +16,9 @@ import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import id.my.rascal.auth.internal.service.RefreshTokenCookieFactory;
 import id.my.rascal.common.ApiResponse;
+import id.my.rascal.common.exception.UnauthorizedException;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -26,9 +30,14 @@ public class SecurityExceptionHandler implements
     AuthenticationEntryPoint, AccessDeniedHandler {
 
     private final ObjectMapper objectMapper;
+    private final RefreshTokenCookieFactory refreshTokenCookieFactory;
 
-    public SecurityExceptionHandler(ObjectMapper objectMapper) {
+    public SecurityExceptionHandler(
+        ObjectMapper objectMapper,
+        RefreshTokenCookieFactory refreshTokenCookieFactory
+    ) {
         this.objectMapper = objectMapper;
+        this.refreshTokenCookieFactory = refreshTokenCookieFactory;
     }
 
     @Override
@@ -84,6 +93,21 @@ public class SecurityExceptionHandler implements
     @ExceptionHandler(AuthorizationDeniedException.class)
     public ResponseEntity<?> handleAuthorizationDenied(AuthorizationDeniedException ex) {
         return ApiResponse.error(HttpStatus.FORBIDDEN, 403, "Forbidden", ex.getMessage());
+    }
+
+    @ExceptionHandler(UnauthorizedException.class)
+    public ResponseEntity<?> handleUnauthorized(UnauthorizedException ex) {
+        ResponseCookie clearCookie = refreshTokenCookieFactory.clear();
+
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+            .header(
+                HttpHeaders.SET_COOKIE,
+                clearCookie.toString()
+            ).body(
+                ApiResponse.errorBody(
+                    401, "INVALID_REFRESH_TOKEN", ex.getMessage()
+                )
+            );
     }
 
 }
