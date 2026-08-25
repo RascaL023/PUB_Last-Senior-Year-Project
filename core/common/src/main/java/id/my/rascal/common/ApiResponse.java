@@ -11,7 +11,7 @@ import id.my.rascal.common.template.*;
 public class ApiResponse {
 
     private static final String DEFAULT_SUCCESS_MESSAGE = "Request processed successfully";
-    private static final String DEFAULT_PAGED_SUCCESS_MESSAGE = "Data retrieved successfully";
+    private static final String DEFAULT_PAGED_SUCCESS_MESSAGE = "Data on page retrieved successfully";
     private static final String DEFAULT_VALIDATION_MESSAGE = "Validation failed";
 
     public static ResponseEntity<ErrorTemplate> error(
@@ -107,6 +107,36 @@ public class ApiResponse {
             new SuccessPagedTemplate<T>(
                 true,
                 message,
+                data,
+                meta
+            )
+        );
+    }
+
+    public static <T> ResponseEntity<SuccessPagedTemplate<T>> paged(
+        HttpStatus httpStatus,
+        T data,
+        int currentPage,
+        int perPage,
+        long totalItems,
+        boolean hasNext,
+        boolean hasPrev
+    ) {
+        int totalPages = (int) Math.ceil((double) totalItems / perPage);
+
+        MetaTemplate meta = MetaTemplate.paged(new PaginationTemplate(
+            currentPage,
+            perPage,
+            totalItems,
+            totalPages,
+            hasNext,
+            hasPrev
+        ));
+
+        return ResponseEntity.status(httpStatus).body(
+            new SuccessPagedTemplate<T>(
+                true,
+                DEFAULT_PAGED_SUCCESS_MESSAGE,
                 data,
                 meta
             )
