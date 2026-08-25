@@ -7,5 +7,6 @@ public interface OrderApi {
 
     OrderSnapshot getOrder(Long id);
     List<OrderSnapshot> getOrders(Collection<Long> ids);
+    void markPaid(Long id);
 
 }

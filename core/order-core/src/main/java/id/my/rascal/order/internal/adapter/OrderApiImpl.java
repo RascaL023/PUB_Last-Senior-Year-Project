@@ -7,10 +7,12 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import id.my.rascal.common.exception.NotFoundException;
 import id.my.rascal.order.api.OrderApi;
 import id.my.rascal.order.api.OrderSnapshot;
+import id.my.rascal.order.api.OrderTypeSnapshot;
 import id.my.rascal.order.internal.entity.Order;
 import id.my.rascal.order.internal.repository.OrderRepository;
 
@@ -24,12 +26,13 @@ public class OrderApiImpl implements OrderApi {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public OrderSnapshot getOrder(Long id) {
-        return orderRepository.findActiveById(id).map(this::toSnapshot)
-            .orElseThrow(() -> new NotFoundException("Order not found with id: " + id));
+        return toSnapshot(findByIdOrThrow(id));
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<OrderSnapshot> getOrders(Collection<Long> ids) {
         if (ids == null || ids.isEmpty())
             return List.of();
@@ -45,15 +48,33 @@ public class OrderApiImpl implements OrderApi {
             .toList();
     }
 
+    @Override
+    @Transactional
+    public void markPaid(Long id) {
+        Order order = findByIdOrThrow(id);
+        order.markPaid();
+        
+        orderRepository.save(order);
+    }
+
+
     private OrderSnapshot toSnapshot(Order order) {
+        OrderTypeSnapshot orderTypeSnapshot = 
+            OrderTypeSnapshot.valueOf(order.getType().toString());
         return new OrderSnapshot(
             order.getId(),
+            orderTypeSnapshot,
             order.getOrderNumber(),
             order.getCustomerId(),
             order.getCustomerName(),
             order.getTotalPrice(),
             order.getCreatedAt()
         );
+    }
+
+    private Order findByIdOrThrow(Long id) {
+        return orderRepository.findActiveById(id)
+            .orElseThrow(() -> new NotFoundException("Order not found with id: " + id));
     }
 
 }

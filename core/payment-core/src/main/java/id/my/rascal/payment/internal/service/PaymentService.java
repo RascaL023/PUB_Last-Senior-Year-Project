@@ -151,6 +151,8 @@ public class PaymentService {
         payment.setStatus(PaymentStatus.PAID);
         payment.setPaidAt(LocalDateTime.now());
         payment.setUpdatedAt(LocalDateTime.now());
+        orderApi.markPaid(payment.getTargetId());
+
         return toResponse(paymentRepository.save(payment));
     }
 

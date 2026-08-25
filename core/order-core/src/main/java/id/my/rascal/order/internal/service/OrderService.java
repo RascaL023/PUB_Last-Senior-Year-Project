@@ -80,8 +80,10 @@ public class OrderService {
 
     @Transactional
     public OrderResponse preparing(Long id) {
+        OrderStatus nextStatus = OrderStatus.PREPARING;
         Order order = findActiveOrder(id);
-        orderStatusFlowPolicy.validateFlow(order.getStatus(), OrderStatus.PREPARING);
+        orderStatusFlowPolicy.validateFlow(order.getStatus(), nextStatus);
+        orderStatusFlowPolicy.validateTransitionRequirements(order.getType(), order.getPaidStatus(), nextStatus);
 
         order.markPreparing();
         return toResponse(orderRepository.save(order));
@@ -98,8 +100,10 @@ public class OrderService {
 
     @Transactional
     public OrderResponse complete(Long id) {
+        OrderStatus nextStatus = OrderStatus.COMPLETED;
         Order order = findActiveOrder(id);
-        orderStatusFlowPolicy.validateFlow(order.getStatus(), OrderStatus.COMPLETED);
+        orderStatusFlowPolicy.validateFlow(order.getStatus(), nextStatus);
+        orderStatusFlowPolicy.validateTransitionRequirements(order.getType(), order.getPaidStatus(), nextStatus);
 
         order.markCompleted();
         return toResponse(orderRepository.save(order));
