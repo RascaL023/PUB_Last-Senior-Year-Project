@@ -14,7 +14,7 @@ public final class AuthorityCatalog {
             entity("authority", "authority"),
             entity("menu", "menu"),
             entity("menu-category", "menu category"),
-            entity("modifier", "modifier"),
+            entity("menu-modifier", "menu modifier"),
             List.of(
                 new AuthoritySeed("image.create", "Can create image"),
                 new AuthoritySeed("image.read", "Can read image"),

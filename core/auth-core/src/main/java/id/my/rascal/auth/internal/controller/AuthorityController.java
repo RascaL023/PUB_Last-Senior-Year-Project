@@ -8,6 +8,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -21,12 +22,14 @@ public class AuthorityController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('authority.create', 'authority.*')")
     public ResponseEntity<?> getById(@PathVariable Long id) {
         AuthorityResponse data = authorityService.getById(id);
         return ApiResponse.success(HttpStatus.OK, data);
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyAuthority('authority.read', 'authority.*')")
     public ResponseEntity<?> getAll(
         @RequestParam(required = false) String name,
         Pageable pageable
@@ -46,6 +49,7 @@ public class AuthorityController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('authority.delete', 'authority.*')")
     public ResponseEntity<?> delete(@PathVariable Long id) {
         if (id <= 0)
             throw new BadRequestException("Invalid ID: " + id);

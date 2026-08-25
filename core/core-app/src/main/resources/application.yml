@@ -2,7 +2,8 @@ spring:
   application:
     name: core-backend
   profiles:
-    active: postgres, dev-seed
+    active: postgres
+    # active: postgres, dev-seed
     default: postgres, dev-formal
   jpa:
     hibernate:

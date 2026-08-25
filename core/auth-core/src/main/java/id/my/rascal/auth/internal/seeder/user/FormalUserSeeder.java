@@ -4,7 +4,6 @@ import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
 
-import org.springframework.context.annotation.Profile;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -15,14 +14,14 @@ import id.my.rascal.auth.internal.repository.RoleRepository;
 import id.my.rascal.auth.internal.repository.UserAuthRepository;
 import id.my.rascal.common.seed.ChunkedSeederSupport;
 import id.my.rascal.common.seed.Seeder;
+import id.my.rascal.common.seed.SeedType;
 
 @Component
-@Profile("formal-seed")
 @Order(30)
 public class FormalUserSeeder implements Seeder {
 
     private static final List<UserSeed> USERS = List.of(
-        new UserSeed("admin@rascal.id", "admin123", List.of("admin"))
+        new UserSeed("admin@rascal.id", "admin123", List.of("ADMIN"))
     );
 
     private final UserAuthRepository userAuthRepository;
@@ -40,6 +39,11 @@ public class FormalUserSeeder implements Seeder {
         this.roleRepository = roleRepository;
         this.passwordEncoder = passwordEncoder;
         this.seedSupport = seedSupport;
+    }
+
+    @Override
+    public SeedType seedType() {
+        return SeedType.FORMAL;
     }
 
     @Override

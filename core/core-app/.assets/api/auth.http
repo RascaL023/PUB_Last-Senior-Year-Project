@@ -1,29 +1,34 @@
+@token = eyJraWQiOiJhdGxhbnRhIiwiYWxnIjoiSFMyNTYifQ.eyJyb2xlcyI6W10sImF1dGhvcml0aWVzIjpbXSwic3ViIjoiMSIsImlhdCI6MTc4NzE2NzE5MSwiZXhwIjoxNzg3MTY4MDkxfQ.zsfRr31VTM05IrNdI6TNEhTbH_skdrOTbxBHLFI3NgQ
+
 ###### AUTH ######
 ### Login
 POST {{baseUrl}}/auths/login
 Content-Type: application/json
 
 {
-    "email": "faiqemilzzz@gmail.com",
-    "password": "asdqwe123"
+    "email": "admin@rascal.id",
+    "password": "admin123"
 }
-
 
 ###### AUTHORITIES ######
 ### Get by ID
 GET {{baseUrl}}/auths/authorities/1
+Authorization: Bearer {{token}}
 
 ### Search active or GetAll
 GET {{baseUrl}}/auths/authorities
+Authorization: Bearer {{token}}
 
 ### Delete
 DELETE {{baseUrl}}/auths/authorities/1
+Authorization: Bearer {{token}}
 
 
 ###### ROLES ######
 ### Create
 POST {{baseUrl}}/auths/roles
 Content-Type: application/json
+Authorization: Bearer {{token}}
 
 {
     "name": "ADMIN",
@@ -32,15 +37,18 @@ Content-Type: application/json
 
 ### Get By ID
 GET {{baseUrl}}/auths/roles/1
+Authorization: Bearer {{token}}
 
 ### Search active or GetAll
 GET {{baseUrl}}/auths/roles
+Authorization: Bearer {{token}}
 
 
 ###### USERS ######
 ### Create
 POST {{baseUrl}}/auths/users
 Content-Type: application/json
+Authorization: Bearer {{token}}
 
 {
     "email": "faiqemilzzz@gmail.com",
@@ -50,9 +58,12 @@ Content-Type: application/json
 
 ### Get by ID
 GET {{baseUrl}}/auths/users/1
+Authorization: Bearer {{accessToken}}
 
 ### Search active or GetAll
 GET {{baseUrl}}/auths/users?email=admin
+Authorization: Bearer {{token}}
 
 ### Delete
 DELETE {{baseUrl}}/auths/users/1
+Authorization: Bearer {{token}}
