@@ -17,7 +17,15 @@ import java.util.Optional;
 public interface UserAuthRepository extends JpaRepository<UserAuth, Long> {
     Optional<UserAuth> findByEmail(String email);
 
-    @Query("select u.email from UserAuth u where u.deletedAt is null and u.email in :emails")
+    @Query("""
+        select distinct u from UserAuth u
+        left join fetch u.roles
+        left join fetch u.roles.authorities
+        where u.deletedAt is null and lower(u.email) = lower(:email)
+        """)
+    Optional<UserAuth> findForLoginByEmail(@Param("email") String email);
+
+    @Query("select u.email from UserAuth u where u.email in :emails")
     List<String> findExistingEmails(@Param("emails") Collection<String> emails);
 
     @Query("select u from UserAuth u where u.deletedAt is null and u.id = :id")

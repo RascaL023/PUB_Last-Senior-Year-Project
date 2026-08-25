@@ -4,7 +4,6 @@ import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
 
-import org.springframework.context.annotation.Profile;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,9 +14,9 @@ import id.my.rascal.auth.internal.repository.RoleRepository;
 import id.my.rascal.auth.internal.seeder.authority.AuthorityCatalog;
 import id.my.rascal.common.seed.ChunkedSeederSupport;
 import id.my.rascal.common.seed.Seeder;
+import id.my.rascal.common.seed.SeedType;
 
 @Component
-@Profile("formal-seed")
 @Order(20)
 public class FormalRoleSeeder implements Seeder {
 
@@ -44,13 +43,18 @@ public class FormalRoleSeeder implements Seeder {
     }
 
     @Override
+    public SeedType seedType() {
+        return SeedType.FORMAL;
+    }
+
+    @Override
     @Transactional
     public void seed() {
         LocalDateTime now = LocalDateTime.now();
 
         seedSupport.seedInChunks(
             ROLES,
-            RoleSeed::name,
+            item -> item.name().toUpperCase(),
             item -> {
                 Role role = new Role();
                 role.setName(item.name().toUpperCase());
