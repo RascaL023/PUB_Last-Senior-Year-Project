@@ -67,6 +67,8 @@ public interface MenuRepository extends JpaRepository<Menu, Long> {
 
     // ---- util ----
 
+    boolean existsByName(String name);
+
     @Query("""
         select distinct m from Menu m
         join m.modifierTypes mt
