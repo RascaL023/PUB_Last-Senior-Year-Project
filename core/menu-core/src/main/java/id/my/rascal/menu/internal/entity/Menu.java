@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
@@ -34,6 +35,8 @@ public class Menu {
 
     @ElementCollection
     @BatchSize(size = 50)
+    @CollectionTable(name = "menu_image_urls", joinColumns = @JoinColumn(name = "menu_id"))
+    @Column(name = "image_url")
     private List<String> imageUrls = new ArrayList<>();
 
     @Column(name = "base_price", nullable = false)
@@ -54,7 +57,7 @@ public class Menu {
     @ManyToMany
     @BatchSize(size = 50)
     @JoinTable(
-        name = "menu_to_categories",
+        name = "menu_category_assignments",
         joinColumns = @JoinColumn(name = "menu_id"),
         inverseJoinColumns = @JoinColumn(name = "menu_category_id")
     ) private List<MenuCategory> categories;
@@ -62,7 +65,7 @@ public class Menu {
     @ManyToMany
     @BatchSize(size = 50)
     @JoinTable(
-        name = "menu_modifier_types",
+        name = "menu_modifier_type_assignments",
         joinColumns = @JoinColumn(name = "menu_id"),
         inverseJoinColumns = @JoinColumn(name = "modifier_type_id")
     ) private List<ModifierType> modifierTypes;

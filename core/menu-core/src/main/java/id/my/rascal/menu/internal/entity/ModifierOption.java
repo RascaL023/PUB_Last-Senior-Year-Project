@@ -13,7 +13,7 @@ import lombok.Setter;
 
 @Entity
 @Getter @Setter
-@Table(name = "modifier_options")
+@Table(name = "menu_modifier_options")
 public class ModifierOption {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)

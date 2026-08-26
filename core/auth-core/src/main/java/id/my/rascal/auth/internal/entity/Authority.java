@@ -16,7 +16,7 @@ import lombok.Setter;
 
 @Entity
 @Getter @Setter
-@Table(name = "authorities")
+@Table(name = "auth_authorities")
 public class Authority {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
