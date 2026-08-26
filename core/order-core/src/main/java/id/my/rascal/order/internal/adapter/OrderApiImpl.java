@@ -1,5 +1,6 @@
 package id.my.rascal.order.internal.adapter;
 
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -14,15 +15,23 @@ import id.my.rascal.order.api.OrderApi;
 import id.my.rascal.order.api.OrderApiResponse;
 import id.my.rascal.order.api.OrderTypeApiResponse;
 import id.my.rascal.order.internal.entity.Order;
+import id.my.rascal.order.internal.model.enums.OrderStatus;
+import id.my.rascal.order.internal.model.enums.OrderType;
 import id.my.rascal.order.internal.repository.OrderRepository;
+import id.my.rascal.order.internal.service.OrderStatusFlowPolicy;
 
 @Service
 public class OrderApiImpl implements OrderApi {
 
     private final OrderRepository orderRepository;
+    private final OrderStatusFlowPolicy orderStatusFlowPolicy;
 
-    public OrderApiImpl(OrderRepository orderRepository) {
+    public OrderApiImpl(
+        OrderRepository orderRepository,
+        OrderStatusFlowPolicy orderStatusFlowPolicy
+    ) {
         this.orderRepository = orderRepository;
+        this.orderStatusFlowPolicy = orderStatusFlowPolicy;
     }
 
     @Override
@@ -53,7 +62,13 @@ public class OrderApiImpl implements OrderApi {
     public void markPaid(Long id) {
         Order order = findByIdOrThrow(id);
         order.markPaid();
-        
+
+        if (order.getType().equals(OrderType.TAKEAWAY)) {
+            orderStatusFlowPolicy.validateTransition(order, OrderStatus.CONFIRMED);
+            order.markConfirmed();
+        }
+
+        order.setUpdatedAt(LocalDateTime.now());
         orderRepository.save(order);
     }
 

@@ -51,7 +51,10 @@ Content-Type: application/json
             "menuId": 2,
             "quantity": 1,
             "modifiers": [
-                {  "modifierOptionId": 6 }
+                {  "modifierOptionId": 6 },
+                {  "modifierOptionId": 2 },
+                {  "modifierOptionId": 13 },
+                {  "modifierOptionId": 12 }
             ]
         }
     ]

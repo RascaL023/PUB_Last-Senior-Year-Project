@@ -82,19 +82,21 @@ public class OrderService {
     public OrderResponse preparing(Long id) {
         OrderStatus nextStatus = OrderStatus.PREPARING;
         Order order = findActiveOrder(id);
-        orderStatusFlowPolicy.validateFlow(order.getStatus(), nextStatus);
-        orderStatusFlowPolicy.validateTransitionRequirements(order.getType(), order.getPaidStatus(), nextStatus);
+        orderStatusFlowPolicy.validateTransition(order, nextStatus);
 
         order.markPreparing();
+        order.setUpdatedAt(LocalDateTime.now());
         return toResponse(orderRepository.save(order));
     }
 
     @Transactional
     public OrderResponse ready(Long id) {
+        OrderStatus nextStatus = OrderStatus.READY;
         Order order = findActiveOrder(id);
-        orderStatusFlowPolicy.validateFlow(order.getStatus(), OrderStatus.READY);
+        orderStatusFlowPolicy.validateTransition(order, nextStatus);
 
         order.markReady();
+        order.setUpdatedAt(LocalDateTime.now());
         return toResponse(orderRepository.save(order));
     }
 
@@ -102,20 +104,22 @@ public class OrderService {
     public OrderResponse complete(Long id) {
         OrderStatus nextStatus = OrderStatus.COMPLETED;
         Order order = findActiveOrder(id);
-        orderStatusFlowPolicy.validateFlow(order.getStatus(), nextStatus);
-        orderStatusFlowPolicy.validateTransitionRequirements(order.getType(), order.getPaidStatus(), nextStatus);
+        orderStatusFlowPolicy.validateTransition(order, nextStatus);
 
         order.markCompleted();
+        order.setUpdatedAt(LocalDateTime.now());
         return toResponse(orderRepository.save(order));
     }
 
     @Transactional
     public OrderResponse cancel(Long id) {
+        OrderStatus nextStatus = OrderStatus.CANCELLED;
         Order order = findActiveOrder(id);
-        orderStatusFlowPolicy.validateFlow(order.getStatus(), OrderStatus.CANCELLED);
+        orderStatusFlowPolicy.validateTransition(order, nextStatus);
         // TODO: restore stock if exists
 
         order.markCancelled();
+        order.setUpdatedAt(LocalDateTime.now());
         return toResponse(orderRepository.save(order));
     }
 
