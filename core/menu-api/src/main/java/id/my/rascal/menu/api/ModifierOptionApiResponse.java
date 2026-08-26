@@ -1,6 +1,6 @@
 package id.my.rascal.menu.api;
 
-public record ModifierOptionSnapshot(
+public record ModifierOptionApiResponse(
     Long id,
     Long modifierTypeId,
     String name,

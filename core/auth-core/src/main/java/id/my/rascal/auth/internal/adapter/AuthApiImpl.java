@@ -1,15 +1,15 @@
-package id.my.rascal.auth.internal.service;
+package id.my.rascal.auth.internal.adapter;
 
 import java.util.Optional;
 
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import id.my.rascal.auth.api.AuthApi;
-import id.my.rascal.auth.api.UserAuthResponse;
+import id.my.rascal.auth.api.UserAuthApiResponse;
 import id.my.rascal.auth.internal.repository.UserAuthRepository;
 
-@Service
+@Component
 public class AuthApiImpl implements AuthApi {
 
     private final UserAuthRepository userAuthRepository;
@@ -20,16 +20,16 @@ public class AuthApiImpl implements AuthApi {
 
     @Override
     @Transactional(readOnly = true)
-    public Optional<UserAuthResponse> getById(Long id) {
+    public Optional<UserAuthApiResponse> getById(Long id) {
         return userAuthRepository.findActiveById(id)
-            .map(u -> new UserAuthResponse(u.getId(), u.getEmail()));
+            .map(u -> new UserAuthApiResponse(u.getId(), u.getEmail()));
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Optional<UserAuthResponse> getByEmail(String email) {
+    public Optional<UserAuthApiResponse> getByEmail(String email) {
         return userAuthRepository.findActiveByEmail(email)
-            .map(u -> new UserAuthResponse(u.getId(), u.getEmail()));
+            .map(u -> new UserAuthApiResponse(u.getId(), u.getEmail()));
     }
     
 }

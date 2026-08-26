@@ -11,8 +11,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import id.my.rascal.common.exception.NotFoundException;
 import id.my.rascal.order.api.OrderApi;
-import id.my.rascal.order.api.OrderSnapshot;
-import id.my.rascal.order.api.OrderTypeSnapshot;
+import id.my.rascal.order.api.OrderApiResponse;
+import id.my.rascal.order.api.OrderTypeApiResponse;
 import id.my.rascal.order.internal.entity.Order;
 import id.my.rascal.order.internal.repository.OrderRepository;
 
@@ -27,23 +27,23 @@ public class OrderApiImpl implements OrderApi {
 
     @Override
     @Transactional(readOnly = true)
-    public OrderSnapshot getOrder(Long id) {
-        return toSnapshot(findByIdOrThrow(id));
+    public OrderApiResponse getOrder(Long id) {
+        return toResponse(findByIdOrThrow(id));
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<OrderSnapshot> getOrders(Collection<Long> ids) {
+    public List<OrderApiResponse> getOrders(Collection<Long> ids) {
         if (ids == null || ids.isEmpty())
             return List.of();
 
-        Map<Long, OrderSnapshot> snapshots = orderRepository.findAllById(ids).stream()
+        Map<Long, OrderApiResponse> responseMap = orderRepository.findAllById(ids).stream()
             .filter(o -> o.getDeletedAt() == null)
-            .map(this::toSnapshot)
-            .collect(Collectors.toMap(OrderSnapshot::id, Function.identity()));
+            .map(this::toResponse)
+            .collect(Collectors.toMap(OrderApiResponse::id, Function.identity()));
 
         return ids.stream()
-            .map(snapshots::get)
+            .map(responseMap::get)
             .filter(java.util.Objects::nonNull)
             .toList();
     }
@@ -58,12 +58,12 @@ public class OrderApiImpl implements OrderApi {
     }
 
 
-    private OrderSnapshot toSnapshot(Order order) {
-        OrderTypeSnapshot orderTypeSnapshot = 
-            OrderTypeSnapshot.valueOf(order.getType().toString());
-        return new OrderSnapshot(
+    private OrderApiResponse toResponse(Order order) {
+        OrderTypeApiResponse orderTypeApiResponse = 
+            OrderTypeApiResponse.valueOf(order.getType().toString());
+        return new OrderApiResponse(
             order.getId(),
-            orderTypeSnapshot,
+            orderTypeApiResponse,
             order.getOrderNumber(),
             order.getCustomerId(),
             order.getCustomerName(),
