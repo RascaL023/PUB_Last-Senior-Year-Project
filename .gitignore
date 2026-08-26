@@ -2,6 +2,7 @@
 
 private
 config/private-config.yml
+reverse-proxy/nginx/*.conf.rendered
 temp
 **tmp**
 .env*

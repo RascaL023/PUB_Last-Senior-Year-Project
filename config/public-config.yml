@@ -19,6 +19,8 @@ services:
   core:
     host: localhost
     port: 8081
+  frontend:
+    origin: http://localhost:5173
 
 external:
   image_service:
