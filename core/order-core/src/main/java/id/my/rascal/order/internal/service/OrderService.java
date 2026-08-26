@@ -442,6 +442,7 @@ public class OrderService {
             order.getOrderNumber(),
             order.getStatus(),
             order.getType(),
+            order.getPaidStatus(),
             order.getCustomerId(),
             order.getCustomerName(),
             order.getNotes(),

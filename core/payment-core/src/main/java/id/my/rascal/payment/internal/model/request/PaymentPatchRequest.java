@@ -2,8 +2,6 @@ package id.my.rascal.payment.internal.model.request;
 
 import java.util.Optional;
 
-import jakarta.validation.constraints.Min;
-
 import id.my.rascal.payment.internal.model.enums.PaymentTargetType;
 
 public record PaymentPatchRequest(

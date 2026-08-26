@@ -4,6 +4,6 @@ public record OrderItemModifierResponse(
     Long id,
     Long modifierTypeId,
     Long modifierOptionId,
-    String name,
+    String modifierName,
     Integer additionalPrice
 ) {}
