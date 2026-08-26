@@ -58,7 +58,7 @@ public class OrderController {
         validateId(id);
         return ApiResponse.success(
             HttpStatus.OK,
-            "Order marked to preparing",
+            "Order successfully marked as preparing",
             orderService.preparing(id)
         );
     }
@@ -68,7 +68,7 @@ public class OrderController {
         validateId(id);
         return ApiResponse.success(
             HttpStatus.OK,
-            "Order marked to ready",
+            "Order successfully marked as ready",
             orderService.ready(id)
         );
     }
@@ -78,7 +78,7 @@ public class OrderController {
         validateId(id);
         return ApiResponse.success(
             HttpStatus.OK,
-            "Order marked to complete",
+            "Order successfully marked as complete",
             orderService.complete(id)
         );
     }
@@ -88,7 +88,7 @@ public class OrderController {
         validateId(id);
         return ApiResponse.success(
             HttpStatus.OK,
-            DEFAULT_CREATE_SUCCESS_MESSAGE,
+            "Order successfully cancelled",
             orderService.cancel(id)
         );
     }

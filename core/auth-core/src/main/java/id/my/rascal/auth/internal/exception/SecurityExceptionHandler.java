@@ -49,7 +49,7 @@ public class SecurityExceptionHandler implements
         writeError(
             response, request, 
             401, HttpStatus.UNAUTHORIZED,
-            "Unauthorized", ex.getMessage()    
+            "UNAUTHORIZED", ex.getMessage()    
         );
     }
 
@@ -62,7 +62,7 @@ public class SecurityExceptionHandler implements
         writeError(
             response, request, 
             403, HttpStatus.FORBIDDEN,
-            "Forbidden", ex.getMessage()    
+            "FORBIDDEN", ex.getMessage()    
         );
        
     }
@@ -82,17 +82,17 @@ public class SecurityExceptionHandler implements
 
     @ExceptionHandler(AuthenticationException.class)
     public ResponseEntity<?> handleAuth(AuthenticationException ex) {
-        return ApiResponse.error(HttpStatus.UNAUTHORIZED, 401, "Unauthorized", ex.getMessage());
+        return ApiResponse.error(HttpStatus.UNAUTHORIZED, 401, "UNAUTHORIZED", ex.getMessage());
     }
 
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<?> handleAccessDenied(AccessDeniedException ex) {
-        return ApiResponse.error(HttpStatus.FORBIDDEN, 403, "Forbidden", ex.getMessage());
+        return ApiResponse.error(HttpStatus.FORBIDDEN, 403, "FORBIDDEN", ex.getMessage());
     }
 
     @ExceptionHandler(AuthorizationDeniedException.class)
     public ResponseEntity<?> handleAuthorizationDenied(AuthorizationDeniedException ex) {
-        return ApiResponse.error(HttpStatus.FORBIDDEN, 403, "Forbidden", ex.getMessage());
+        return ApiResponse.error(HttpStatus.FORBIDDEN, 403, "FORBIDDEN", ex.getMessage());
     }
 
     @ExceptionHandler(UnauthorizedException.class)

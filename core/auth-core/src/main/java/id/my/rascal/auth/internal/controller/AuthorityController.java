@@ -4,6 +4,8 @@ import id.my.rascal.auth.internal.model.response.AuthorityResponse;
 import id.my.rascal.auth.internal.service.AuthorityService;
 import id.my.rascal.common.ApiResponse;
 import id.my.rascal.common.exception.BadRequestException;
+import id.my.rascal.common.template.SuccessPagedTemplate;
+import id.my.rascal.common.template.SuccessTemplate;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -23,14 +25,14 @@ public class AuthorityController {
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyAuthority('authority.create', 'authority.*')")
-    public ResponseEntity<?> getById(@PathVariable Long id) {
+    public ResponseEntity<SuccessTemplate<AuthorityResponse>> getById(@PathVariable Long id) {
         AuthorityResponse data = authorityService.getById(id);
-        return ApiResponse.success(HttpStatus.OK, data);
+        return ApiResponse.success(HttpStatus.OK, "Authority successfully retrieved", data);
     }
 
     @GetMapping
     @PreAuthorize("hasAnyAuthority('authority.read', 'authority.*')")
-    public ResponseEntity<?> getAll(
+    public ResponseEntity<SuccessPagedTemplate<java.util.List<AuthorityResponse>>> getAll(
         @RequestParam(required = false) String name,
         Pageable pageable
     ) {
@@ -38,7 +40,7 @@ public class AuthorityController {
             .searchActiveAuthorities(name, pageable);
 
         return ApiResponse.paged(
-            HttpStatus.OK, "Authorities retrieved",
+            HttpStatus.OK, "Authorities successfully retrieved",
             page.getContent(),
             page.getNumber() + 1,
             page.getSize(),
@@ -50,12 +52,12 @@ public class AuthorityController {
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyAuthority('authority.delete', 'authority.*')")
-    public ResponseEntity<?> delete(@PathVariable Long id) {
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
         if (id <= 0)
             throw new BadRequestException("Invalid ID: " + id);
 
         authorityService.delete(id);
-        return ApiResponse.success(HttpStatus.OK, "Authority deleted", null);
+        return ResponseEntity.noContent().build();
     }
 
 }
