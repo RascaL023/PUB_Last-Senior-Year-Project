@@ -23,6 +23,13 @@
             <artifactId>order-api</artifactId>
         </dependency>
 
+        <!-- Dining API (for Dine-In payment resolution) -->
+        <dependency>
+            <groupId>id.my.rascal</groupId>
+            <artifactId>dining-api</artifactId>
+        </dependency>
+
+
         <!-- Starter Web -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

@@ -21,7 +21,7 @@ public class OrderStatusFlowPolicy {
 
         switch (currentStatus) {
             case CREATED -> validateFromCreated(order, nextStatus);
-            case CONFIRMED -> validateFromConfirmed(nextStatus);
+            case CONFIRMED -> validateFromConfirmed(order, nextStatus);
             case PREPARING -> validateFromPreparing(nextStatus);
             case READY -> validateFromReady(order, nextStatus);
             default -> reject();
@@ -43,8 +43,13 @@ public class OrderStatusFlowPolicy {
         ) reject("Takeaway order must be paid before confirmation");
     }
 
-    private void validateFromConfirmed(OrderStatus n) {
-        if (n != OrderStatus.PREPARING)
+    private void validateFromConfirmed(
+        Order order,
+        OrderStatus n
+    ) {
+        if (n == OrderStatus.CANCELLED)
+            return;
+        else if (n != OrderStatus.PREPARING)
             reject();
     }
 

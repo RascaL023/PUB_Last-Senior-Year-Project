@@ -15,6 +15,7 @@ public record OrderResponse(
     OrderPaidStatus paidStatus,
     Long customerId,
     String customerName,
+    Long diningId,
     String notes,
     Integer totalPrice,
     LocalDateTime createdAt,

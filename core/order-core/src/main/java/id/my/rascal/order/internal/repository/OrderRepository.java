@@ -2,7 +2,6 @@ package id.my.rascal.order.internal.repository;
 
 import id.my.rascal.order.internal.entity.Order;
 import id.my.rascal.order.internal.model.enums.OrderStatus;
-// import id.my.rascal.order.internal.model.enums.PaymentStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -34,8 +33,13 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     Page<Order> searchActive(
         @Param("keyword") String keyword,
         @Param("status") OrderStatus status,
-        // @Param("paymentStatus") PaymentStatus paymentStatus,
         Pageable pageable
     );
+
+    @Query("select o from Order o where o.deletedAt is null and o.diningId = :diningId order by o.createdAt asc")
+    java.util.List<Order> findActiveByDiningId(@Param("diningId") Long diningId);
+
+    @Query("select o from Order o where o.deletedAt is null and o.diningId in :diningIds")
+    java.util.List<Order> findActiveByDiningIds(@Param("diningIds") java.util.Collection<Long> diningIds);
 
 }

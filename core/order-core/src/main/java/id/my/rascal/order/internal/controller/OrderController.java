@@ -53,6 +53,16 @@ public class OrderController {
         );
     }
 
+    @PostMapping("/{id}/confirm")
+    public ResponseEntity<SuccessTemplate<OrderResponse>> confirm(@PathVariable Long id) {
+        validateId(id);
+        return ApiResponse.success(
+            HttpStatus.OK,
+            "Order successfully marked as confirmed",
+            orderService.confirm(id)
+        );
+    }
+
     @PostMapping("/{id}/prepare")
     public ResponseEntity<SuccessTemplate<OrderResponse>> prepare(@PathVariable Long id) {
         validateId(id);

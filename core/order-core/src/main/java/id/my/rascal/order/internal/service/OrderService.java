@@ -7,10 +7,12 @@ import id.my.rascal.menu.api.MenuApi;
 import id.my.rascal.menu.api.MenuApiResponse;
 import id.my.rascal.menu.api.ModifierOptionApiResponse;
 import id.my.rascal.menu.api.ModifierTypeApiResponse;
+import id.my.rascal.order.api.OrderApiCreateRequest;
 import id.my.rascal.order.internal.entity.Order;
 import id.my.rascal.order.internal.entity.OrderItem;
 import id.my.rascal.order.internal.entity.OrderItemModifier;
 import id.my.rascal.order.internal.model.enums.OrderStatus;
+import id.my.rascal.order.internal.model.enums.OrderType;
 import id.my.rascal.order.internal.model.request.OrderItemModifierRequest;
 import id.my.rascal.order.internal.model.request.OrderItemRequest;
 import id.my.rascal.order.internal.model.request.OrderPatchRequest;
@@ -62,6 +64,9 @@ public class OrderService {
 
     @Transactional
     public OrderResponse create(OrderRequest request) {
+        if (request.type() == OrderType.DINE_IN)
+            throw new BadRequestException("Dine-In orders must be created through a dining session");
+
         Order order = new Order();
         order.setOrderNumber(generateOrderNumber());
         applyCustomer(order, request.customerId(), request.customerName());
@@ -75,6 +80,48 @@ public class OrderService {
         order.markUnpaid();
         order.markCreated();
 
+        return toResponse(orderRepository.save(order));
+    }
+
+    @Transactional
+    public OrderResponse createDineInOrder(Long diningId, OrderApiCreateRequest request) {
+        Order order = new Order();
+        order.setOrderNumber(generateOrderNumber());
+        order.setDiningId(diningId);
+        applyCustomer(order, request.customerId(), request.customerName());
+        applyNotes(order, request.notes());
+
+        List<OrderItemRequest> itemRequests = request.items().stream()
+            .map(apiReq -> new OrderItemRequest(
+                null,
+                apiReq.menuId(),
+                apiReq.quantity(),
+                apiReq.modifiers() == null ? List.of()
+                    : apiReq.modifiers().stream()
+                        .map(m -> new OrderItemModifierRequest(null, m.modifierOptionId()))
+                        .toList()
+            ))
+            .toList();
+
+        List<OrderItem> items = buildItems(order, itemRequests);
+        order.setOrderItems(items);
+        order.setTotalPrice(computeTotalPrice(items));
+        order.setCreatedAt(LocalDateTime.now());
+        order.setType(OrderType.DINE_IN);
+        order.markUnpaid();
+        order.markCreated();
+
+        return toResponse(orderRepository.save(order));
+    }
+
+    @Transactional
+    public OrderResponse confirm(Long id) {
+        OrderStatus nextStatus = OrderStatus.CONFIRMED;
+        Order order = findActiveOrder(id);
+        orderStatusFlowPolicy.validateTransition(order, nextStatus);
+
+        order.markConfirmed();
+        order.setUpdatedAt(LocalDateTime.now());
         return toResponse(orderRepository.save(order));
     }
 
@@ -442,6 +489,7 @@ public class OrderService {
             order.getPaidStatus(),
             order.getCustomerId(),
             order.getCustomerName(),
+            order.getDiningId(),
             order.getNotes(),
             order.getTotalPrice(),
             order.getCreatedAt(),
