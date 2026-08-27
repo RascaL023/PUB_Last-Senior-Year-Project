@@ -158,13 +158,6 @@ public class OrderService {
     public OrderResponse patch(Long id, OrderPatchRequest request) {
         Order order = findActiveOrder(id);
 
-        if (request.status().isPresent()) {
-            if (order.getStatus() == OrderStatus.COMPLETED || order.getStatus() == OrderStatus.CANCELLED)
-                throw new BadRequestException("Cannot change status of a " + order.getStatus() + " order");
-
-            order.setStatus(request.status().get());
-        }
-
         if (request.customerName().isPresent()) {
             ensureEditable(order);
             applyCustomer(order, order.getCustomerId(), request.customerName().get());
