@@ -28,6 +28,7 @@ import id.my.rascal.order.internal.model.request.OrderPatchRequest;
 import id.my.rascal.order.internal.model.request.OrderPutRequest;
 import id.my.rascal.order.internal.model.request.OrderRequest;
 import id.my.rascal.order.internal.model.response.OrderResponse;
+import id.my.rascal.order.internal.service.OrderQueryService;
 import id.my.rascal.order.internal.service.OrderService;
 import jakarta.validation.Valid;
 
@@ -36,12 +37,14 @@ import jakarta.validation.Valid;
 public class OrderController {
 
     private final OrderService orderService;
+    private final OrderQueryService orderQueryService;
     private final String DEFAULT_GET_SUCCESS_MESSAGE = "Order successfully retrieved";
     private final String DEFAULT_CREATE_SUCCESS_MESSAGE = "Order successfully created";
     private final String DEFAULT_UPDATE_SUCCESS_MESSAGE = "Order successfully updated";
 
-    public OrderController(OrderService orderService) {
+    public OrderController(OrderService orderService, OrderQueryService orderQueryService) {
         this.orderService = orderService;
+        this.orderQueryService = orderQueryService;
     }
 
     @PostMapping
@@ -99,7 +102,7 @@ public class OrderController {
         @RequestParam(required = false) OrderStatus status,
         @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        Page<OrderResponse> page = orderService.search(keyword, status, pageable);
+        Page<OrderResponse> page = orderQueryService.searchActive(keyword, status, pageable);
 
         return ApiResponse.paged(
             HttpStatus.OK,
@@ -118,7 +121,7 @@ public class OrderController {
         return ApiResponse.success(
             HttpStatus.OK,
             DEFAULT_GET_SUCCESS_MESSAGE,
-            orderService.getById(id)
+            orderQueryService.findActiveOrderById(id)
         );
     }
 
