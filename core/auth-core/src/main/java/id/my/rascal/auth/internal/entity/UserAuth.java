@@ -21,7 +21,7 @@ import lombok.Setter;
 
 @Entity
 @Getter @Setter
-@Table(name = "users_auth")
+@Table(name = "auth_users")
 public class UserAuth {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -45,7 +45,7 @@ public class UserAuth {
     @ManyToMany
     @BatchSize(size = 7)
     @JoinTable(
-        name = "user_roles",
+        name = "auth_user_role_assignments",
         joinColumns = @JoinColumn(name = "user_id"),
         inverseJoinColumns = @JoinColumn(name = "role_id")
     ) private Set<Role> roles = new HashSet<>();

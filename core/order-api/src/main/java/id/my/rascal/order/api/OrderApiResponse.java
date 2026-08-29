@@ -2,9 +2,9 @@ package id.my.rascal.order.api;
 
 import java.time.LocalDateTime;
 
-public record OrderSnapshot(
+public record OrderApiResponse(
     Long id,
-    OrderTypeSnapshot orderType,
+    OrderTypeApiResponse orderType,
     String orderNumber,
     Long customerId,
     String customerName,

@@ -1,25 +1,25 @@
-package id.my.rascal.menu.internal.service;
+package id.my.rascal.menu.internal.adapter;
 
-import id.my.rascal.menu.api.MenuDataProvider;
-import id.my.rascal.menu.api.MenuSnapshot;
-import id.my.rascal.menu.api.ModifierOptionSnapshot;
-import id.my.rascal.menu.api.ModifierTypeSnapshot;
+import id.my.rascal.menu.api.MenuApi;
+import id.my.rascal.menu.api.MenuApiResponse;
+import id.my.rascal.menu.api.ModifierOptionApiResponse;
+import id.my.rascal.menu.api.ModifierTypeApiResponse;
 import id.my.rascal.menu.internal.repository.MenuRepository;
 import id.my.rascal.menu.internal.repository.ModifierOptionRepository;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
-@Service
-public class MenuDataProviderImpl implements MenuDataProvider {
+@Component
+public class MenuApiImpl implements MenuApi {
 
     private final MenuRepository menuRepository;
     private final ModifierOptionRepository modifierOptionRepository;
 
-    public MenuDataProviderImpl(
+    public MenuApiImpl(
         MenuRepository menuRepository,
         ModifierOptionRepository modifierOptionRepository
     ) {
@@ -29,18 +29,18 @@ public class MenuDataProviderImpl implements MenuDataProvider {
 
     @Override
     @Transactional(readOnly = true)
-    public List<MenuSnapshot> getMenuSnapshots(Collection<Long> menuIds) {
+    public List<MenuApiResponse> getMenuSnapshots(Collection<Long> menuIds) {
         if (menuIds == null || menuIds.isEmpty())
             return List.of();
 
         return menuRepository.findAllById(menuIds).stream()
-            .map(menu -> new MenuSnapshot(
+            .map(menu -> new MenuApiResponse(
                 menu.getId(),
                 menu.getName(),
                 menu.getBasePrice(),
                 menu.getIsAvailable(),
                 Optional.ofNullable(menu.getModifierTypes()).orElse(List.of()).stream()
-                    .map(type -> new ModifierTypeSnapshot(
+                    .map(type -> new ModifierTypeApiResponse(
                         type.getId(),
                         type.getMinSelection(),
                         type.getMaxSelection()
@@ -52,12 +52,12 @@ public class MenuDataProviderImpl implements MenuDataProvider {
 
     @Override
     @Transactional(readOnly = true)
-    public List<ModifierOptionSnapshot> getModifierOptionSnapshots(Collection<Long> optionIds) {
+    public List<ModifierOptionApiResponse> getModifierOptionSnapshots(Collection<Long> optionIds) {
         if (optionIds == null || optionIds.isEmpty())
             return List.of();
 
         return modifierOptionRepository.findAllById(optionIds).stream()
-            .map(option -> new ModifierOptionSnapshot(
+            .map(option -> new ModifierOptionApiResponse(
                 option.getId(),
                 option.getModifierType().getId(),
                 option.getName(),

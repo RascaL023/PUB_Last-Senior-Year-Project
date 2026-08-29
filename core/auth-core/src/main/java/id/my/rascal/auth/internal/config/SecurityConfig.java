@@ -25,13 +25,13 @@ import java.io.IOException;
 
 @Configuration
 @EnableMethodSecurity
-public class ModuleConfig {
+public class SecurityConfig {
 
     // private final HeaderAuthFilter headerAuthFilter;
     private final JwtAuthFilter jwtAuthFilter;
     private final SecurityExceptionHandler securityExceptionHandler;
 
-    public ModuleConfig(
+    public SecurityConfig(
         JwtAuthFilter jwtAuthFilter,
         // HeaderAuthFilter headerAuthFilter,
         SecurityExceptionHandler securityExceptionHandler

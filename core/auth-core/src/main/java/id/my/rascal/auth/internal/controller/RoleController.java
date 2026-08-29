@@ -7,6 +7,8 @@ import id.my.rascal.auth.internal.model.response.RoleResponse;
 import id.my.rascal.auth.internal.service.RoleService;
 import id.my.rascal.common.ApiResponse;
 import id.my.rascal.common.exception.BadRequestException;
+import id.my.rascal.common.template.SuccessPagedTemplate;
+import id.my.rascal.common.template.SuccessTemplate;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -27,28 +29,28 @@ public class RoleController {
 
     @PostMapping
     @PreAuthorize("hasAnyAuthority('role.create', 'role.*')")
-    public ResponseEntity<?> create(@RequestBody @Valid RoleRequest request) {
+    public ResponseEntity<SuccessTemplate<RoleResponse>> create(@RequestBody @Valid RoleRequest request) {
         RoleResponse data = roleService.create(request);
-        return ApiResponse.success(HttpStatus.CREATED, "Role created", data);
+        return ApiResponse.success(HttpStatus.CREATED, "Role successfully created", data);
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyAuthority('role.read', 'role.*')")
-    public ResponseEntity<?> getById(@PathVariable Long id) {
+    public ResponseEntity<SuccessTemplate<RoleResponse>> getById(@PathVariable Long id) {
         RoleResponse data = roleService.getById(id, false);
-        return ApiResponse.success(HttpStatus.OK, data);
+        return ApiResponse.success(HttpStatus.OK, "Role successfully retrieved", data);
     }
 
     @GetMapping
     @PreAuthorize("hasAnyAuthority('role.read', 'role.*')")
-    public ResponseEntity<?> getAll(
+    public ResponseEntity<SuccessPagedTemplate<java.util.List<RoleResponse>>> getAll(
         @RequestParam(required = false) String name,
         Pageable pageable
     ) {
         Page<RoleResponse> page = roleService.searchRoles(name, false, pageable);
 
         return ApiResponse.paged(
-            HttpStatus.OK, "Roles retrieved",
+            HttpStatus.OK, "Roles successfully retrieved",
             page.getContent(),
             page.getNumber() + 1,
             page.getSize(),
@@ -60,17 +62,17 @@ public class RoleController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyAuthority('role.update', 'role.*')")
-    public ResponseEntity<?> updatePut(
+    public ResponseEntity<SuccessTemplate<RoleResponse>> updatePut(
         @PathVariable Long id, 
         @RequestBody @Valid RolePutRequest request
     ) {
         RoleResponse data = roleService.update(id, request);
-        return ApiResponse.success(HttpStatus.OK, "Role updated", data);
+        return ApiResponse.success(HttpStatus.OK, "Role successfully updated", data);
     }
 
     @PatchMapping("/{id}")
     @PreAuthorize("hasAnyAuthority('role.update', 'role.*')")
-    public ResponseEntity<?> updatePatch(
+    public ResponseEntity<SuccessTemplate<RoleResponse>> updatePatch(
         @PathVariable Long id, 
         @RequestBody 
         RolePatchRequest request
@@ -79,17 +81,17 @@ public class RoleController {
             throw new BadRequestException("PATCH can't be empty");
         
         RoleResponse data = roleService.update(id, request);
-        return ApiResponse.success(HttpStatus.OK, "Role updated", data);
+        return ApiResponse.success(HttpStatus.OK, "Role successfully updated", data);
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyAuthority('role.delete', 'role.*')")
-    public ResponseEntity<?> delete(@PathVariable Long id) {
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
         if (id <= 0) 
             throw new BadRequestException("Invalid ID: " + id);
 
         roleService.delete(id);
-        return ApiResponse.success(HttpStatus.OK, "Role deleted", null);
+        return ResponseEntity.noContent().build();
     }
 
 }

@@ -7,6 +7,8 @@ import id.my.rascal.auth.internal.model.response.UserAuthResponse;
 import id.my.rascal.auth.internal.service.UserAuthService;
 import id.my.rascal.common.ApiResponse;
 import id.my.rascal.common.exception.BadRequestException;
+import id.my.rascal.common.template.SuccessPagedTemplate;
+import id.my.rascal.common.template.SuccessTemplate;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -25,19 +27,19 @@ public class UserAuthController {
     }
 
     @PostMapping
-    public ResponseEntity<?> create(@RequestBody @Valid UserAuthRequest request) {
+    public ResponseEntity<SuccessTemplate<UserAuthResponse>> create(@RequestBody @Valid UserAuthRequest request) {
         UserAuthResponse data = userAuthService.create(request);
-        return ApiResponse.success(HttpStatus.CREATED, "User created", data);
+        return ApiResponse.success(HttpStatus.CREATED, "User successfully created", data);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> getById(@PathVariable Long id) {
+    public ResponseEntity<SuccessTemplate<UserAuthResponse>> getById(@PathVariable Long id) {
         UserAuthResponse data = userAuthService.getById(id);
-        return ApiResponse.success(HttpStatus.OK, data);
+        return ApiResponse.success(HttpStatus.OK, "User successfully retrieved", data);
     }
 
     @GetMapping
-    public ResponseEntity<?> getAll(
+    public ResponseEntity<SuccessPagedTemplate<java.util.List<UserAuthResponse>>> getAll(
         @RequestParam(required = false) String email,
         Pageable pageable
     ) {
@@ -45,7 +47,7 @@ public class UserAuthController {
             .searchActiveUsers(email, pageable);
 
         return ApiResponse.paged(
-            HttpStatus.OK, "Users retrieved",
+            HttpStatus.OK, "Users successfully retrieved",
             page.getContent(),
             page.getNumber() + 1,
             page.getSize(),
@@ -56,16 +58,16 @@ public class UserAuthController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updatePut(
+    public ResponseEntity<SuccessTemplate<UserAuthResponse>> updatePut(
         @PathVariable Long id,
         @RequestBody @Valid UserAuthPutRequest request
     ) {
         UserAuthResponse data = userAuthService.update(id, request);
-        return ApiResponse.success(HttpStatus.OK, "User updated", data);
+        return ApiResponse.success(HttpStatus.OK, "User successfully updated", data);
     }
 
     @PatchMapping("/{id}")
-    public ResponseEntity<?> updatePatch(
+    public ResponseEntity<SuccessTemplate<UserAuthResponse>> updatePatch(
         @PathVariable Long id,
         @RequestBody UserAuthPatchRequest request
     ) {
@@ -73,15 +75,15 @@ public class UserAuthController {
             throw new BadRequestException("PATCH can't be empty");
 
         UserAuthResponse data = userAuthService.update(id, request);
-        return ApiResponse.success(HttpStatus.OK, "User updated", data);
+        return ApiResponse.success(HttpStatus.OK, "User successfully updated", data);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> delete(@PathVariable Long id) {
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
         if (id <= 0)
             throw new BadRequestException("Invalid ID: " + id);
 
         userAuthService.delete(id);
-        return ApiResponse.success(HttpStatus.OK, "User deleted", null);
+        return ResponseEntity.noContent().build();
     }
 }

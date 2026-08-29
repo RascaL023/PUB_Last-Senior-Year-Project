@@ -3,10 +3,10 @@ package id.my.rascal.order.internal.service;
 import id.my.rascal.common.exception.BadRequestException;
 import id.my.rascal.common.exception.NotFoundException;
 import id.my.rascal.common.util.StringUtil;
-import id.my.rascal.menu.api.MenuDataProvider;
-import id.my.rascal.menu.api.MenuSnapshot;
-import id.my.rascal.menu.api.ModifierOptionSnapshot;
-import id.my.rascal.menu.api.ModifierTypeSnapshot;
+import id.my.rascal.menu.api.MenuApi;
+import id.my.rascal.menu.api.MenuApiResponse;
+import id.my.rascal.menu.api.ModifierOptionApiResponse;
+import id.my.rascal.menu.api.ModifierTypeApiResponse;
 import id.my.rascal.order.internal.entity.Order;
 import id.my.rascal.order.internal.entity.OrderItem;
 import id.my.rascal.order.internal.entity.OrderItemModifier;
@@ -47,16 +47,16 @@ public class OrderService {
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("ddMMyyyy");
 
     private final OrderRepository orderRepository;
-    private final MenuDataProvider menuDataProvider;
+    private final MenuApi menuApi;
     private final OrderStatusFlowPolicy orderStatusFlowPolicy;
 
     public OrderService(
         OrderRepository orderRepository, 
-        MenuDataProvider menuDataProvider,
+        MenuApi menuApi,
         OrderStatusFlowPolicy orderStatusFlowPolicy
     ) {
         this.orderRepository = orderRepository;
-        this.menuDataProvider = menuDataProvider;
+        this.menuApi = menuApi;
         this.orderStatusFlowPolicy = orderStatusFlowPolicy;
     }
 
@@ -82,19 +82,21 @@ public class OrderService {
     public OrderResponse preparing(Long id) {
         OrderStatus nextStatus = OrderStatus.PREPARING;
         Order order = findActiveOrder(id);
-        orderStatusFlowPolicy.validateFlow(order.getStatus(), nextStatus);
-        orderStatusFlowPolicy.validateTransitionRequirements(order.getType(), order.getPaidStatus(), nextStatus);
+        orderStatusFlowPolicy.validateTransition(order, nextStatus);
 
         order.markPreparing();
+        order.setUpdatedAt(LocalDateTime.now());
         return toResponse(orderRepository.save(order));
     }
 
     @Transactional
     public OrderResponse ready(Long id) {
+        OrderStatus nextStatus = OrderStatus.READY;
         Order order = findActiveOrder(id);
-        orderStatusFlowPolicy.validateFlow(order.getStatus(), OrderStatus.READY);
+        orderStatusFlowPolicy.validateTransition(order, nextStatus);
 
         order.markReady();
+        order.setUpdatedAt(LocalDateTime.now());
         return toResponse(orderRepository.save(order));
     }
 
@@ -102,20 +104,22 @@ public class OrderService {
     public OrderResponse complete(Long id) {
         OrderStatus nextStatus = OrderStatus.COMPLETED;
         Order order = findActiveOrder(id);
-        orderStatusFlowPolicy.validateFlow(order.getStatus(), nextStatus);
-        orderStatusFlowPolicy.validateTransitionRequirements(order.getType(), order.getPaidStatus(), nextStatus);
+        orderStatusFlowPolicy.validateTransition(order, nextStatus);
 
         order.markCompleted();
+        order.setUpdatedAt(LocalDateTime.now());
         return toResponse(orderRepository.save(order));
     }
 
     @Transactional
     public OrderResponse cancel(Long id) {
+        OrderStatus nextStatus = OrderStatus.CANCELLED;
         Order order = findActiveOrder(id);
-        orderStatusFlowPolicy.validateFlow(order.getStatus(), OrderStatus.CANCELLED);
+        orderStatusFlowPolicy.validateTransition(order, nextStatus);
         // TODO: restore stock if exists
 
         order.markCancelled();
+        order.setUpdatedAt(LocalDateTime.now());
         return toResponse(orderRepository.save(order));
     }
 
@@ -153,13 +157,6 @@ public class OrderService {
     @Transactional
     public OrderResponse patch(Long id, OrderPatchRequest request) {
         Order order = findActiveOrder(id);
-
-        if (request.status().isPresent()) {
-            if (order.getStatus() == OrderStatus.COMPLETED || order.getStatus() == OrderStatus.CANCELLED)
-                throw new BadRequestException("Cannot change status of a " + order.getStatus() + " order");
-
-            order.setStatus(request.status().get());
-        }
 
         if (request.customerName().isPresent()) {
             ensureEditable(order);
@@ -226,7 +223,7 @@ public class OrderService {
 
         List<OrderItem> items = new ArrayList<>();
         for (OrderItemRequest itemRequest : itemRequests) {
-            MenuSnapshot menu = snapshots.menuMap().get(itemRequest.menuId());
+            MenuApiResponse menu = snapshots.menuMap().get(itemRequest.menuId());
             if (!menu.isAvailable()) throw new BadRequestException("Menu " + menu.name() + " is not available");
 
             validateItemModifiers(menu, optionToTypeId, itemRequest.modifiers());
@@ -242,7 +239,7 @@ public class OrderService {
             List<OrderItemModifier> modifiers = new ArrayList<>();
             if (itemRequest.modifiers() != null) {
                 for (OrderItemModifierRequest mReq : itemRequest.modifiers()) {
-                    ModifierOptionSnapshot option = snapshots.optionMap().get(mReq.modifierOptionId());
+                    ModifierOptionApiResponse option = snapshots.optionMap().get(mReq.modifierOptionId());
 
                     OrderItemModifier modifier = new OrderItemModifier();
                     modifier.setOrderItem(item);
@@ -274,7 +271,7 @@ public class OrderService {
         order.getOrderItems().removeIf(item -> item.getId() != null && !incomingItemIds.contains(item.getId()));
 
         for (OrderItemRequest itemRequest : itemRequests) {
-            MenuSnapshot menu = snapshots.menuMap().get(itemRequest.menuId());
+            MenuApiResponse menu = snapshots.menuMap().get(itemRequest.menuId());
             validateItemModifiers(menu, optionToTypeId, itemRequest.modifiers());
 
             OrderItem item;
@@ -308,7 +305,7 @@ public class OrderService {
             int modifierTotal = 0;
             if (itemRequest.modifiers() != null) {
                 for (OrderItemModifierRequest mReq : itemRequest.modifiers()) {
-                    ModifierOptionSnapshot option = snapshots.optionMap().get(mReq.modifierOptionId());
+                    ModifierOptionApiResponse option = snapshots.optionMap().get(mReq.modifierOptionId());
                     OrderItemModifier mod;
                     if (mReq.id() != null) {
                         mod = item.getModifiers().stream()
@@ -336,13 +333,13 @@ public class OrderService {
     }
 
     private void validateItemModifiers(
-        MenuSnapshot menu,
+        MenuApiResponse menu,
         Map<Long, Long> optionToTypeId,
         List<OrderItemModifierRequest> modifiers
     ) {
-        Map<Long, ModifierTypeSnapshot> allowedTypes = Optional.ofNullable(menu.modifierTypes())
+        Map<Long, ModifierTypeApiResponse> allowedTypes = Optional.ofNullable(menu.modifierTypes())
             .orElse(List.of()).stream()
-            .collect(Collectors.toMap(ModifierTypeSnapshot::id, Function.identity()));
+            .collect(Collectors.toMap(ModifierTypeApiResponse::id, Function.identity()));
 
         Map<Long, Long> typeCounts = modifiers == null
             ? Map.of()
@@ -357,7 +354,7 @@ public class OrderService {
             }
         }
 
-        for (ModifierTypeSnapshot type : allowedTypes.values()) {
+        for (ModifierTypeApiResponse type : allowedTypes.values()) {
             long count = typeCounts.getOrDefault(type.id(), 0L);
             if (count > type.maxSelection()) {
                 throw new BadRequestException(
@@ -376,8 +373,8 @@ public class OrderService {
             .distinct()
             .toList();
 
-        Map<Long, MenuSnapshot> menuMap = menuDataProvider.getMenuSnapshots(menuIds).stream()
-            .collect(Collectors.toMap(MenuSnapshot::id, Function.identity()));
+        Map<Long, MenuApiResponse> menuMap = menuApi.getMenuSnapshots(menuIds).stream()
+            .collect(Collectors.toMap(MenuApiResponse::id, Function.identity()));
         validateSnapshots(menuMap.keySet(), new HashSet<>(menuIds), "Menu");
 
         List<Long> optionIds = itemRequests.stream()
@@ -388,19 +385,19 @@ public class OrderService {
             .distinct()
             .toList();
 
-        Map<Long, ModifierOptionSnapshot> optionMap = menuDataProvider.getModifierOptionSnapshots(optionIds).stream()
-            .collect(Collectors.toMap(ModifierOptionSnapshot::id, Function.identity()));
+        Map<Long, ModifierOptionApiResponse> optionMap = menuApi.getModifierOptionSnapshots(optionIds).stream()
+            .collect(Collectors.toMap(ModifierOptionApiResponse::id, Function.identity()));
         validateSnapshots(optionMap.keySet(), new HashSet<>(optionIds), "Modifier option");
 
         Map<Long, Long> optionToTypeId = optionMap.values().stream()
-            .collect(Collectors.toMap(ModifierOptionSnapshot::id, ModifierOptionSnapshot::modifierTypeId));
+            .collect(Collectors.toMap(ModifierOptionApiResponse::id, ModifierOptionApiResponse::modifierTypeId));
 
         return new Snapshots(menuMap, optionMap, optionToTypeId);
     }
 
     private record Snapshots(
-        Map<Long, MenuSnapshot> menuMap,
-        Map<Long, ModifierOptionSnapshot> optionMap,
+        Map<Long, MenuApiResponse> menuMap,
+        Map<Long, ModifierOptionApiResponse> optionMap,
         Map<Long, Long> optionToTypeId
     ) {}
 
@@ -442,6 +439,7 @@ public class OrderService {
             order.getOrderNumber(),
             order.getStatus(),
             order.getType(),
+            order.getPaidStatus(),
             order.getCustomerId(),
             order.getCustomerName(),
             order.getNotes(),

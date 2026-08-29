@@ -20,7 +20,7 @@ import lombok.Setter;
 
 @Entity
 @Getter @Setter
-@Table(name = "roles")
+@Table(name = "auth_roles")
 public class Role {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -44,7 +44,7 @@ public class Role {
     @ManyToMany
     @BatchSize(size = 20)
     @JoinTable(
-        name = "role_authorities",
+        name = "auth_role_authority_assignments",
         joinColumns = @JoinColumn(name = "role_id"),
         inverseJoinColumns = @JoinColumn(name = "authority_id")
     ) private Set<Authority> authorities = new HashSet<>();

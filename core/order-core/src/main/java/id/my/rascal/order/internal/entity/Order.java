@@ -78,6 +78,10 @@ public class Order {
         this.status = OrderStatus.CREATED;
     }
 
+    public void markConfirmed() {
+        this.status = OrderStatus.CONFIRMED;
+    }
+
     public void markPreparing() {
         this.status = OrderStatus.PREPARING;
     }

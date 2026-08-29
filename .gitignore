@@ -9,6 +9,7 @@ temp
 env*
 **.bak
 run
+http-client.env.json
 
 ### Docker - CI/CD?
 redis_data

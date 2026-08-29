@@ -57,25 +57,25 @@ public class PaymentController {
     @PostMapping("/{id}/pay")
     public ResponseEntity<SuccessTemplate<PaymentResponse>> pay(@PathVariable Long id) {
         validateId(id);
-        return ApiResponse.success(HttpStatus.OK, "Payment marked as paid", paymentService.markPaid(id));
+        return ApiResponse.success(HttpStatus.OK, "Payment successfully marked as paid", paymentService.markPaid(id));
     }
 
     @PostMapping("/{id}/expire")
     public ResponseEntity<SuccessTemplate<PaymentResponse>> expire(@PathVariable Long id) {
         validateId(id);
-        return ApiResponse.success(HttpStatus.OK, "Payment marked as expired", paymentService.markExpired(id));
+        return ApiResponse.success(HttpStatus.OK, "Payment successfully marked as expired", paymentService.markExpired(id));
     }
 
     @PostMapping("/{id}/fail")
     public ResponseEntity<SuccessTemplate<PaymentResponse>> fail(@PathVariable Long id) {
         validateId(id);
-        return ApiResponse.success(HttpStatus.OK, "Payment marked as failed", paymentService.markFailed(id));
+        return ApiResponse.success(HttpStatus.OK, "Payment successfully marked as failed", paymentService.markFailed(id));
     }
 
     @PostMapping("/{id}/refund")
     public ResponseEntity<SuccessTemplate<PaymentResponse>> refund(@PathVariable Long id) {
         validateId(id);
-        return ApiResponse.success(HttpStatus.OK, "Payment marked as refunded", paymentService.markRefunded(id));
+        return ApiResponse.success(HttpStatus.OK, "Payment successfully marked as refunded", paymentService.markRefunded(id));
     }
 
     @GetMapping

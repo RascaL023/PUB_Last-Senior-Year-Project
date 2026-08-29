@@ -18,7 +18,7 @@ import org.hibernate.annotations.BatchSize;
 
 @Entity
 @Getter @Setter
-@Table(name = "modifier_types")
+@Table(name = "menu_modifier_types")
 public class ModifierType {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)

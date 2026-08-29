@@ -10,7 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import id.my.rascal.common.exception.BadRequestException;
 import id.my.rascal.common.exception.NotFoundException;
 import id.my.rascal.order.api.OrderApi;
-import id.my.rascal.order.api.OrderSnapshot;
+import id.my.rascal.order.api.OrderApiResponse;
 import id.my.rascal.payment.internal.entity.Payment;
 import id.my.rascal.payment.internal.entity.PaymentMethod;
 import id.my.rascal.payment.internal.model.enums.PaymentStatus;
@@ -195,7 +195,7 @@ public class PaymentService {
     }
 
     private ResolvedTarget resolveOrder(Long targetId) {
-        OrderSnapshot order = orderApi.getOrder(targetId);
+        OrderApiResponse order = orderApi.getOrder(targetId);
         return new ResolvedTarget(order.totalPrice(), order.orderNumber());
     }
 
