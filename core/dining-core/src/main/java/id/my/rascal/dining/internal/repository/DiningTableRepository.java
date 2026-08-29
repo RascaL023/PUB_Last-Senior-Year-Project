@@ -1,5 +1,6 @@
 package id.my.rascal.dining.internal.repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -31,5 +32,8 @@ public interface DiningTableRepository extends JpaRepository<DiningTable, Long> 
 
     @Query("select t from DiningTable t where t.deletedAt is null and t.status = :status")
     List<DiningTable> findAllActiveByStatus(@Param("status") TableStatus status);
+
+    @Query("select t from DiningTable t where t.deletedAt is null and t.id in :ids")
+    List<DiningTable> findActiveByIds(@Param("ids") Collection<Long> ids);
 
 }

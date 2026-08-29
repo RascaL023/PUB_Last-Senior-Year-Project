@@ -8,4 +8,6 @@ public interface DiningApi {
     DiningApiResponse getDining(Long id);
 
     List<DiningApiResponse> getDinings(Collection<Long> ids);
+
+    List<Long> getOrderIds(Long diningId);
 }

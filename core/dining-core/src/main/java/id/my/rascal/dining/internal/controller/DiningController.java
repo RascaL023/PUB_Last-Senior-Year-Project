@@ -16,7 +16,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import id.my.rascal.common.ApiResponse;
-import id.my.rascal.common.exception.BadRequestException;
 import id.my.rascal.common.template.SuccessPagedTemplate;
 import id.my.rascal.common.template.SuccessTemplate;
 import id.my.rascal.dining.internal.model.request.CreateDiningOrderRequest;
@@ -93,4 +92,5 @@ public class DiningController {
             diningService.close(id)
         );
     }
+
 }

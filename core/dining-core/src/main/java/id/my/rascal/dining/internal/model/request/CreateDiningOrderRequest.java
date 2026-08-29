@@ -7,8 +7,6 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Size;
 
-import id.my.rascal.order.api.OrderItemApiRequest;
-
 public record CreateDiningOrderRequest(
     @Min(value = 1, message = "Invalid customer ID")
     Long customerId,
@@ -20,5 +18,5 @@ public record CreateDiningOrderRequest(
     String notes,
 
     @NotEmpty(message = "Order must have at least 1 item")
-    List<@Valid OrderItemApiRequest> items
+    List<@Valid DiningOrderItemRequest> items
 ) {}
