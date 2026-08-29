@@ -13,6 +13,7 @@ public record UserAuthRequest(
     String email,
 
     @Size(min = 8, message = "Password must be at least 8 characters")
+    @NotBlank(message = "Password is required")
     String password,
 
     @NotEmpty(message = "Expected at least 1 role ID")

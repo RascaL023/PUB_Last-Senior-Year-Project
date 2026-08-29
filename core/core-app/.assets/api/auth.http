@@ -16,7 +16,7 @@ Cookie: {{refresh-token}}
 ### Refresh
 POST {{baseUrl}}/auths/refresh
 Authorization: Bearer {{token}}
-Cookie: refresh_token=jPGub08bJ37XFkJjNaV3IZl2jq5mnv98PNxObxfnVNjJ1KDKDYjKU4J3YzMiub8MG_9QnZJA98ZHLh-TOY80LA
+Cookie: {{refreshToken}}
 
 
 ###### AUTHORITIES ######
