@@ -1,6 +1,7 @@
 package id.my.rascal.payment.internal.service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -153,14 +154,21 @@ public class PaymentService {
     public PaymentResponse markPaid(Long id) {
         Payment payment = findActive(id);
         paymentStatusFlowPolicy.validateFlow(payment.getStatus(), PaymentStatus.PAID);
-        payment.setStatus(PaymentStatus.PAID);
-        payment.setPaidAt(LocalDateTime.now());
-        payment.setUpdatedAt(LocalDateTime.now());
 
         switch (payment.getTargetType()) {
             case ORDER -> orderApi.markPaid(payment.getTargetId());
-            case DINE_IN -> orderApi.markDiningOrdersPaid(payment.getTargetId());
+            case DINE_IN -> {
+                List<Long> orderIds = diningApi.getOrderIds(payment.getTargetId());
+                if (orderIds.isEmpty()) 
+                    throw new BadRequestException("There is no orders on " + payment.getTargetType() + " id " + payment.getTargetId());
+                orderApi.markPaid(orderIds);
+            }
         }
+
+        LocalDateTime now = LocalDateTime.now();
+        payment.setPaidAt(now);
+        payment.setUpdatedAt(now);
+        payment.setStatus(PaymentStatus.PAID);
 
         return toResponse(paymentRepository.save(payment));
     }

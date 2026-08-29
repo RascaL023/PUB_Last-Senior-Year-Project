@@ -81,13 +81,20 @@ public class PaymentController {
     @GetMapping
     public ResponseEntity<SuccessPagedTemplate<List<PaymentResponse>>> getAll(
         @RequestParam(required = false) String keyword,
-        @RequestParam(required = false) PaymentTargetType targetType,
+        @RequestParam(required = false) String targetType,
         @RequestParam(required = false) Long targetId,
-        @RequestParam(required = false) PaymentStatus status,
+        @RequestParam(required = false) String status,
         @RequestParam(required = false) Long paymentMethodId,
         @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        Page<PaymentResponse> page = paymentService.search(keyword, targetType, targetId, status, paymentMethodId, pageable);
+        Page<PaymentResponse> page = paymentService.search(
+            keyword, 
+            PaymentTargetType.fromString(targetType), 
+            targetId, 
+            PaymentStatus.fromString(status), 
+            paymentMethodId, 
+            pageable
+        );
 
         return ApiResponse.paged(
             HttpStatus.OK,
