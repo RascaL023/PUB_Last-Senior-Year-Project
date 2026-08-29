@@ -13,12 +13,14 @@ import id.my.rascal.common.exception.BadRequestException;
 import id.my.rascal.common.exception.ConflictException;
 import id.my.rascal.common.exception.NotFoundException;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -35,9 +37,11 @@ public class UserAuthServiceImpl implements UserAuthService {
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
 
-    public UserAuthServiceImpl(UserAuthRepository userAuthRepository,
-                               RoleRepository roleRepository,
-                               PasswordEncoder passwordEncoder) {
+    public UserAuthServiceImpl(
+        UserAuthRepository userAuthRepository,
+        RoleRepository roleRepository,
+        PasswordEncoder passwordEncoder
+    ) {
         this.userAuthRepository = userAuthRepository;
         this.roleRepository = roleRepository;
         this.passwordEncoder = passwordEncoder;
@@ -50,12 +54,8 @@ public class UserAuthServiceImpl implements UserAuthService {
             throw new ConflictException("Email already exists: " + request.email());
 
         UserAuth userAuth = UserAuthMapper.toEntity(request);
-
-        if (request.password() != null && !request.password().isBlank())
-            userAuth.setHashedPassword(passwordEncoder.encode(request.password()));
-
-        if (request.roleIds() != null && !request.roleIds().isEmpty())
-            userAuth.setRoles(resolveActiveRoles(request.roleIds()));
+        userAuth.setHashedPassword(passwordEncoder.encode(request.password()));
+        userAuth.setRoles(resolveActiveRoles(request.roleIds()));
 
         userAuth = userAuthRepository.save(userAuth);
         return UserAuthMapper.toResponse(userAuth);
@@ -78,23 +78,32 @@ public class UserAuthServiceImpl implements UserAuthService {
     @Override
     @Transactional(readOnly = true)
     public Page<UserAuthResponse> searchActiveUsers(String email, Pageable pageable) {
-        return userAuthRepository
-            .searchActive(normalizeSearchEmail(email), pageable)
-            .map(UserAuthMapper::toResponse);
+        Page<Long> idPage = userAuthRepository.findSearchIds(normalizeSearchEmail(email), false, pageable);
+        List<Long> contents = idPage.getContent();
+        if (contents.isEmpty())
+            return Page.empty(pageable);
+
+        List<UserAuth> userAuths = userAuthRepository.findAllByIds(contents);
+        List<UserAuthResponse> responses = new ArrayList<>();
+        for (Long id : contents) {
+            userAuths.stream()
+                .filter(u -> u.getId().equals(id))
+                .findFirst().ifPresent(u -> responses.add(
+                    UserAuthMapper.toResponse(u)
+                ));   
+        }
+
+        return new PageImpl<>(responses, pageable, idPage.getTotalElements());
     }
 
     @Override
     @Transactional
     public UserAuthResponse update(Long id, UserAuthPutRequest request) {
         UserAuth userAuth = validateAndGetUserById(id);
-
         checkEmailConflict(userAuth.getEmail(), request.email());
 
         UserAuthMapper.updateEntity(userAuth, request);
-
-        if (request.password() != null && !request.password().isBlank())
-            userAuth.setHashedPassword(passwordEncoder.encode(request.password()));
-
+        userAuth.setHashedPassword(passwordEncoder.encode(request.password()));
         applyRoles(userAuth, request.roleIds());
 
         userAuth = userAuthRepository.save(userAuth);

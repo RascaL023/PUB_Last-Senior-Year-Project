@@ -44,4 +44,19 @@ public interface UserAuthRepository extends JpaRepository<UserAuth, Long> {
     @EntityGraph(attributePaths = "roles")
     Page<UserAuth> searchActive(@Param("email") String email, Pageable pageable);
 
+    @Query("""
+        select ua.id  from UserAuth ua
+        where (
+            :email is null or lower(ua.email) like 
+            lower(concat('%', cast(:email as string), '%'))
+        ) and (
+            (:showDeleted = true and ua.deletedAt is not null) or
+            (:showDeleted = false and ua.deletedAt is null)
+        ) order by ua.email
+    """)
+    Page<Long> findSearchIds(@Param("email") String email, @Param("showDeleted") boolean showDeleted, Pageable pageable);
+
+    @Query("select ua from UserAuth ua where ua.id in :ids")
+    List<UserAuth> findAllByIds(@Param("ids") Collection<Long> ids);
+
 }

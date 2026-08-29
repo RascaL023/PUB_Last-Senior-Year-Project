@@ -42,7 +42,7 @@ public class Role {
     private LocalDateTime deletedAt;
 
     @ManyToMany
-    @BatchSize(size = 20)
+    @BatchSize(size = 30)
     @JoinTable(
         name = "auth_role_authority_assignments",
         joinColumns = @JoinColumn(name = "role_id"),
