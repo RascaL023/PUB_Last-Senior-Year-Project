@@ -32,12 +32,11 @@ public enum OrderType {
         String normalized = StringUtil.toUnderscoredEnum(value).toUpperCase();
 
         return switch (normalized) {
-            case "DINE_IN" -> DINE_IN;
-            case "DINEIN" -> DINE_IN;
             case "TAKEAWAY" -> TAKEAWAY;
             case "TAKE_AWAY" -> TAKEAWAY;
+            case "DINE_IN" -> DINE_IN;
             default -> throw new BadRequestException( 
-                "Invalid OrderType: '" + value + "'. Allowed: " + allowedValues()
+                "Invalid order type: '" + value + "'. Allowed: " + allowedValues()
             );
         };
     }

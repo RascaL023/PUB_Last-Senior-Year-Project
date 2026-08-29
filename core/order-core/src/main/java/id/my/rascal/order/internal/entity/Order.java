@@ -45,9 +45,6 @@ public class Order {
     @Column(name = "paid_status", nullable = false)
     private OrderPaidStatus paidStatus;
 
-    @Column(name = "dining_id")
-    private Long diningId;
-
     @Column(name = "customer_id")
     private Long customerId;
 
@@ -102,19 +99,11 @@ public class Order {
     }
 
     public void markUnpaid() {
-        this.paidStatus = OrderPaidStatus.UNAPAID;
+        this.paidStatus = OrderPaidStatus.UNPAID;
     }
 
     public void markPaid() {
         this.paidStatus = OrderPaidStatus.PAID;
-    }
-
-    public boolean isDineIn() {
-        return this.type == OrderType.DINE_IN;
-    }
-
-    public boolean isTakeaway() {
-        return this.type == OrderType.TAKEAWAY;
     }
 
 }

@@ -1,44 +1,32 @@
 package id.my.rascal.order.internal.service;
 
 import id.my.rascal.common.exception.BadRequestException;
+import id.my.rascal.common.exception.ConflictException;
 import id.my.rascal.common.exception.NotFoundException;
 import id.my.rascal.common.util.StringUtil;
-import id.my.rascal.menu.api.MenuApi;
-import id.my.rascal.menu.api.MenuApiResponse;
-import id.my.rascal.menu.api.ModifierOptionApiResponse;
-import id.my.rascal.menu.api.ModifierTypeApiResponse;
-import id.my.rascal.order.api.OrderApiCreateRequest;
 import id.my.rascal.order.internal.entity.Order;
 import id.my.rascal.order.internal.entity.OrderItem;
-import id.my.rascal.order.internal.entity.OrderItemModifier;
+import id.my.rascal.order.internal.model.enums.OrderPaidStatus;
 import id.my.rascal.order.internal.model.enums.OrderStatus;
 import id.my.rascal.order.internal.model.enums.OrderType;
-import id.my.rascal.order.internal.model.request.OrderItemModifierRequest;
-import id.my.rascal.order.internal.model.request.OrderItemRequest;
+import id.my.rascal.order.internal.model.mapper.OrderMapper;
 import id.my.rascal.order.internal.model.request.OrderPatchRequest;
 import id.my.rascal.order.internal.model.request.OrderPutRequest;
+import id.my.rascal.order.api.OrderApiCreateRequest;
+import id.my.rascal.order.internal.model.request.OrderItemModifierRequest;
+import id.my.rascal.order.internal.model.request.OrderItemRequest;
 import id.my.rascal.order.internal.model.request.OrderRequest;
-import id.my.rascal.order.internal.model.response.OrderItemModifierResponse;
-import id.my.rascal.order.internal.model.response.OrderItemResponse;
 import id.my.rascal.order.internal.model.response.OrderResponse;
 import id.my.rascal.order.internal.repository.OrderRepository;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Optional;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 @Service
 public class OrderService {
@@ -49,141 +37,35 @@ public class OrderService {
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("ddMMyyyy");
 
     private final OrderRepository orderRepository;
-    private final MenuApi menuApi;
+    private final OrderItemService orderItemService;
     private final OrderStatusFlowPolicy orderStatusFlowPolicy;
 
     public OrderService(
-        OrderRepository orderRepository, 
-        MenuApi menuApi,
+        OrderRepository orderRepository,
+        OrderItemService orderItemService,
         OrderStatusFlowPolicy orderStatusFlowPolicy
     ) {
         this.orderRepository = orderRepository;
-        this.menuApi = menuApi;
+        this.orderItemService = orderItemService;
         this.orderStatusFlowPolicy = orderStatusFlowPolicy;
     }
 
     @Transactional
     public OrderResponse create(OrderRequest request) {
-        if (request.type() == OrderType.DINE_IN)
-            throw new BadRequestException("Dine-In orders must be created through a dining session");
-
         Order order = new Order();
         order.setOrderNumber(generateOrderNumber());
         applyCustomer(order, request.customerId(), request.customerName());
         applyNotes(order, request.notes());
 
-        List<OrderItem> items = buildItems(order, request.items());
+        List<OrderItem> items = orderItemService.buildItems(order, request.items());
         order.setOrderItems(items);
-        order.setTotalPrice(computeTotalPrice(items));
+        order.setTotalPrice(orderItemService.computeTotalPrice(items));
         order.setCreatedAt(LocalDateTime.now());
         order.setType(request.type());
         order.markUnpaid();
         order.markCreated();
 
-        return toResponse(orderRepository.save(order));
-    }
-
-    @Transactional
-    public OrderResponse createDineInOrder(Long diningId, OrderApiCreateRequest request) {
-        Order order = new Order();
-        order.setOrderNumber(generateOrderNumber());
-        order.setDiningId(diningId);
-        applyCustomer(order, request.customerId(), request.customerName());
-        applyNotes(order, request.notes());
-
-        List<OrderItemRequest> itemRequests = request.items().stream()
-            .map(apiReq -> new OrderItemRequest(
-                null,
-                apiReq.menuId(),
-                apiReq.quantity(),
-                apiReq.modifiers() == null ? List.of()
-                    : apiReq.modifiers().stream()
-                        .map(m -> new OrderItemModifierRequest(null, m.modifierOptionId()))
-                        .toList()
-            ))
-            .toList();
-
-        List<OrderItem> items = buildItems(order, itemRequests);
-        order.setOrderItems(items);
-        order.setTotalPrice(computeTotalPrice(items));
-        order.setCreatedAt(LocalDateTime.now());
-        order.setType(OrderType.DINE_IN);
-        order.markUnpaid();
-        order.markCreated();
-
-        return toResponse(orderRepository.save(order));
-    }
-
-    @Transactional
-    public OrderResponse confirm(Long id) {
-        OrderStatus nextStatus = OrderStatus.CONFIRMED;
-        Order order = findActiveOrder(id);
-        orderStatusFlowPolicy.validateTransition(order, nextStatus);
-
-        order.markConfirmed();
-        order.setUpdatedAt(LocalDateTime.now());
-        return toResponse(orderRepository.save(order));
-    }
-
-    @Transactional
-    public OrderResponse preparing(Long id) {
-        OrderStatus nextStatus = OrderStatus.PREPARING;
-        Order order = findActiveOrder(id);
-        orderStatusFlowPolicy.validateTransition(order, nextStatus);
-
-        order.markPreparing();
-        order.setUpdatedAt(LocalDateTime.now());
-        return toResponse(orderRepository.save(order));
-    }
-
-    @Transactional
-    public OrderResponse ready(Long id) {
-        OrderStatus nextStatus = OrderStatus.READY;
-        Order order = findActiveOrder(id);
-        orderStatusFlowPolicy.validateTransition(order, nextStatus);
-
-        order.markReady();
-        order.setUpdatedAt(LocalDateTime.now());
-        return toResponse(orderRepository.save(order));
-    }
-
-    @Transactional
-    public OrderResponse complete(Long id) {
-        OrderStatus nextStatus = OrderStatus.COMPLETED;
-        Order order = findActiveOrder(id);
-        orderStatusFlowPolicy.validateTransition(order, nextStatus);
-
-        order.markCompleted();
-        order.setUpdatedAt(LocalDateTime.now());
-        return toResponse(orderRepository.save(order));
-    }
-
-    @Transactional
-    public OrderResponse cancel(Long id) {
-        OrderStatus nextStatus = OrderStatus.CANCELLED;
-        Order order = findActiveOrder(id);
-        orderStatusFlowPolicy.validateTransition(order, nextStatus);
-        // TODO: restore stock if exists
-
-        order.markCancelled();
-        order.setUpdatedAt(LocalDateTime.now());
-        return toResponse(orderRepository.save(order));
-    }
-
-    @Transactional(readOnly = true)
-    public OrderResponse getById(Long id) {
-        return toResponse(findActiveOrder(id));
-    }
-
-    @Transactional(readOnly = true)
-    public Page<OrderResponse> search(
-        String keyword,
-        OrderStatus status,
-        Pageable pageable
-    ) {
-        return orderRepository
-            .searchActive(StringUtil.normalizeSearch(keyword), status, pageable)
-            .map(this::toResponse);
+        return OrderMapper.toResponse(orderRepository.save(order));
     }
 
     @Transactional
@@ -194,11 +76,11 @@ public class OrderService {
         applyCustomer(order, request.customerId(), request.customerName());
         applyNotes(order, request.notes());
 
-        replaceItems(order, request.items());
+        orderItemService.replaceItems(order, request.items());
 
         order.setType(request.type());
         order.setUpdatedAt(LocalDateTime.now());
-        return toResponse(orderRepository.save(order));
+        return OrderMapper.toResponse(orderRepository.save(order));
     }
 
     @Transactional
@@ -217,7 +99,7 @@ public class OrderService {
 
         if (request.items().isPresent()) {
             ensureEditable(order);
-            replaceItems(order, request.items().get());
+            orderItemService.replaceItems(order, request.items().get());
         }
 
         if (request.type().isPresent()) {
@@ -226,7 +108,7 @@ public class OrderService {
         }
 
         order.setUpdatedAt(LocalDateTime.now());
-        return toResponse(orderRepository.save(order));
+        return OrderMapper.toResponse(orderRepository.save(order));
     }
 
     @Transactional
@@ -236,6 +118,115 @@ public class OrderService {
 
         order.setDeletedAt(LocalDateTime.now());
         orderRepository.save(order);
+    }
+
+    @Transactional
+    public OrderResponse createOrder(OrderApiCreateRequest request) {
+        if (request.type() == null) throw new BadRequestException("Order type cannot be null");
+        Order order = new Order();
+        order.setOrderNumber(generateOrderNumber());
+        applyCustomer(order, request.customerId(), request.customerName());
+        applyNotes(order, request.notes());
+
+        List<OrderItemRequest> itemRequests = request.items() == null ? List.of()
+            : request.items().stream()
+                .map(apiReq -> new OrderItemRequest(
+                    null,
+                    apiReq.menuId(),
+                    apiReq.quantity(),
+                    apiReq.modifiers() == null ? List.of()
+                        : apiReq.modifiers().stream()
+                            .map(m -> new OrderItemModifierRequest(null, m.modifierOptionId()))
+                            .toList()
+                ))
+                .toList();
+
+        List<OrderItem> items = orderItemService.buildItems(order, itemRequests);
+        order.setOrderItems(items);
+        order.setTotalPrice(orderItemService.computeTotalPrice(items));
+        order.setCreatedAt(LocalDateTime.now());
+        order.setType(OrderType.valueOf(request.type().name()));
+        order.markUnpaid();
+        order.markCreated();
+
+        return OrderMapper.toResponse(orderRepository.save(order));
+    }
+
+    @Transactional
+    public OrderResponse confirm(Long id) {
+        Order order = findActiveOrder(id);
+        orderStatusFlowPolicy.validateTransition(order, OrderStatus.CONFIRMED);
+
+        order.markConfirmed();
+        order.setUpdatedAt(LocalDateTime.now());
+        return OrderMapper.toResponse(orderRepository.save(order));
+    }
+
+    @Transactional
+    public void markPaid(Long id) {
+        Order order = findActiveOrder(id);
+        if (order.getPaidStatus().equals(OrderPaidStatus.PAID))
+            throw new ConflictException("Order already paid");
+        order.markPaid();
+
+        if (order.getType().equals(OrderType.TAKEAWAY)) {
+            orderStatusFlowPolicy.validateTransition(order, OrderStatus.CONFIRMED);
+            order.markConfirmed();
+        }
+
+        order.setUpdatedAt(LocalDateTime.now());
+        orderRepository.save(order);
+    }
+
+    @Transactional
+    public void markPaid(Collection<Long> orderIds) {
+        if (orderIds == null || orderIds.isEmpty()) return;
+        orderRepository.markPaidByIds(orderIds, OrderPaidStatus.PAID, LocalDateTime.now());
+    }
+
+    @Transactional
+    public OrderResponse preparing(Long id) {
+        OrderStatus nextStatus = OrderStatus.PREPARING;
+        Order order = findActiveOrder(id);
+        orderStatusFlowPolicy.validateTransition(order, nextStatus);
+
+        order.markPreparing();
+        order.setUpdatedAt(LocalDateTime.now());
+        return OrderMapper.toResponse(orderRepository.save(order));
+    }
+
+    @Transactional
+    public OrderResponse ready(Long id) {
+        OrderStatus nextStatus = OrderStatus.READY;
+        Order order = findActiveOrder(id);
+        orderStatusFlowPolicy.validateTransition(order, nextStatus);
+
+        order.markReady();
+        order.setUpdatedAt(LocalDateTime.now());
+        return OrderMapper.toResponse(orderRepository.save(order));
+    }
+
+    @Transactional
+    public OrderResponse complete(Long id) {
+        OrderStatus nextStatus = OrderStatus.COMPLETED;
+        Order order = findActiveOrder(id);
+        orderStatusFlowPolicy.validateTransition(order, nextStatus);
+
+        order.markCompleted();
+        order.setUpdatedAt(LocalDateTime.now());
+        return OrderMapper.toResponse(orderRepository.save(order));
+    }
+
+    @Transactional
+    public OrderResponse cancel(Long id) {
+        OrderStatus nextStatus = OrderStatus.CANCELLED;
+        Order order = findActiveOrder(id);
+        orderStatusFlowPolicy.validateTransition(order, nextStatus);
+        // TODO: restore stock if exists
+
+        order.markCancelled();
+        order.setUpdatedAt(LocalDateTime.now());
+        return OrderMapper.toResponse(orderRepository.save(order));
     }
 
 
@@ -258,208 +249,6 @@ public class OrderService {
         order.setNotes(StringUtil.safeIsBlank(notes) ? null : StringUtil.normalizeSpaces(notes));
     }
 
-    private void replaceItems(Order order, List<OrderItemRequest> itemRequests) {
-        Snapshots snapshots = fetchSnapshots(itemRequests);
-        reconcileItems(order, itemRequests, snapshots);
-        order.setTotalPrice(computeTotalPrice(order.getOrderItems()));
-    }
-
-    private List<OrderItem> buildItems(Order order, List<OrderItemRequest> itemRequests) {
-        Snapshots snapshots = fetchSnapshots(itemRequests);
-        Map<Long, Long> optionToTypeId = snapshots.optionToTypeId();
-
-        List<OrderItem> items = new ArrayList<>();
-        for (OrderItemRequest itemRequest : itemRequests) {
-            MenuApiResponse menu = snapshots.menuMap().get(itemRequest.menuId());
-            if (!menu.isAvailable()) throw new BadRequestException("Menu " + menu.name() + " is not available");
-
-            validateItemModifiers(menu, optionToTypeId, itemRequest.modifiers());
-
-            OrderItem item = new OrderItem();
-            item.setOrder(order);
-            item.setMenuId(menu.id());
-            item.setItemName(menu.name());
-            item.setUnitPrice(menu.basePrice());
-            item.setQuantity(itemRequest.quantity());
-
-            int modifierTotal = 0;
-            List<OrderItemModifier> modifiers = new ArrayList<>();
-            if (itemRequest.modifiers() != null) {
-                for (OrderItemModifierRequest mReq : itemRequest.modifiers()) {
-                    ModifierOptionApiResponse option = snapshots.optionMap().get(mReq.modifierOptionId());
-
-                    OrderItemModifier modifier = new OrderItemModifier();
-                    modifier.setOrderItem(item);
-                    modifier.setModifierTypeId(option.modifierTypeId());
-                    modifier.setModifierOptionId(option.id());
-                    modifier.setName(option.name());
-                    modifier.setAdditionalPrice(option.additionalPrice());
-
-                    modifierTotal += option.additionalPrice();
-                    modifiers.add(modifier);
-                }
-            }
-
-            item.setModifiers(modifiers);
-            item.setSubtotal((menu.basePrice() + modifierTotal) * itemRequest.quantity());
-            items.add(item);
-        }
-
-        return items;
-    }
-
-    private void reconcileItems(Order order, List<OrderItemRequest> itemRequests, Snapshots snapshots) {
-        Map<Long, Long> optionToTypeId = snapshots.optionToTypeId();
-
-        Set<Long> incomingItemIds = itemRequests.stream()
-            .map(OrderItemRequest::id)
-            .filter(java.util.Objects::nonNull)
-            .collect(Collectors.toSet());
-        order.getOrderItems().removeIf(item -> item.getId() != null && !incomingItemIds.contains(item.getId()));
-
-        for (OrderItemRequest itemRequest : itemRequests) {
-            MenuApiResponse menu = snapshots.menuMap().get(itemRequest.menuId());
-            validateItemModifiers(menu, optionToTypeId, itemRequest.modifiers());
-
-            OrderItem item;
-            if (itemRequest.id() != null) {
-                item = order.getOrderItems().stream()
-                    .filter(i -> itemRequest.id().equals(i.getId()))
-                    .findFirst()
-                    .orElseThrow(() -> new BadRequestException(
-                        "Order item " + itemRequest.id() + " not found in order " + order.getId()));
-                item.setMenuId(menu.id());
-                item.setItemName(menu.name());
-                item.setUnitPrice(menu.basePrice());
-                item.setQuantity(itemRequest.quantity());
-            } else {
-                item = new OrderItem();
-                item.setOrder(order);
-                item.setMenuId(menu.id());
-                item.setItemName(menu.name());
-                item.setUnitPrice(menu.basePrice());
-                item.setQuantity(itemRequest.quantity());
-                order.getOrderItems().add(item);
-            }
-
-            Set<Long> incomingModIds = itemRequest.modifiers() == null ? Set.of()
-                : itemRequest.modifiers().stream()
-                    .map(OrderItemModifierRequest::id)
-                    .filter(java.util.Objects::nonNull)
-                    .collect(Collectors.toSet());
-            item.getModifiers().removeIf(m -> m.getId() != null && !incomingModIds.contains(m.getId()));
-
-            int modifierTotal = 0;
-            if (itemRequest.modifiers() != null) {
-                for (OrderItemModifierRequest mReq : itemRequest.modifiers()) {
-                    ModifierOptionApiResponse option = snapshots.optionMap().get(mReq.modifierOptionId());
-                    OrderItemModifier mod;
-                    if (mReq.id() != null) {
-                        mod = item.getModifiers().stream()
-                            .filter(m -> mReq.id().equals(m.getId()))
-                            .findFirst()
-                            .orElseThrow(() -> new BadRequestException(
-                                "Order item modifier " + mReq.id() + " not found in order " + order.getId()));
-                    } else {
-                        mod = new OrderItemModifier();
-                        mod.setOrderItem(item);
-                    }
-                    mod.setModifierTypeId(option.modifierTypeId());
-                    mod.setModifierOptionId(option.id());
-                    mod.setName(option.name());
-                    mod.setAdditionalPrice(option.additionalPrice());
-                    if (mReq.id() == null) {
-                        item.getModifiers().add(mod);
-                    }
-                    modifierTotal += option.additionalPrice();
-                }
-            }
-
-            item.setSubtotal((menu.basePrice() + modifierTotal) * itemRequest.quantity());
-        }
-    }
-
-    private void validateItemModifiers(
-        MenuApiResponse menu,
-        Map<Long, Long> optionToTypeId,
-        List<OrderItemModifierRequest> modifiers
-    ) {
-        Map<Long, ModifierTypeApiResponse> allowedTypes = Optional.ofNullable(menu.modifierTypes())
-            .orElse(List.of()).stream()
-            .collect(Collectors.toMap(ModifierTypeApiResponse::id, Function.identity()));
-
-        Map<Long, Long> typeCounts = modifiers == null
-            ? Map.of()
-            : modifiers.stream()
-                .map(m -> optionToTypeId.get(m.modifierOptionId()))
-                .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
-
-        for (Long typeId : typeCounts.keySet()) {
-            if (!allowedTypes.containsKey(typeId)) {
-                throw new BadRequestException(
-                    "Modifier option of type " + typeId + " is not available for menu " + menu.id());
-            }
-        }
-
-        for (ModifierTypeApiResponse type : allowedTypes.values()) {
-            long count = typeCounts.getOrDefault(type.id(), 0L);
-            if (count > type.maxSelection()) {
-                throw new BadRequestException(
-                    "Modifier type " + type.id() + " allows at most " + type.maxSelection() + " selection(s)");
-            }
-            if (count < type.minSelection()) {
-                throw new BadRequestException(
-                    "Modifier type " + type.id() + " requires at least " + type.minSelection() + " selection(s)");
-            }
-        }
-    }
-
-    private Snapshots fetchSnapshots(List<OrderItemRequest> itemRequests) {
-        List<Long> menuIds = itemRequests.stream()
-            .map(OrderItemRequest::menuId)
-            .distinct()
-            .toList();
-
-        Map<Long, MenuApiResponse> menuMap = menuApi.getMenuSnapshots(menuIds).stream()
-            .collect(Collectors.toMap(MenuApiResponse::id, Function.identity()));
-        validateSnapshots(menuMap.keySet(), new HashSet<>(menuIds), "Menu");
-
-        List<Long> optionIds = itemRequests.stream()
-            .map(OrderItemRequest::modifiers)
-            .filter(java.util.Objects::nonNull)
-            .flatMap(Collection::stream)
-            .map(OrderItemModifierRequest::modifierOptionId)
-            .distinct()
-            .toList();
-
-        Map<Long, ModifierOptionApiResponse> optionMap = menuApi.getModifierOptionSnapshots(optionIds).stream()
-            .collect(Collectors.toMap(ModifierOptionApiResponse::id, Function.identity()));
-        validateSnapshots(optionMap.keySet(), new HashSet<>(optionIds), "Modifier option");
-
-        Map<Long, Long> optionToTypeId = optionMap.values().stream()
-            .collect(Collectors.toMap(ModifierOptionApiResponse::id, ModifierOptionApiResponse::modifierTypeId));
-
-        return new Snapshots(menuMap, optionMap, optionToTypeId);
-    }
-
-    private record Snapshots(
-        Map<Long, MenuApiResponse> menuMap,
-        Map<Long, ModifierOptionApiResponse> optionMap,
-        Map<Long, Long> optionToTypeId
-    ) {}
-
-    private void validateSnapshots(Set<Long> foundIds, Set<Long> requestedIds, String label) {
-        if (foundIds.size() != requestedIds.size()) {
-            Set<Long> missingIds = new HashSet<>(requestedIds);
-            missingIds.removeAll(foundIds);
-            throw new NotFoundException("Not found " + label + " IDs: " + missingIds);
-        }
-    }
-
-    private Integer computeTotalPrice(List<OrderItem> items) {
-        return items.stream().mapToInt(OrderItem::getSubtotal).sum();
-    }
-
     private String generateOrderNumber() {
         for (int i = 0; i < 10; i++) {
             String candidate = ORDER_PREFIX + LocalDateTime.now().format(DATE_FORMAT) + "-" + randomSuffix(6);
@@ -474,54 +263,6 @@ public class OrderService {
         for (int i = 0; i < length; i++)
             sb.append(RANDOM_CHARS.charAt(RANDOM.nextInt(RANDOM_CHARS.length())));
         return sb.toString();
-    }
-
-    private OrderResponse toResponse(Order order) {
-        List<OrderItemResponse> items = order.getOrderItems().stream()
-            .map(this::toItemResponse)
-            .toList();
-
-        return new OrderResponse(
-            order.getId(),
-            order.getOrderNumber(),
-            order.getStatus(),
-            order.getType(),
-            order.getPaidStatus(),
-            order.getCustomerId(),
-            order.getCustomerName(),
-            order.getDiningId(),
-            order.getNotes(),
-            order.getTotalPrice(),
-            order.getCreatedAt(),
-            order.getUpdatedAt(),
-            items
-        );
-    }
-
-    private OrderItemResponse toItemResponse(OrderItem item) {
-        List<OrderItemModifierResponse> modifiers = item.getModifiers().stream()
-            .map(this::toModifierResponse)
-            .toList();
-
-        return new OrderItemResponse(
-            item.getId(),
-            item.getMenuId(),
-            item.getItemName(),
-            item.getUnitPrice(),
-            item.getQuantity(),
-            item.getSubtotal(),
-            modifiers
-        );
-    }
-
-    private OrderItemModifierResponse toModifierResponse(OrderItemModifier modifier) {
-        return new OrderItemModifierResponse(
-            modifier.getId(),
-            modifier.getModifierTypeId(),
-            modifier.getModifierOptionId(),
-            modifier.getName(),
-            modifier.getAdditionalPrice()
-        );
     }
 
 }
