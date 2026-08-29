@@ -23,6 +23,7 @@ import id.my.rascal.common.ApiResponse;
 import id.my.rascal.common.exception.BadRequestException;
 import id.my.rascal.common.template.SuccessPagedTemplate;
 import id.my.rascal.common.template.SuccessTemplate;
+import id.my.rascal.order.internal.model.enums.OrderPaidStatus;
 import id.my.rascal.order.internal.model.enums.OrderStatus;
 import id.my.rascal.order.internal.model.request.OrderPatchRequest;
 import id.my.rascal.order.internal.model.request.OrderPutRequest;
@@ -53,6 +54,16 @@ public class OrderController {
             HttpStatus.CREATED,
             DEFAULT_CREATE_SUCCESS_MESSAGE,
             orderService.create(request)
+        );
+    }
+
+    @PostMapping("/{id}/confirm")
+    public ResponseEntity<SuccessTemplate<OrderResponse>> confirm(@PathVariable Long id) {
+        validateId(id);
+        return ApiResponse.success(
+            HttpStatus.OK,
+            "Order successfully marked as confirmed",
+            orderService.confirm(id)
         );
     }
 
@@ -99,10 +110,16 @@ public class OrderController {
     @GetMapping
     public ResponseEntity<SuccessPagedTemplate<List<OrderResponse>>> getAll(
         @RequestParam(required = false) String keyword,
-        @RequestParam(required = false) OrderStatus status,
+        @RequestParam(required = false) String status,
+        @RequestParam(required = false) String paidStatus,
         @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        Page<OrderResponse> page = orderQueryService.searchActive(keyword, status, pageable);
+        Page<OrderResponse> page = orderQueryService.searchActive(
+            keyword, 
+            OrderStatus.fromString(status), 
+            OrderPaidStatus.fromString(paidStatus), 
+            pageable
+        );
 
         return ApiResponse.paged(
             HttpStatus.OK,

@@ -1,6 +1,7 @@
 package id.my.rascal.payment.internal.service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -9,6 +10,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import id.my.rascal.common.exception.BadRequestException;
 import id.my.rascal.common.exception.NotFoundException;
+import id.my.rascal.dining.api.DiningApi;
+import id.my.rascal.dining.api.DiningApiResponse;
 import id.my.rascal.order.api.OrderApi;
 import id.my.rascal.order.api.OrderApiResponse;
 import id.my.rascal.payment.internal.entity.Payment;
@@ -28,17 +31,20 @@ public class PaymentService {
     private final PaymentMethodService paymentMethodService;
     private final PaymentStatusFlowPolicy paymentStatusFlowPolicy;
     private final OrderApi orderApi;
+    private final DiningApi diningApi;
 
     public PaymentService(
         PaymentRepository paymentRepository,
         PaymentMethodService paymentMethodService,
         PaymentStatusFlowPolicy paymentStatusFlowPolicy,
-        OrderApi orderApi
+        OrderApi orderApi,
+        DiningApi diningApi
     ) {
         this.paymentRepository = paymentRepository;
         this.paymentMethodService = paymentMethodService;
         this.paymentStatusFlowPolicy = paymentStatusFlowPolicy;
         this.orderApi = orderApi;
+        this.diningApi = diningApi;
     }
 
     @Transactional
@@ -148,10 +154,21 @@ public class PaymentService {
     public PaymentResponse markPaid(Long id) {
         Payment payment = findActive(id);
         paymentStatusFlowPolicy.validateFlow(payment.getStatus(), PaymentStatus.PAID);
+
+        switch (payment.getTargetType()) {
+            case ORDER -> orderApi.markPaid(payment.getTargetId());
+            case DINE_IN -> {
+                List<Long> orderIds = diningApi.getOrderIds(payment.getTargetId());
+                if (orderIds.isEmpty()) 
+                    throw new BadRequestException("There is no orders on " + payment.getTargetType() + " id " + payment.getTargetId());
+                orderApi.markPaid(orderIds);
+            }
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        payment.setPaidAt(now);
+        payment.setUpdatedAt(now);
         payment.setStatus(PaymentStatus.PAID);
-        payment.setPaidAt(LocalDateTime.now());
-        payment.setUpdatedAt(LocalDateTime.now());
-        orderApi.markPaid(payment.getTargetId());
 
         return toResponse(paymentRepository.save(payment));
     }
@@ -183,20 +200,21 @@ public class PaymentService {
         return toResponse(paymentRepository.save(payment));
     }
 
-    /**
-     * Menentukan reference & nominal yang ditagih berdasarkan target.
-     * Untuk sekarang hanya ORDER; saat module Dining ada, tambahkan branch
-     * DINING yang memanggil Dining API (getPayable) di sini.
-     */
     private ResolvedTarget resolveTarget(PaymentTargetType type, Long targetId) {
         return switch (type) {
             case ORDER -> resolveOrder(targetId);
+            case DINE_IN -> resolveDining(targetId);
         };
     }
 
     private ResolvedTarget resolveOrder(Long targetId) {
         OrderApiResponse order = orderApi.getOrder(targetId);
         return new ResolvedTarget(order.totalPrice(), order.orderNumber());
+    }
+
+    private ResolvedTarget resolveDining(Long targetId) {
+        DiningApiResponse dining = diningApi.getDining(targetId);
+        return new ResolvedTarget(dining.totalPrice(), "DINING-" + dining.id());
     }
 
     private Payment findActive(Long id) {

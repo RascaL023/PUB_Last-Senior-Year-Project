@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
 import com.fasterxml.jackson.annotation.JsonCreator;
 
 public enum OrderType {
-    // DINE_IN("DINE_IN"),
+    DINE_IN("DINE_IN"),
     TAKEAWAY("TAKEAWAY");
 
     private final String type;
@@ -34,9 +34,9 @@ public enum OrderType {
         return switch (normalized) {
             case "TAKEAWAY" -> TAKEAWAY;
             case "TAKE_AWAY" -> TAKEAWAY;
-            // case "DINE_IN" -> DINE_IN;     // Standard
+            case "DINE_IN" -> DINE_IN;
             default -> throw new BadRequestException( 
-                "Invalid PaymentTargetType: '" + value + "'. Allowed: " + allowedValues()
+                "Invalid order type: '" + value + "'. Allowed: " + allowedValues()
             );
         };
     }

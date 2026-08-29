@@ -4,8 +4,10 @@ import java.util.Collection;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import id.my.rascal.order.api.OrderApi;
+import id.my.rascal.order.api.OrderApiCreateRequest;
 import id.my.rascal.order.api.OrderApiResponse;
 import id.my.rascal.order.internal.model.mapper.OrderMapper;
 import id.my.rascal.order.internal.service.OrderQueryService;
@@ -38,6 +40,24 @@ public class OrderApiImpl implements OrderApi {
     @Override
     public void markPaid(Long id) {
         orderService.markPaid(id);
+    }
+
+    @Override
+    @Transactional
+    public void markPaid(Collection<Long> ids) {
+        orderService.markPaid(ids);
+    }
+
+    @Override
+    @Transactional
+    public OrderApiResponse createOrder(OrderApiCreateRequest request) {
+        return OrderMapper.toApiResponse(orderService.createOrder(request));
+    }
+
+    @Override
+    @Transactional
+    public OrderApiResponse confirmOrder(Long id) {
+        return OrderMapper.toApiResponse(orderService.confirm(id));
     }
 
 }

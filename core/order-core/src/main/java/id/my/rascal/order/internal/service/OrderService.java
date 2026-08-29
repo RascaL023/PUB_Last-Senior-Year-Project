@@ -1,15 +1,20 @@
 package id.my.rascal.order.internal.service;
 
 import id.my.rascal.common.exception.BadRequestException;
+import id.my.rascal.common.exception.ConflictException;
 import id.my.rascal.common.exception.NotFoundException;
 import id.my.rascal.common.util.StringUtil;
 import id.my.rascal.order.internal.entity.Order;
 import id.my.rascal.order.internal.entity.OrderItem;
+import id.my.rascal.order.internal.model.enums.OrderPaidStatus;
 import id.my.rascal.order.internal.model.enums.OrderStatus;
 import id.my.rascal.order.internal.model.enums.OrderType;
 import id.my.rascal.order.internal.model.mapper.OrderMapper;
 import id.my.rascal.order.internal.model.request.OrderPatchRequest;
 import id.my.rascal.order.internal.model.request.OrderPutRequest;
+import id.my.rascal.order.api.OrderApiCreateRequest;
+import id.my.rascal.order.internal.model.request.OrderItemModifierRequest;
+import id.my.rascal.order.internal.model.request.OrderItemRequest;
 import id.my.rascal.order.internal.model.request.OrderRequest;
 import id.my.rascal.order.internal.model.response.OrderResponse;
 import id.my.rascal.order.internal.repository.OrderRepository;
@@ -19,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Collection;
 import java.util.List;
 import java.util.Random;
 
@@ -115,8 +121,52 @@ public class OrderService {
     }
 
     @Transactional
+    public OrderResponse createOrder(OrderApiCreateRequest request) {
+        if (request.type() == null) throw new BadRequestException("Order type cannot be null");
+        Order order = new Order();
+        order.setOrderNumber(generateOrderNumber());
+        applyCustomer(order, request.customerId(), request.customerName());
+        applyNotes(order, request.notes());
+
+        List<OrderItemRequest> itemRequests = request.items() == null ? List.of()
+            : request.items().stream()
+                .map(apiReq -> new OrderItemRequest(
+                    null,
+                    apiReq.menuId(),
+                    apiReq.quantity(),
+                    apiReq.modifiers() == null ? List.of()
+                        : apiReq.modifiers().stream()
+                            .map(m -> new OrderItemModifierRequest(null, m.modifierOptionId()))
+                            .toList()
+                ))
+                .toList();
+
+        List<OrderItem> items = orderItemService.buildItems(order, itemRequests);
+        order.setOrderItems(items);
+        order.setTotalPrice(orderItemService.computeTotalPrice(items));
+        order.setCreatedAt(LocalDateTime.now());
+        order.setType(OrderType.valueOf(request.type().name()));
+        order.markUnpaid();
+        order.markCreated();
+
+        return OrderMapper.toResponse(orderRepository.save(order));
+    }
+
+    @Transactional
+    public OrderResponse confirm(Long id) {
+        Order order = findActiveOrder(id);
+        orderStatusFlowPolicy.validateTransition(order, OrderStatus.CONFIRMED);
+
+        order.markConfirmed();
+        order.setUpdatedAt(LocalDateTime.now());
+        return OrderMapper.toResponse(orderRepository.save(order));
+    }
+
+    @Transactional
     public void markPaid(Long id) {
         Order order = findActiveOrder(id);
+        if (order.getPaidStatus().equals(OrderPaidStatus.PAID))
+            throw new ConflictException("Order already paid");
         order.markPaid();
 
         if (order.getType().equals(OrderType.TAKEAWAY)) {
@@ -126,6 +176,12 @@ public class OrderService {
 
         order.setUpdatedAt(LocalDateTime.now());
         orderRepository.save(order);
+    }
+
+    @Transactional
+    public void markPaid(Collection<Long> orderIds) {
+        if (orderIds == null || orderIds.isEmpty()) return;
+        orderRepository.markPaidByIds(orderIds, OrderPaidStatus.PAID, LocalDateTime.now());
     }
 
     @Transactional

@@ -99,7 +99,7 @@ public class Order {
     }
 
     public void markUnpaid() {
-        this.paidStatus = OrderPaidStatus.UNAPAID;
+        this.paidStatus = OrderPaidStatus.UNPAID;
     }
 
     public void markPaid() {
