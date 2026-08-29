@@ -1,0 +1,377 @@
+### ========================================
+### Tables
+### ========================================
+
+### Create Table 1
+POST {{baseUrl}}/tables
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "tableNumber": "T1"
+}
+
+### Get table by ID
+GET {{baseUrl}}/tables/1
+Authorization: Bearer {{token}}
+
+### Get all tables
+GET {{baseUrl}}/tables
+Authorization: Bearer {{token}}
+
+### Search tables with keyword
+GET {{baseUrl}}/tables?keyword=VIP
+Authorization: Bearer {{token}}
+
+### Search tables with pagination
+GET {{baseUrl}}/tables?page=0&size=2&sort=tableNumber,asc
+Authorization: Bearer {{token}}
+
+### Update table (PUT)
+PUT {{baseUrl}}/tables/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "tableNumber": "T1-Updated"
+}
+
+### Patch table (partial)
+PATCH {{baseUrl}}/tables/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "tableNumber": "T1-Main"
+}
+
+### Delete table
+DELETE {{baseUrl}}/tables/1
+Authorization: Bearer {{token}}
+
+
+### ========================================
+### Dinings
+### ========================================
+
+### Step 1: Open dining on table 2
+POST {{baseUrl}}/dinings
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "tableId": 1
+}
+
+### Step 2: Add order to dining 1
+POST {{baseUrl}}/dinings/1/orders
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "customerId": 1,
+    "customerName": "Asep",
+    "notes": "Less sugar",
+    "items": [
+        {
+            "menuId": 2,
+            "quantity": 1,
+            "modifiers": [
+                {  "modifierOptionId": 6 },
+                {  "modifierOptionId": 2 },
+                {  "modifierOptionId": 13 },
+                {  "modifierOptionId": 12 }
+            ]
+        }
+    ]
+}
+
+### Step 3: Confirm order 1 (DINE_IN — no payment needed)
+POST {{baseUrl}}/orders/2/confirm
+Authorization: Bearer {{token}}
+
+### Step 4: Mark preparing
+POST {{baseUrl}}/orders/2/prepare
+Authorization: Bearer {{token}}
+
+### Step 5: Mark ready
+POST {{baseUrl}}/orders/2/ready
+Authorization: Bearer {{token}}
+
+### Step 6: Create payment for the dining
+POST {{baseUrl}}/payments
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "targetType": "DINE_IN",
+    "targetId": 1,
+    "paymentMethodId": 1,
+    "paymentChannel": null,
+    "paymentDetail": "CASH-001",
+    "externalId": null,
+    "invoiceUrl": null
+}
+
+### Step 7: Mark payment as paid
+POST {{baseUrl}}/payments/1/pay
+Authorization: Bearer {{token}}
+
+### Step 8: Complete order 1
+POST {{baseUrl}}/orders/2/complete
+Authorization: Bearer {{token}}
+
+### Step 9: Close dining
+POST {{baseUrl}}/dinings/1/close
+Authorization: Bearer {{token}}
+
+
+### ========================================
+### E2E FLOW — Happy Path Multiple Orders
+### ========================================
+
+### Open dining on table 3
+POST {{baseUrl}}/dinings
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "tableId": 3
+}
+
+### Add order #1 to dining 2
+POST {{baseUrl}}/dinings/2/orders
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "customerId": 1,
+    "customerName": "Budi",
+    "notes": "Extra hot",
+    "items": [
+        {
+            "menuId": 1,
+            "quantity": 1,
+            "modifiers": [
+                { "modifierOptionId": 1 }
+            ]
+        }
+    ]
+}
+
+### Confirm order 2
+POST {{baseUrl}}/orders/2/confirm
+Authorization: Bearer {{token}}
+
+### Prepare order 2
+POST {{baseUrl}}/orders/2/prepare
+Authorization: Bearer {{token}}
+
+### Ready order 2
+POST {{baseUrl}}/orders/2/ready
+Authorization: Bearer {{token}}
+
+### Complete order 2
+POST {{baseUrl}}/orders/2/complete
+Authorization: Bearer {{token}}
+
+### Add order #2 (additional) to dining 2
+POST {{baseUrl}}/dinings/2/orders
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "customerId": 1,
+    "customerName": "Budi",
+    "notes": "Ice please",
+    "items": [
+        {
+            "menuId": 2,
+            "quantity": 1,
+            "modifiers": [
+                { "modifierOptionId": 6 }
+            ]
+        },
+        {
+            "menuId": 1,
+            "quantity": 3,
+            "modifiers": [
+                { "modifierOptionId": 2 }
+            ]
+        }
+    ]
+}
+
+### Confirm order 3
+POST {{baseUrl}}/orders/3/confirm
+Authorization: Bearer {{token}}
+
+### Prepare order 3
+POST {{baseUrl}}/orders/3/prepare
+Authorization: Bearer {{token}}
+
+### Ready order 3
+POST {{baseUrl}}/orders/3/ready
+Authorization: Bearer {{token}}
+
+### Complete order 3
+POST {{baseUrl}}/orders/3/complete
+Authorization: Bearer {{token}}
+
+### Create payment for dining 2
+POST {{baseUrl}}/payments
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "targetType": "DINE_IN",
+    "targetId": 2,
+    "paymentMethodId": 1,
+    "paymentChannel": null,
+    "paymentDetail": "CASH-002",
+    "externalId": null,
+    "invoiceUrl": null
+}
+
+### Mark payment paid
+POST {{baseUrl}}/payments/2/pay
+Authorization: Bearer {{token}}
+
+### Close dining 2
+POST {{baseUrl}}/dinings/2/close
+Authorization: Bearer {{token}}
+
+
+### ========================================
+### E2E FLOW — Confirm Without Payment
+### ========================================
+
+### Open dining on table 4
+POST {{baseUrl}}/dinings
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "tableId": 4
+}
+
+### Add order to dining 3
+POST {{baseUrl}}/dinings/3/orders
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "customerId": 1,
+    "customerName": "Dina",
+    "notes": "No sugar",
+    "items": [
+        {
+            "menuId": 2,
+            "quantity": 1,
+            "modifiers": [
+                { "modifierOptionId": 6 }
+            ]
+        }
+    ]
+}
+
+### Confirm order 4 — succeeds without payment (DINE_IN)
+POST {{baseUrl}}/orders/4/confirm
+Authorization: Bearer {{token}}
+
+
+### ========================================
+### VALIDATION — Table
+### ========================================
+
+### Table not found (404)
+POST {{baseUrl}}/dinings
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "tableId": 999
+}
+
+### Table already occupied (409)
+POST {{baseUrl}}/dinings
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "tableId": 2
+}
+
+### tableId missing (400)
+POST {{baseUrl}}/dinings
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{}
+
+
+### ========================================
+### VALIDATION — Dining
+### ========================================
+
+### Add order to closed dining (409)
+POST {{baseUrl}}/dinings/1/orders
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "customerId": 1,
+    "customerName": "Test",
+    "notes": "Should fail",
+    "items": [
+        {
+            "menuId": 1,
+            "quantity": 1,
+            "modifiers": [
+                { "modifierOptionId": 1 }
+            ]
+        }
+    ]
+}
+
+### Close dining already closed (409)
+POST {{baseUrl}}/dinings/1/close
+Authorization: Bearer {{token}}
+
+### Close dining not found (404)
+POST {{baseUrl}}/dinings/999/close
+Authorization: Bearer {{token}}
+
+### Get dining not found (404)
+GET {{baseUrl}}/dinings/999
+Authorization: Bearer {{token}}
+
+
+### ========================================
+### GET / INSPECT
+### ========================================
+
+### Get dining by ID
+GET {{baseUrl}}/dinings/2
+Authorization: Bearer {{token}}
+
+### Get all dinings
+GET {{baseUrl}}/dinings
+Authorization: Bearer {{token}}
+
+### Get dinings with pagination
+GET {{baseUrl}}/dinings?page=0&size=5&sort=createdAt,desc
+Authorization: Bearer {{token}}
+
+
+### ========================================
+### TABLE STATE VERIFICATION
+### ========================================
+
+### Table should be AVAILABLE (after dining closed)
+GET {{baseUrl}}/tables/2
+Authorization: Bearer {{token}}
+
+### Table should be OCCUPIED (dining 3 still open)
+GET {{baseUrl}}/tables/4
+Authorization: Bearer {{token}}
