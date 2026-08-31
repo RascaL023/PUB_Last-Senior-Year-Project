@@ -18,6 +18,8 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
     boolean existsByExternalId(String externalId);
 
+    Optional<Payment> findByExternalId(String externalId);
+
     @Query("select p from Payment p where p.deletedAt is null and p.id = :id")
     Optional<Payment> findActiveById(@Param("id") Long id);
 

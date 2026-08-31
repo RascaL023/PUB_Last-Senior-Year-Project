@@ -14,6 +14,7 @@ http-client.env.json
 ### Docker - CI/CD?
 redis_data
 docker-compose.yml
+CI-CD.md
 
 ### FUTURE PLAN ###
 CACHE.md

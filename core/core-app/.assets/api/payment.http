@@ -40,7 +40,22 @@ DELETE {{baseUrl}}/payment-methods/1
 
 
 ###### PAYMENTS ######
-### Create (targetType: ORDER | DINING)
+### Create (targetType: ORDER | DINING) - XENDIT
+POST {{baseUrl}}/payments
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "targetType": "ORDER",
+    "targetId": 1,
+    "paymentMethodId": 6,
+    "paymentChannel": "BANK_TRANSFER",
+    "paymentDetail": "Test payment via Xendit",
+    "externalId": null,
+    "invoiceUrl": null
+}
+
+### Create (targetType: ORDER) - Manual/Cash
 POST {{baseUrl}}/payments
 Authorization: Bearer {{token}}
 Content-Type: application/json

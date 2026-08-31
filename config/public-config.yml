@@ -22,8 +22,14 @@ services:
   frontend:
     origin: http://localhost:5173
 
+app:
+  dev-base-url: https://dev.rascal.my.id
+
 external:
   image_service:
     imagekit:
       url-endpoint:
       public-key:
+  xendit:
+    base-url: https://api.xendit.co
+    public-key: xnd_public_development_qadxOpWzsEL0O4FtQjLz4AShD5aOY3gZCdjO4GC58XV2y9J3NRwN3krpil9f75Ew

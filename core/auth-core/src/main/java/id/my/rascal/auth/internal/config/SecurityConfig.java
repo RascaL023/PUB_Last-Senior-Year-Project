@@ -52,7 +52,8 @@ public class SecurityConfig {
                 HttpServletResponse response,
                 FilterChain filterChain
             ) throws ServletException, IOException {
-                if ("/api/v1/auths/refresh".equals(request.getRequestURI())) {
+                String uri = request.getRequestURI();
+                if ("/api/v1/auths/refresh".equals(uri) || "/api/v1/payments/webhooks/xendit".equals(uri)) {
                     filterChain.doFilter(request, response);
                     return;
                 }
@@ -67,7 +68,11 @@ public class SecurityConfig {
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             ).authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                .requestMatchers("/api/v1/auths/login", "/api/v1/auths/refresh").permitAll()
+                .requestMatchers(
+                    "/api/v1/auths/login", 
+                    "/api/v1/auths/refresh",
+                    "/api/v1/payments/webhooks/xendit"
+                ).permitAll()
                 .anyRequest().authenticated()
                 // .anyRequest().permitAll()
             ).exceptionHandling(ex -> ex

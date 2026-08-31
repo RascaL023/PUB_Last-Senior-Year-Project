@@ -32,6 +32,16 @@ server:
   address: ${services.core.host:localhost}
   port: ${services.core.port:8081}
 
-imagekit.url-endpoint: ${external.image_service.imagekit.url-endpoint:""}
-imagekit.public-key: ${external.image_service.imagekit.public-key:""}
-imagekit.private-key: ${external.image_service.imagekit.private-key:""}
+app:
+  dev-base-url: ${app.dev-base-url:https://dev.rascal.my.id}
+
+imagekit:
+  url-endpoint: ${external.image_service.imagekit.url-endpoint:""}
+  public-key: ${external.image_service.imagekit.public-key:""}
+  private-key: ${external.image_service.imagekit.private-key:""}
+
+xendit:
+  base-url: ${external.xendit.base-url:https://api.xendit.co}
+  private-key: ${external.xendit.private-key:""}
+  public-key: ${external.xendit.public-key:""}
+  callback-token: ${external.xendit.callback-token:""}

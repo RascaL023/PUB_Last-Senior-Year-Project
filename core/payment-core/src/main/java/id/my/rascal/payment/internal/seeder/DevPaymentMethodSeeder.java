@@ -21,7 +21,8 @@ public class DevPaymentMethodSeeder implements Seeder {
         new MethodSeed("BANK_TRANSFER", "Transfer Bank"),
         new MethodSeed("E_WALLET", "E-Wallet"),
         new MethodSeed("QRIS", "QRIS"),
-        new MethodSeed("CREDIT_CARD", "Kartu Kredit")
+        new MethodSeed("CREDIT_CARD", "Kartu Kredit"),
+        new MethodSeed("XENDIT", "Xendit")
     );
 
     private final PaymentMethodRepository paymentMethodRepository;
