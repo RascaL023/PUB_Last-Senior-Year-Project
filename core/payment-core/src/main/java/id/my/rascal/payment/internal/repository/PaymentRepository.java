@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import id.my.rascal.payment.internal.entity.Payment;
+import id.my.rascal.payment.internal.model.enums.PaymentProvider;
 import id.my.rascal.payment.internal.model.enums.PaymentStatus;
 import id.my.rascal.payment.internal.model.enums.PaymentTargetType;
 
@@ -32,7 +33,7 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
           and (:targetType is null or p.targetType = :targetType)
           and (:targetId is null or p.targetId = :targetId)
           and (:status is null or p.status = :status)
-          and (:paymentMethodId is null or p.paymentMethodId = :paymentMethodId)
+          and (:paymentProvider is null or p.paymentProvider = :paymentProvider)
         order by p.createdAt desc
     """)
     Page<Payment> searchActive(
@@ -40,7 +41,7 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
         @Param("targetType") PaymentTargetType targetType,
         @Param("targetId") Long targetId,
         @Param("status") PaymentStatus status,
-        @Param("paymentMethodId") Long paymentMethodId,
+        @Param("paymentProvider") PaymentProvider paymentProvider,
         Pageable pageable
     );
 

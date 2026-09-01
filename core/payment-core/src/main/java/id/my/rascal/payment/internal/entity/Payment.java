@@ -13,7 +13,7 @@ import jakarta.persistence.Lob;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
-
+import id.my.rascal.payment.internal.model.enums.PaymentProvider;
 import id.my.rascal.payment.internal.model.enums.PaymentStatus;
 import id.my.rascal.payment.internal.model.enums.PaymentTargetType;
 
@@ -32,14 +32,23 @@ public class Payment {
     @Column(name = "target_id", nullable = false)
     private Long targetId;
 
-    @Column(name = "target_reference")
-    private String targetReference;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    private PaymentStatus status;
 
-    @Column(name = "payment_method_id", nullable = false)
-    private Long paymentMethodId;
+    @Column(name = "amount", nullable = false)
+    private Integer amount;
 
-    @Column(name = "payment_method_name")
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payment_provider", nullable = false)
+    private PaymentProvider paymentProvider;
+
+    @Column(name = "payment_method")
     private String paymentMethodName;
+
+    @Column(name = "payment_channel")
+    private String paymentChannel;
 
     @Column(name = "external_id")
     private String externalId;
@@ -47,24 +56,18 @@ public class Payment {
     @Column(name = "invoice_url")
     private String invoiceUrl;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false)
-    private PaymentStatus status;
-
-    @Column(name = "payment_channel")
-    private String paymentChannel;
-
     @Column(name = "payment_detail")
     private String paymentDetail;
 
-    @Column(name = "amount", nullable = false)
-    private Integer amount;
+    @Lob @Column(name = "raw_webhook")
+    private String rawWebhook;
+
+    @Column(name = "target_reference")
+    private String targetReference;
+
 
     @Column(name = "paid_at")
     private LocalDateTime paidAt;
-
-    @Lob @Column(name = "raw_webhook")
-    private String rawWebhook;
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;

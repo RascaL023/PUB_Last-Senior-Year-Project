@@ -1,7 +1,6 @@
 package id.my.rascal.payment.internal.service;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.UUID;
 
 import org.slf4j.Logger;
@@ -18,17 +17,15 @@ import id.my.rascal.dining.api.DiningApi;
 import id.my.rascal.dining.api.DiningApiResponse;
 import id.my.rascal.order.api.OrderApi;
 import id.my.rascal.order.api.OrderApiResponse;
+import id.my.rascal.payment.api.PaymentProcessor;
+import id.my.rascal.payment.api.PaymentProcessorRequest;
+import id.my.rascal.payment.api.PaymentProcessorResponse;
+import id.my.rascal.payment.internal.config.PaymentProcessorResolver;
 import id.my.rascal.payment.internal.entity.Payment;
-import id.my.rascal.payment.internal.entity.PaymentMethod;
-import id.my.rascal.payment.internal.integration.xendit.XenditClient;
-import id.my.rascal.payment.internal.integration.xendit.XenditClientException;
-import id.my.rascal.payment.internal.integration.xendit.XenditInvoiceRequest;
-import id.my.rascal.payment.internal.integration.xendit.XenditInvoiceResponse;
-import id.my.rascal.payment.internal.integration.xendit.XenditWebhookPayload;
+import id.my.rascal.payment.internal.model.enums.PaymentProvider;
 import id.my.rascal.payment.internal.model.enums.PaymentStatus;
 import id.my.rascal.payment.internal.model.enums.PaymentTargetType;
-import id.my.rascal.payment.internal.model.request.PaymentPatchRequest;
-import id.my.rascal.payment.internal.model.request.PaymentPutRequest;
+import id.my.rascal.payment.internal.model.mapper.PaymentMapper;
 import id.my.rascal.payment.internal.model.request.PaymentRequest;
 import id.my.rascal.payment.internal.model.response.PaymentResponse;
 import id.my.rascal.payment.internal.repository.PaymentRepository;
@@ -37,67 +34,69 @@ import id.my.rascal.payment.internal.repository.PaymentRepository;
 public class PaymentService {
 
     private static final Logger log = LoggerFactory.getLogger(PaymentService.class);
-    private static final String XENDIT_METHOD_CODE = "XENDIT";
-
     private final PaymentRepository paymentRepository;
-    private final PaymentMethodService paymentMethodService;
     private final PaymentStatusFlowPolicy paymentStatusFlowPolicy;
+    private final PaymentProcessorResolver paymentProcessorResolver;
+    private final PaymentEffect paymentEffect;
     private final OrderApi orderApi;
     private final DiningApi diningApi;
-    private final XenditClient xenditClient;
 
     public PaymentService(
         PaymentRepository paymentRepository,
-        PaymentMethodService paymentMethodService,
         PaymentStatusFlowPolicy paymentStatusFlowPolicy,
+        PaymentProcessorResolver paymentProcessorResolver,
         OrderApi orderApi,
         DiningApi diningApi,
-        XenditClient xenditClient
+        PaymentEffect paymentEffect
     ) {
         this.paymentRepository = paymentRepository;
-        this.paymentMethodService = paymentMethodService;
         this.paymentStatusFlowPolicy = paymentStatusFlowPolicy;
+        this.paymentProcessorResolver = paymentProcessorResolver;
         this.orderApi = orderApi;
         this.diningApi = diningApi;
-        this.xenditClient = xenditClient;
+        this.paymentEffect = paymentEffect;
     }
 
     public PaymentResponse create(PaymentRequest request) {
-        PaymentMethod method = paymentMethodService.findActive(request.paymentMethodId());
-        boolean isXendit = XENDIT_METHOD_CODE.equals(method.getCode());
         ResolvedTarget target = resolveTarget(request.targetType(), request.targetId());
+        String externalId = "INV-" + UUID.randomUUID();
+
+        PaymentProcessor processor = paymentProcessorResolver.resolve(request.paymentProvider().toString());
+        PaymentProcessorResponse processorResponse;
+        try {
+             processorResponse = processor.process(
+                new PaymentProcessorRequest(
+                    target.amount(), 
+                    "IDR", 
+                    target.reference(),
+                    externalId, 
+                    null, null
+                )
+            );
+        } catch (Exception e) {
+            // Mark failed?
+            log.error(e.getMessage());
+            throw new BadRequestException(e.getMessage());
+        }
+
 
         Payment payment = new Payment();
+        payment.setPaymentProvider(PaymentProvider.valueOf(processor.paymentProvider()));
+        payment.setPaymentMethodName(processorResponse.paymentMethodName());
+        payment.setPaymentChannel(processorResponse.paymentChannel());
         payment.setTargetType(request.targetType());
         payment.setTargetId(request.targetId());
         payment.setTargetReference(target.reference());
-        payment.setPaymentMethodId(method.getId());
-        payment.setPaymentMethodName(method.getName());
         payment.setAmount(target.amount());
-        payment.setPaymentChannel(request.paymentChannel());
         payment.setPaymentDetail(request.paymentDetail());
-        payment.setStatus(PaymentStatus.PENDING);
+        payment.setExternalId(externalId);
+
+        payment.setStatus(PaymentMapper.toPaymentStatus(processorResponse.status()));
+        paymentEffect.applyEffectIfPaid(payment);
+
+        payment.setInvoiceUrl(processorResponse.invoiceUrl());
         payment.setCreatedAt(LocalDateTime.now());
 
-        if (isXendit) {
-            // External IDs must be generated by us, never trusted from the client.
-            String externalId = "INV-" + UUID.randomUUID();
-            payment.setExternalId(externalId);
-
-            Payment saved = persistPending(payment);
-            try {
-                XenditInvoiceResponse invoice = xenditClient.createInvoice(
-                    new XenditInvoiceRequest(externalId, saved.getAmount(), "IDR", saved.getTargetReference(), null, null)
-                );
-                return toResponse(attachInvoice(saved.getId(), invoice.invoiceUrl()));
-            } catch (XenditClientException ex) {
-                markInitFailed(saved.getId());
-                throw new BadRequestException("Failed to initialize Xendit payment: " + ex.getMessage());
-            }
-        }
-
-        payment.setExternalId(request.externalId());
-        payment.setInvoiceUrl(request.invoiceUrl());
         return toResponse(paymentRepository.save(payment));
     }
 
@@ -112,92 +111,12 @@ public class PaymentService {
         PaymentTargetType targetType,
         Long targetId,
         PaymentStatus status,
-        Long paymentMethodId,
+        PaymentProvider paymentProvider,
         Pageable pageable
     ) {
         return paymentRepository
-            .searchActive(keyword, targetType, targetId, status, paymentMethodId, pageable)
+            .searchActive(keyword, targetType, targetId, status, paymentProvider, pageable)
             .map(this::toResponse);
-    }
-
-    @Transactional
-    public PaymentResponse update(Long id, PaymentPutRequest request) {
-        Payment payment = findActive(id);
-        ensureMutable(payment);
-
-        ResolvedTarget target = resolveTarget(request.targetType(), request.targetId());
-        PaymentMethod method = paymentMethodService.findActive(request.paymentMethodId());
-
-        payment.setTargetType(request.targetType());
-        payment.setTargetId(request.targetId());
-        payment.setTargetReference(target.reference());
-        payment.setPaymentMethodId(method.getId());
-        payment.setPaymentMethodName(method.getName());
-        payment.setAmount(target.amount());
-        payment.setPaymentChannel(request.paymentChannel());
-        payment.setPaymentDetail(request.paymentDetail());
-        payment.setExternalId(request.externalId());
-        payment.setInvoiceUrl(request.invoiceUrl());
-        payment.setUpdatedAt(LocalDateTime.now());
-
-        return toResponse(paymentRepository.save(payment));
-    }
-
-    @Transactional
-    public PaymentResponse patch(Long id, PaymentPatchRequest request) {
-        Payment payment = findActive(id);
-        if (request.isEmptyPatch()) throw new BadRequestException("PATCH can't be empty");
-        ensureMutable(payment);
-
-        if (request.targetType().isPresent() || request.targetId().isPresent()) {
-            if (request.targetType().isEmpty() || request.targetId().isEmpty()) {
-                throw new BadRequestException("targetType and targetId must be provided together");
-            }
-            ResolvedTarget target = resolveTarget(request.targetType().get(), request.targetId().get());
-            payment.setTargetType(request.targetType().get());
-            payment.setTargetId(request.targetId().get());
-            payment.setTargetReference(target.reference());
-            payment.setAmount(target.amount());
-        }
-
-        if (request.paymentMethodId().isPresent()) {
-            PaymentMethod method = paymentMethodService.findActive(request.paymentMethodId().get());
-            payment.setPaymentMethodId(method.getId());
-            payment.setPaymentMethodName(method.getName());
-        }
-
-        request.paymentChannel().ifPresent(payment::setPaymentChannel);
-        request.paymentDetail().ifPresent(payment::setPaymentDetail);
-        request.externalId().ifPresent(payment::setExternalId);
-        request.invoiceUrl().ifPresent(payment::setInvoiceUrl);
-
-        payment.setUpdatedAt(LocalDateTime.now());
-        return toResponse(paymentRepository.save(payment));
-    }
-
-    @Transactional
-    public void delete(Long id) {
-        Payment payment = findActive(id);
-        payment.setDeletedAt(LocalDateTime.now());
-        paymentRepository.save(payment);
-    }
-
-    @Transactional
-    public PaymentResponse markPaid(Long id) {
-        Payment payment = findActive(id);
-        paymentStatusFlowPolicy.validateFlow(payment.getStatus(), PaymentStatus.PAID);
-
-        // Idempotent: only perform the order side effect once.
-        if (payment.getStatus() != PaymentStatus.PAID) {
-            applyOrderSideEffect(payment);
-        }
-
-        LocalDateTime now = LocalDateTime.now();
-        payment.setPaidAt(now);
-        payment.setUpdatedAt(now);
-        payment.setStatus(PaymentStatus.PAID);
-
-        return toResponse(paymentRepository.save(payment));
     }
 
     @Transactional
@@ -223,40 +142,41 @@ public class PaymentService {
      * Handles an asynchronous Xendit invoice webhook.
      * Idempotent: duplicate deliveries do not re-run the order side effect.
      */
-    @Transactional
-    public void handleXenditWebhook(XenditWebhookPayload payload, String raw) {
-        if (payload == null || payload.externalId() == null) {
-            throw new BadRequestException("Invalid Xendit webhook payload");
-        }
+    // @Transactional
+    // public void handleXenditWebhook(XenditWebhookPayload payload, String raw) {
+    //     if (payload == null || payload.externalId() == null) {
+    //         throw new BadRequestException("Invalid Xendit webhook payload");
+    //     }
+    //
+    //     Payment payment = paymentRepository.findByExternalId(payload.externalId()).orElse(null);
+    //     if (payment == null) {
+    //         log.warn("Received Xendit webhook for unknown external_id: {}", payload.externalId());
+    //         return; // acknowledge to stop retries; no side effect
+    //     }
+    //
+    //     payment.setRawWebhook(raw);
+    //
+    //     if (!"PAID".equals(payload.status()) && !"EXPIRED".equals(payload.status())) {
+    //         paymentRepository.save(payment);
+    //         return;
+    //     }
+    //
+    //     PaymentStatus target = "PAID".equals(payload.status())
+    //         ? PaymentStatus.PAID
+    //         : PaymentStatus.EXPIRED;
+    //
+    //     paymentStatusFlowPolicy.validateFlow(payment.getStatus(), target);
+    //
+    //     if (target == PaymentStatus.PAID && payment.getStatus() != PaymentStatus.PAID) {
+    //         applyOrderSideEffect(payment);
+    //         payment.setPaidAt(LocalDateTime.now());
+    //     }
+    //
+    //     payment.setStatus(target);
+    //     payment.setUpdatedAt(LocalDateTime.now());
+    //     paymentRepository.save(payment);
+    // }
 
-        Payment payment = paymentRepository.findByExternalId(payload.externalId()).orElse(null);
-        if (payment == null) {
-            log.warn("Received Xendit webhook for unknown external_id: {}", payload.externalId());
-            return; // acknowledge to stop retries; no side effect
-        }
-
-        payment.setRawWebhook(raw);
-
-        if (!"PAID".equals(payload.status()) && !"EXPIRED".equals(payload.status())) {
-            paymentRepository.save(payment);
-            return;
-        }
-
-        PaymentStatus target = "PAID".equals(payload.status())
-            ? PaymentStatus.PAID
-            : PaymentStatus.EXPIRED;
-
-        paymentStatusFlowPolicy.validateFlow(payment.getStatus(), target);
-
-        if (target == PaymentStatus.PAID && payment.getStatus() != PaymentStatus.PAID) {
-            applyOrderSideEffect(payment);
-            payment.setPaidAt(LocalDateTime.now());
-        }
-
-        payment.setStatus(target);
-        payment.setUpdatedAt(LocalDateTime.now());
-        paymentRepository.save(payment);
-    }
 
     private PaymentResponse transition(Long id, PaymentStatus target) {
         Payment payment = findActive(id);
@@ -264,18 +184,6 @@ public class PaymentService {
         payment.setStatus(target);
         payment.setUpdatedAt(LocalDateTime.now());
         return toResponse(paymentRepository.save(payment));
-    }
-
-    private void applyOrderSideEffect(Payment payment) {
-        switch (payment.getTargetType()) {
-            case ORDER -> orderApi.markPaid(payment.getTargetId());
-            case DINE_IN -> {
-                List<Long> orderIds = diningApi.getOrderIds(payment.getTargetId());
-                if (orderIds.isEmpty())
-                    throw new BadRequestException("There is no orders on " + payment.getTargetType() + " id " + payment.getTargetId());
-                orderApi.markPaid(orderIds);
-            }
-        }
     }
 
     @Transactional
@@ -299,6 +207,7 @@ public class PaymentService {
         paymentRepository.save(payment);
     }
 
+
     private ResolvedTarget resolveTarget(PaymentTargetType type, Long targetId) {
         return switch (type) {
             case ORDER -> resolveOrder(targetId);
@@ -321,22 +230,13 @@ public class PaymentService {
             .orElseThrow(() -> new NotFoundException("Payment not found with id: " + id));
     }
 
-    private void ensureMutable(Payment payment) {
-        if (payment.getStatus() == PaymentStatus.PAID
-            || payment.getStatus() == PaymentStatus.REFUNDED
-            || payment.getStatus() == PaymentStatus.EXPIRED
-            || payment.getStatus() == PaymentStatus.FAILED) {
-            throw new BadRequestException("Cannot modify a " + payment.getStatus() + " payment");
-        }
-    }
-
     private PaymentResponse toResponse(Payment payment) {
         return new PaymentResponse(
             payment.getId(),
             payment.getTargetType(),
             payment.getTargetId(),
             payment.getTargetReference(),
-            payment.getPaymentMethodId(),
+            payment.getPaymentProvider(),
             payment.getPaymentMethodName(),
             payment.getExternalId(),
             payment.getInvoiceUrl(),
@@ -351,5 +251,67 @@ public class PaymentService {
     }
 
     private record ResolvedTarget(Integer amount, String reference) {}
+
+    // @Transactional
+    // public PaymentResponse update(Long id, PaymentPutRequest request) {
+    //     Payment payment = findActive(id);
+    //     ensureMutable(payment);
+    //
+    //     ResolvedTarget target = resolveTarget(request.targetType(), request.targetId());
+    //     PaymentMethod method = paymentMethodService.findActive(request.paymentMethodId());
+    //
+    //     payment.setTargetType(request.targetType());
+    //     payment.setTargetId(request.targetId());
+    //     payment.setTargetReference(target.reference());
+    //     payment.setPaymentMethodId(method.getId());
+    //     payment.setPaymentMethodName(method.getName());
+    //     payment.setAmount(target.amount());
+    //     payment.setPaymentChannel(request.paymentChannel());
+    //     payment.setPaymentDetail(request.paymentDetail());
+    //     payment.setExternalId(request.externalId());
+    //     payment.setInvoiceUrl(request.invoiceUrl());
+    //     payment.setUpdatedAt(LocalDateTime.now());
+    //
+    //     return toResponse(paymentRepository.save(payment));
+    // }
+    //
+    // @Transactional
+    // public PaymentResponse patch(Long id, PaymentPatchRequest request) {
+    //     Payment payment = findActive(id);
+    //     if (request.isEmptyPatch()) throw new BadRequestException("PATCH can't be empty");
+    //     ensureMutable(payment);
+    //
+    //     if (request.targetType().isPresent() || request.targetId().isPresent()) {
+    //         if (request.targetType().isEmpty() || request.targetId().isEmpty()) {
+    //             throw new BadRequestException("targetType and targetId must be provided together");
+    //         }
+    //         ResolvedTarget target = resolveTarget(request.targetType().get(), request.targetId().get());
+    //         payment.setTargetType(request.targetType().get());
+    //         payment.setTargetId(request.targetId().get());
+    //         payment.setTargetReference(target.reference());
+    //         payment.setAmount(target.amount());
+    //     }
+    //
+    //     if (request.paymentMethodId().isPresent()) {
+    //         PaymentMethod method = paymentMethodService.findActive(request.paymentMethodId().get());
+    //         payment.setPaymentMethodId(method.getId());
+    //         payment.setPaymentMethodName(method.getName());
+    //     }
+    //
+    //     request.paymentChannel().ifPresent(payment::setPaymentChannel);
+    //     request.paymentDetail().ifPresent(payment::setPaymentDetail);
+    //     request.externalId().ifPresent(payment::setExternalId);
+    //     request.invoiceUrl().ifPresent(payment::setInvoiceUrl);
+    //
+    //     payment.setUpdatedAt(LocalDateTime.now());
+    //     return toResponse(paymentRepository.save(payment));
+    // }
+    //
+    // @Transactional
+    // public void delete(Long id) {
+    //     Payment payment = findActive(id);
+    //     payment.setDeletedAt(LocalDateTime.now());
+    //     paymentRepository.save(payment);
+    // }
 
 }

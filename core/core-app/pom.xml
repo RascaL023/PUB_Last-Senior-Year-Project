@@ -30,7 +30,6 @@
             <groupId>id.my.rascal</groupId>
             <artifactId>order-core</artifactId>
         </dependency>
-
         <dependency>
             <groupId>id.my.rascal</groupId>
             <artifactId>order-api</artifactId>
@@ -39,6 +38,14 @@
         <dependency>
             <groupId>id.my.rascal</groupId>
             <artifactId>payment-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>id.my.rascal</groupId>
+            <artifactId>payment-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>id.my.rascal</groupId>
+            <artifactId>payment-xendit</artifactId>
         </dependency>
 
         <dependency>

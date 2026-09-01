@@ -62,12 +62,9 @@ Content-Type: application/json
 
 {
     "targetType": "ORDER",
-    "targetId": 2,
-    "paymentMethodId": 1,
-    "paymentChannel": null,
-    "paymentDetail": "0000123456789",
-    "externalId": null,
-    "invoiceUrl": null
+    "targetId": 1,
+    "paymentProvider": "INTERNAL",
+    "paymentDetail": "0000123456789"
 }
 
 ### Mark as paid

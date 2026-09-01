@@ -23,6 +23,7 @@ import id.my.rascal.common.ApiResponse;
 import id.my.rascal.common.exception.BadRequestException;
 import id.my.rascal.common.template.SuccessPagedTemplate;
 import id.my.rascal.common.template.SuccessTemplate;
+import id.my.rascal.payment.internal.model.enums.PaymentProvider;
 import id.my.rascal.payment.internal.model.enums.PaymentStatus;
 import id.my.rascal.payment.internal.model.enums.PaymentTargetType;
 import id.my.rascal.payment.internal.model.request.PaymentPatchRequest;
@@ -54,11 +55,11 @@ public class PaymentController {
         );
     }
 
-    @PostMapping("/{id}/pay")
-    public ResponseEntity<SuccessTemplate<PaymentResponse>> pay(@PathVariable Long id) {
-        validateId(id);
-        return ApiResponse.success(HttpStatus.OK, "Payment successfully marked as paid", paymentService.markPaid(id));
-    }
+    // @PostMapping("/{id}/pay")
+    // public ResponseEntity<SuccessTemplate<PaymentResponse>> pay(@PathVariable Long id) {
+    //     validateId(id);
+    //     return ApiResponse.success(HttpStatus.OK, "Payment successfully marked as paid", paymentService.markPaid(id));
+    // }
 
     @PostMapping("/{id}/expire")
     public ResponseEntity<SuccessTemplate<PaymentResponse>> expire(@PathVariable Long id) {
@@ -78,13 +79,14 @@ public class PaymentController {
         return ApiResponse.success(HttpStatus.OK, "Payment successfully marked as refunded", paymentService.markRefunded(id));
     }
 
+    // TODO: resolve payment provider enum
     @GetMapping
     public ResponseEntity<SuccessPagedTemplate<List<PaymentResponse>>> getAll(
         @RequestParam(required = false) String keyword,
         @RequestParam(required = false) String targetType,
         @RequestParam(required = false) Long targetId,
         @RequestParam(required = false) String status,
-        @RequestParam(required = false) Long paymentMethodId,
+        @RequestParam(required = false) String paymentProvider,
         @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
         Page<PaymentResponse> page = paymentService.search(
@@ -92,7 +94,7 @@ public class PaymentController {
             PaymentTargetType.fromString(targetType), 
             targetId, 
             PaymentStatus.fromString(status), 
-            paymentMethodId, 
+            PaymentProvider.valueOf(paymentProvider.toUpperCase()), 
             pageable
         );
 
@@ -117,38 +119,38 @@ public class PaymentController {
         );
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<SuccessTemplate<PaymentResponse>> update(
-        @PathVariable("id") Long id,
-        @Valid @RequestBody PaymentPutRequest request
-    ) {
-        return ApiResponse.success(
-            HttpStatus.OK,
-            DEFAULT_UPDATE_SUCCESS_MESSAGE,
-            paymentService.update(id, request)
-        );
-    }
+    // @PutMapping("/{id}")
+    // public ResponseEntity<SuccessTemplate<PaymentResponse>> update(
+    //     @PathVariable("id") Long id,
+    //     @Valid @RequestBody PaymentPutRequest request
+    // ) {
+    //     return ApiResponse.success(
+    //         HttpStatus.OK,
+    //         DEFAULT_UPDATE_SUCCESS_MESSAGE,
+    //         paymentService.update(id, request)
+    //     );
+    // }
 
-    @PatchMapping("/{id}")
-    public ResponseEntity<SuccessTemplate<PaymentResponse>> patch(
-        @PathVariable("id") Long id,
-        @RequestBody PaymentPatchRequest request
-    ) {
-        if (request.isEmptyPatch())
-            throw new BadRequestException("PATCH can't be empty");
+    // @PatchMapping("/{id}")
+    // public ResponseEntity<SuccessTemplate<PaymentResponse>> patch(
+    //     @PathVariable("id") Long id,
+    //     @RequestBody PaymentPatchRequest request
+    // ) {
+    //     if (request.isEmptyPatch())
+    //         throw new BadRequestException("PATCH can't be empty");
+    //
+    //     return ApiResponse.success(
+    //         HttpStatus.OK,
+    //         DEFAULT_UPDATE_SUCCESS_MESSAGE,
+    //         paymentService.patch(id, request)
+    //     );
+    // }
 
-        return ApiResponse.success(
-            HttpStatus.OK,
-            DEFAULT_UPDATE_SUCCESS_MESSAGE,
-            paymentService.patch(id, request)
-        );
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable("id") Long id) {
-        paymentService.delete(id);
-        return ResponseEntity.noContent().build();
-    }
+    // @DeleteMapping("/{id}")
+    // public ResponseEntity<Void> delete(@PathVariable("id") Long id) {
+    //     paymentService.delete(id);
+    //     return ResponseEntity.noContent().build();
+    // }
 
     private void validateId(Long id) {
         if (id < 0) throw new BadRequestException("Invalid payment ID");

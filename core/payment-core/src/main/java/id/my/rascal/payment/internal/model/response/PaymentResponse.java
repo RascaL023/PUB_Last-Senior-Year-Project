@@ -2,6 +2,7 @@ package id.my.rascal.payment.internal.model.response;
 
 import java.time.LocalDateTime;
 
+import id.my.rascal.payment.internal.model.enums.PaymentProvider;
 import id.my.rascal.payment.internal.model.enums.PaymentStatus;
 import id.my.rascal.payment.internal.model.enums.PaymentTargetType;
 
@@ -10,7 +11,7 @@ public record PaymentResponse(
     PaymentTargetType targetType,
     Long targetId,
     String targetReference,
-    Long paymentMethodId,
+    PaymentProvider paymentProvider,
     String paymentMethodName,
     String externalId,
     String invoiceUrl,
