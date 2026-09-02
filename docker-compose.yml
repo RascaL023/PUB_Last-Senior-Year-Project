@@ -1,0 +1,80 @@
+# ============================================================
+# Docker Compose — Rascal Backend (Modular Monolith)
+# ============================================================
+# Architecture:
+#   config/docker.env    → SSOT untuk SEMUA config (app + infra)
+#   docker-compose.yml   → Service definitions (Docker-internal only)
+#
+# ⚠️ TIDAK PAKAI .ENV — Semua variabel dari config/docker.env
+#
+# Usage:
+#   docker compose --env-file config/docker.env up -d
+#   docker compose --env-file config/docker.env build
+#   docker compose down
+# ============================================================
+# host:docker
+
+services:
+  # ── PostgreSQL ──────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: cafe-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DATABASE_USERNAME}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+      POSTGRES_DB: ${DATABASE_NAMES_CORE_BACKEND}
+    ports:
+      - "${DB_EXTERNAL_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USERNAME} -d ${DATABASE_NAMES_CORE_BACKEND}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ── Backend (Spring Boot) ───────────────────────────────
+  # Config source: config/docker.env (via APP_ENV=docker)
+  backend:
+    build:
+      context: ./core
+      dockerfile: Dockerfile
+      args:
+        GITHUB_USER: ${GITHUB_USER:-RascaL023}
+        GITHUB_TOKEN: ${GITHUB_TOKEN}
+    container_name: cafe-backend
+    restart: unless-stopped
+    ports:
+      - "${BACKEND_PORT:-8081}:8081"
+    environment:
+      APP_ENV: docker
+    volumes:
+      - maven_cache:/root/.m2
+      - ./config:/app/config
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f 'java.*app.jar' || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 45s
+
+  # ── Nginx Reverse Proxy ─────────────────────────────────
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: cafe-nginx
+    restart: unless-stopped
+    ports:
+      - "${NGINX_PORT:-9000}:9000"
+    volumes:
+      - ./reverse-proxy/nginx/nginx.docker.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  maven_cache:

@@ -1,25 +1,28 @@
+### MY ENVs ###
 .myenv
-
 private
-config/private-config.yml
 reverse-proxy/nginx/*.conf.rendered
 temp
 **tmp**
-.env*
-env*
 **.bak
 run
 http-client.env.json
 
-### Docker - CI/CD?
-redis_data
-docker-compose.yml
-CI-CD.md
-
-### FUTURE PLAN ###
+### Personal Documentations ###
+DOCKER-COMMANDS.md
+DOCKER-VOLUMES.md
+DOCKER.md
+GITHUB-PACKAGES-SETUP.md
 CACHE.md
 ORDER-ROADMAP.md
 BACKEND-COMPLIANCE.md
+
+### Docker - CI/CD ###
+redis_data
+*.env
+.env.*
+!.env.example
+CI-CD.md
 
 ### JAVA ###
 HELP.md

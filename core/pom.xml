@@ -24,6 +24,15 @@
         <jjwt.version>0.12.6</jjwt.version>
     </properties>
 
+    <!-- GitHub Packages repository for custom libraries -->
+    <repositories>
+        <repository>
+            <id>github</id>
+            <name>GitHub Packages</name>
+            <url>https://maven.pkg.github.com/RascaL023/Solo_Custom-Security-Filter</url>
+        </repository>
+    </repositories>
+
     <modules>
         <module>common</module>
         <module>auth-api</module>

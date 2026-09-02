@@ -1,0 +1,43 @@
+# Build output
+**/target/
+*.class
+*.jar
+*.war
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+.project
+.classpath
+.settings/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Maven
+.mvn/wrapper/maven-wrapper.jar
+
+# Git
+.git/
+.gitignore
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker (avoid recursion)
+Dockerfile
+docker-compose*.yml
+.dockerignore
+
+# Logs
+*.log
+**/logs/
+
+# Temp
+**/tmp/
+**/temp/
+**/run/

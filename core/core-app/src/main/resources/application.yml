@@ -2,17 +2,16 @@ spring:
   application:
     name: core-backend
   profiles:
-    active: ${database.provider:postgres}, ${seed.active:none}
-    # active: postgres, dev-seed
-    default: ${database.provider:postgres}, dev-formal
+    active: ${DATABASE_PROVIDER:postgres}, ${SEED_ACTIVE:none}
+    default: ${DATABASE_PROVIDER:postgres}, dev-seed
   config:
     import:
-      - optional:file:./config/public-config.yml
-      - optional:file:./config/private-config.yml
-      - optional:file:../config/public-config.yml
-      - optional:file:../config/private-config.yml
-      - optional:file:../../config/public-config.yml
-      - optional:file:../../config/private-config.yml
+      # ── Environment config (selected by APP_ENV) ──
+      # Native: APP_ENV=native → loads native.env
+      # Docker: APP_ENV=docker → loads docker.env
+      - optional:file:./config/${APP_ENV:native}.env[.properties]
+      - optional:file:../config/${APP_ENV:native}.env[.properties]
+      - optional:file:../../config/${APP_ENV:native}.env[.properties]
   jpa:
     hibernate:
       ddl-auto: update
@@ -29,19 +28,19 @@ spring:
     exclude: org.springframework.boot.security.autoconfigure.UserDetailsServiceAutoConfiguration
 
 server:
-  address: ${services.core.host:localhost}
-  port: ${services.core.port:8081}
+  address: ${SERVICES_CORE_HOST:localhost}
+  port: ${SERVICES_CORE_PORT:8081}
 
 app:
-  dev-base-url: ${app.dev-base-url:https://dev.rascal.my.id}
+  dev-base-url: ${APP_DEV_BASE_URL:https://dev.rascal.my.id}
 
 imagekit:
-  url-endpoint: ${external.image_service.imagekit.url-endpoint:""}
-  public-key: ${external.image_service.imagekit.public-key:""}
-  private-key: ${external.image_service.imagekit.private-key:""}
+  url-endpoint: ${IMAGEKIT_URL_ENDPOINT:""}
+  public-key: ${IMAGEKIT_PUBLIC_KEY:""}
+  private-key: ${IMAGEKIT_PRIVATE_KEY:""}
 
 xendit:
-  base-url: ${external.xendit.base-url:https://api.xendit.co}
-  private-key: ${external.xendit.private-key:""}
-  public-key: ${external.xendit.public-key:""}
-  callback-token: ${external.xendit.callback-token:""}
+  base-url: ${XENDIT_BASE_URL:https://api.xendit.co}
+  private-key: ${XENDIT_PRIVATE_KEY:""}
+  public-key: ${XENDIT_PUBLIC_KEY:""}
+  callback-token: ${XENDIT_CALLBACK_TOKEN:""}

@@ -7,8 +7,8 @@ RED=$'\033[0;31m'; GREEN=$'\033[0;32m'; YELLOW=$'\033[1;33m'; BOLD=$'\033[1m'; R
 die() { printf '%sERROR: %s%s\n' "$RED" "$*" "$RESET" >&2; exit 1; }
 
 command -v nginx    >/dev/null 2>&1 || die "nginx tidak ditemukan di PATH"
-command -v envsubst >/dev/null 2>&1 || die "envsubst tidak ditemukan (butuh GNU gettext / nixpkgs#envsubst)"
-command -v yq       >/dev/null 2>&1 || die "yq tidak ditemukan (butuh nixpkgs#yq)"
+command -v envsubst >/dev/null 2>&1 || die "envsubst tidak ditemukan (butuh GNU gettext / envsubst)"
+command -v yq       >/dev/null 2>&1 || die "yq tidak ditemukan (butuh yq)"
 
 conf_for() {
     case "$1" in
