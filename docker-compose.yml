@@ -50,7 +50,6 @@ services:
     environment:
       APP_ENV: docker
     volumes:
-      - maven_cache:/root/.m2
       - ./config:/app/config
     depends_on:
       postgres:
@@ -77,4 +76,3 @@ services:
 
 volumes:
   postgres_data:
-  maven_cache:
