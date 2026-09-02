@@ -24,9 +24,7 @@ public enum PaymentStatus {
     }
 
     @JsonValue
-    public String getTargetType() {
-        return status;
-    }
+    public String getStatus() { return status; }
 
     @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
     public static PaymentStatus fromString(String value) {

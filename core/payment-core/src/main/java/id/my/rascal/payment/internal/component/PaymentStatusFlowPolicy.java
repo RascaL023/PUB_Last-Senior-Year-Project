@@ -1,11 +1,11 @@
-package id.my.rascal.payment.internal.service;
+package id.my.rascal.payment.internal.component;
 
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 
 import id.my.rascal.common.exception.BadRequestException;
 import id.my.rascal.payment.internal.model.enums.PaymentStatus;
 
-@Service
+@Component
 public class PaymentStatusFlowPolicy {
 
     public void validateFlow(PaymentStatus oldStatus, PaymentStatus newStatus) {

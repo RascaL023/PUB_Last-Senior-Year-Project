@@ -9,12 +9,12 @@ import org.springframework.stereotype.Component;
 import id.my.rascal.common.exception.BadRequestException;
 import id.my.rascal.payment.api.PaymentApi;
 import id.my.rascal.payment.api.PaymentApiWebhookRequest;
+import id.my.rascal.payment.internal.component.PaymentEffect;
+import id.my.rascal.payment.internal.component.PaymentStatusFlowPolicy;
 import id.my.rascal.payment.internal.entity.Payment;
 import id.my.rascal.payment.internal.model.enums.PaymentStatus;
 import id.my.rascal.payment.internal.model.mapper.PaymentMapper;
 import id.my.rascal.payment.internal.repository.PaymentRepository;
-import id.my.rascal.payment.internal.service.PaymentEffect;
-import id.my.rascal.payment.internal.service.PaymentStatusFlowPolicy;
 
 @Component
 public class PaymentApiImpl implements PaymentApi {

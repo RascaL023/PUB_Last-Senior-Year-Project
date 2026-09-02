@@ -20,8 +20,10 @@ import id.my.rascal.order.api.OrderApiResponse;
 import id.my.rascal.payment.api.PaymentProcessor;
 import id.my.rascal.payment.api.PaymentProcessorRequest;
 import id.my.rascal.payment.api.PaymentProcessorResponse;
-import id.my.rascal.payment.internal.config.PaymentProcessorResolver;
 import id.my.rascal.payment.internal.entity.Payment;
+import id.my.rascal.payment.internal.component.PaymentEffect;
+import id.my.rascal.payment.internal.component.PaymentProcessorResolver;
+import id.my.rascal.payment.internal.component.PaymentStatusFlowPolicy;
 import id.my.rascal.payment.internal.model.enums.PaymentProvider;
 import id.my.rascal.payment.internal.model.enums.PaymentStatus;
 import id.my.rascal.payment.internal.model.enums.PaymentTargetType;
@@ -138,45 +140,6 @@ public class PaymentService {
         return toResponse(paymentRepository.save(payment));
     }
 
-    /**
-     * Handles an asynchronous Xendit invoice webhook.
-     * Idempotent: duplicate deliveries do not re-run the order side effect.
-     */
-    // @Transactional
-    // public void handleXenditWebhook(XenditWebhookPayload payload, String raw) {
-    //     if (payload == null || payload.externalId() == null) {
-    //         throw new BadRequestException("Invalid Xendit webhook payload");
-    //     }
-    //
-    //     Payment payment = paymentRepository.findByExternalId(payload.externalId()).orElse(null);
-    //     if (payment == null) {
-    //         log.warn("Received Xendit webhook for unknown external_id: {}", payload.externalId());
-    //         return; // acknowledge to stop retries; no side effect
-    //     }
-    //
-    //     payment.setRawWebhook(raw);
-    //
-    //     if (!"PAID".equals(payload.status()) && !"EXPIRED".equals(payload.status())) {
-    //         paymentRepository.save(payment);
-    //         return;
-    //     }
-    //
-    //     PaymentStatus target = "PAID".equals(payload.status())
-    //         ? PaymentStatus.PAID
-    //         : PaymentStatus.EXPIRED;
-    //
-    //     paymentStatusFlowPolicy.validateFlow(payment.getStatus(), target);
-    //
-    //     if (target == PaymentStatus.PAID && payment.getStatus() != PaymentStatus.PAID) {
-    //         applyOrderSideEffect(payment);
-    //         payment.setPaidAt(LocalDateTime.now());
-    //     }
-    //
-    //     payment.setStatus(target);
-    //     payment.setUpdatedAt(LocalDateTime.now());
-    //     paymentRepository.save(payment);
-    // }
-
 
     private PaymentResponse transition(Long id, PaymentStatus target) {
         Payment payment = findActive(id);
@@ -185,28 +148,6 @@ public class PaymentService {
         payment.setUpdatedAt(LocalDateTime.now());
         return toResponse(paymentRepository.save(payment));
     }
-
-    @Transactional
-    public Payment persistPending(Payment payment) {
-        return paymentRepository.save(payment);
-    }
-
-    @Transactional
-    public Payment attachInvoice(Long id, String invoiceUrl) {
-        Payment payment = findActive(id);
-        payment.setInvoiceUrl(invoiceUrl);
-        payment.setUpdatedAt(LocalDateTime.now());
-        return paymentRepository.save(payment);
-    }
-
-    @Transactional
-    public void markInitFailed(Long id) {
-        Payment payment = findActive(id);
-        payment.setStatus(PaymentStatus.FAILED);
-        payment.setUpdatedAt(LocalDateTime.now());
-        paymentRepository.save(payment);
-    }
-
 
     private ResolvedTarget resolveTarget(PaymentTargetType type, Long targetId) {
         return switch (type) {
