@@ -79,7 +79,6 @@ public class PaymentController {
         return ApiResponse.success(HttpStatus.OK, "Payment successfully marked as refunded", paymentService.markRefunded(id));
     }
 
-    // TODO: resolve payment provider enum
     @GetMapping
     public ResponseEntity<SuccessPagedTemplate<List<PaymentResponse>>> getAll(
         @RequestParam(required = false) String keyword,
@@ -94,7 +93,7 @@ public class PaymentController {
             PaymentTargetType.fromString(targetType), 
             targetId, 
             PaymentStatus.fromString(status), 
-            PaymentProvider.valueOf(paymentProvider.toUpperCase()), 
+            PaymentProvider.fromString(paymentProvider), 
             pageable
         );
 

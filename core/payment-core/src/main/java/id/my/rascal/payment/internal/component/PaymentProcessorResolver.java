@@ -1,4 +1,4 @@
-package id.my.rascal.payment.internal.config;
+package id.my.rascal.payment.internal.component;
 
 import java.util.List;
 import java.util.Map;

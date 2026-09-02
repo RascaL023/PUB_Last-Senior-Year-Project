@@ -1,9 +1,9 @@
-package id.my.rascal.payment.internal.service;
+package id.my.rascal.payment.internal.component;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 
 import id.my.rascal.common.exception.BadRequestException;
 import id.my.rascal.dining.api.DiningApi;
@@ -11,7 +11,7 @@ import id.my.rascal.order.api.OrderApi;
 import id.my.rascal.payment.internal.entity.Payment;
 import id.my.rascal.payment.internal.model.enums.PaymentStatus;
 
-@Service
+@Component
 public class PaymentEffect {
 
     private final OrderApi orderApi;
@@ -30,7 +30,9 @@ public class PaymentEffect {
         if (payment.getStatus() != expectedStatus) 
             return;
 
-        payment.setPaidAt(LocalDateTime.now());
+        LocalDateTime now = LocalDateTime.now();
+        payment.setPaidAt(now);
+        payment.setUpdatedAt(now);
         applyOrderSideEffect(payment);
     }
     

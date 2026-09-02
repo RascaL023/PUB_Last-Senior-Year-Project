@@ -19,6 +19,7 @@ import id.my.rascal.xendit.internal.model.response.XenditInvoiceResponse;
 @Component
 public class XenditClient {
 
+    private static final String INVOIICE_ENDPOINT = "/v2/invoices";
     private static final Logger log = LoggerFactory.getLogger(XenditClient.class);
     private final RestClient client;
 
@@ -30,27 +31,26 @@ public class XenditClient {
     public XenditInvoiceResponse createInvoice(XenditInvoiceRequest request) {
         try {
             return client.post()
-                    .uri("/v2/invoices")
-                    .accept(MediaType.APPLICATION_JSON)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(request)
-                    .retrieve()
-                    .body(XenditInvoiceResponse.class);
+                .uri(INVOIICE_ENDPOINT)
+                .accept(MediaType.APPLICATION_JSON)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(request)
+                .retrieve()
+                .body(XenditInvoiceResponse.class);
         } catch (RestClientResponseException ex) {
             String errorBody = ex.getResponseBodyAsString();
             log.error("Xendit invoice creation failed: status={}, body={}", ex.getStatusCode(), errorBody);
-            throw new XenditClientException(
-                    "Xendit invoice creation failed with status " + ex.getStatusCode(), ex);
+            throw new XenditClientException("Xendit invoice creation failed with status " + ex.getStatusCode(), ex);
         }
     }
 
     private static RestClient buildClient(XenditProperties props) {
         String basicAuth = "Basic " + Base64.getEncoder()
-                .encodeToString((props.privateKey() + ":").getBytes(StandardCharsets.UTF_8));
+            .encodeToString((props.privateKey() + ":").getBytes(StandardCharsets.UTF_8));
         return RestClient.builder()
-                .baseUrl(props.baseUrl())
-                .defaultHeader(HttpHeaders.AUTHORIZATION, basicAuth)
-                .build();
+            .baseUrl(props.baseUrl())
+            .defaultHeader(HttpHeaders.AUTHORIZATION, basicAuth)
+            .build();
     }
 
 }
