@@ -2,8 +2,8 @@ spring:
   application:
     name: core-backend
   profiles:
-    active: ${DATABASE_PROVIDER:postgres}, ${SEED_ACTIVE:none}
-    default: ${DATABASE_PROVIDER:postgres}, dev-seed
+    active: ${SPRING_PROFILES}
+    default: postgres, dev-seed
   config:
     import:
       # ── Environment config (selected by APP_ENV) ──
@@ -14,9 +14,9 @@ spring:
       - optional:file:../../config/${APP_ENV:native}.env[.properties]
   jpa:
     hibernate:
-      ddl-auto: update
-    open-in-view: false
-    show-sql: true
+      ddl-auto: ${JPA_DDL_AUTO:update}
+    open-in-view: ${JPA_OSIV:false}
+    show-sql: ${JPA_SHOW_SQL:true}
     defer-datasource-initialization: true
     properties:
       hibernate:
@@ -33,6 +33,14 @@ server:
 
 app:
   dev-base-url: ${APP_DEV_BASE_URL:https://dev.rascal.my.id}
+
+id:
+  rascal:
+    filter:
+      jwt-bypass-uris:
+        - /api/v1/auths/refresh
+        - /api/v1/payments/webhooks/xendit
+logging.level.id.rascal.filter: ${SECURITY_FILTER_LOG_LEVEL:WARN}
 
 imagekit:
   url-endpoint: ${IMAGEKIT_URL_ENDPOINT:""}

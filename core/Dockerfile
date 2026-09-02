@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:1
+
 # ============================================================
 # Stage 1 — Build
 # ============================================================
@@ -9,8 +11,9 @@ ARG GITHUB_TOKEN
 
 WORKDIR /app
 
-RUN mkdir -p /root/.m2 && \
-    printf '<settings>\n\
+# Maven settings for GitHub Packages
+# Stored outside /root/.m2 because /root/.m2 is used as BuildKit cache
+RUN printf '<settings>\n\
   <servers>\n\
     <server>\n\
       <id>github</id>\n\
@@ -18,9 +21,9 @@ RUN mkdir -p /root/.m2 && \
       <password>%s</password>\n\
     </server>\n\
   </servers>\n\
-</settings>\n' "$GITHUB_USER" "$GITHUB_TOKEN" > /root/.m2/settings.xml
+</settings>\n' "$GITHUB_USER" "$GITHUB_TOKEN" > /root/maven-settings.xml
 
-# --- Layer 1: Copy only POM files  ---
+# --- Layer 1: Copy POM files ---
 # Parent POM
 COPY pom.xml .
 
@@ -39,13 +42,18 @@ COPY dining-api/pom.xml       dining-api/pom.xml
 COPY dining-core/pom.xml      dining-core/pom.xml
 COPY core-app/pom.xml         core-app/pom.xml
 
-RUN mvn dependency:go-offline -B 2>/dev/null || true
+# --- Layer 2: Resolve dependencies using persistent Maven cache ---
+RUN --mount=type=cache,target=/root/.m2 \
+    mvn -s /root/maven-settings.xml dependency:go-offline -B
 
-# --- Layer 2: Copy source code & build ---
+# --- Layer 3: Copy source code & build ---
 COPY . .
-RUN mvn clean package -DskipTests -B
 
-RUN rm -f /root/.m2/settings.xml
+RUN --mount=type=cache,target=/root/.m2 \
+    mvn -s /root/maven-settings.xml clean package -DskipTests -B
+
+# Remove Maven settings containing GitHub credentials
+RUN rm -f /root/maven-settings.xml
 
 # ============================================================
 # Stage 2 — Runtime
