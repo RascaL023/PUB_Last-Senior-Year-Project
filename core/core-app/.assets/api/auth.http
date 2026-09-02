@@ -11,7 +11,7 @@ Content-Type: application/json
 ### Logout
 POST {{baseUrl}}/auths/logout
 Authorization: Bearer {{token}}
-Cookie: {{refresh-token}}
+Cookie: {{refreshToken}}
 
 ### Refresh
 POST {{baseUrl}}/auths/refresh

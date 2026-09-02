@@ -70,24 +70,30 @@ public class AuthServiceImpl implements AuthService {
         );
     }
     
-    // TODO: refresh token rotation(delete readOnly)
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public RefreshResultResponse refresh(String rawRefreshToken) {
         String hashRefreshToken = refreshTokenProvider.hash(rawRefreshToken);
         RefreshToken refreshToken = refreshTokenRepository.findByTokenHash(hashRefreshToken)
             .orElseThrow(() -> new UnauthorizedException("Token not found"));
         validateRefreshToken(refreshToken);
 
+        refreshToken.setRevokedAt(Instant.now());
+
         UserAuth userAuth = refreshToken.getUserAuth();
         UserAuthData authData = getUserAuthData(userAuth);
         String accessToken = jwtService.generateToken(authData.userId(), authData.roles(), authData.authorities());
-        
+
+        String newRawRefreshToken = refreshTokenProvider.generateToken();
+        String newHashRefreshToken = refreshTokenProvider.hash(newRawRefreshToken);
+        RefreshToken newRefreshToken = createRefreshToken(userAuth, newHashRefreshToken);
+        refreshTokenRepository.save(newRefreshToken);
+
         return new RefreshResultResponse(
             userAuth.getId(),
             userAuth.getEmail(),
             accessToken,
-            rawRefreshToken
+            newRawRefreshToken
         );
     }
 

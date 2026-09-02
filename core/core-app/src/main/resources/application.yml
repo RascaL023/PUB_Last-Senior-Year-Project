@@ -34,6 +34,13 @@ server:
 app:
   dev-base-url: ${APP_DEV_BASE_URL:https://dev.rascal.my.id}
 
+id:
+  rascal:
+    filter:
+      jwt-bypass-uris:
+        - /api/v1/auths/refresh
+        - /api/v1/payments/webhooks/xendit
+
 imagekit:
   url-endpoint: ${IMAGEKIT_URL_ENDPOINT:""}
   public-key: ${IMAGEKIT_PUBLIC_KEY:""}

@@ -22,4 +22,15 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long
     """)
     void revokeAllByUserId(@Param("userId") Long userId, @Param("now") Instant now);
 
+    @Modifying
+    @Query("""
+        delete from RefreshToken rt
+        where rt.expiresAt <= :now
+           or (
+               rt.revokedAt is not null
+               and rt.revokedAt <= :revokedBefore
+           )
+    """)
+    void deleteExpiredAndOldRevoked(@Param("now") Instant now, @Param("revokedBefore") Instant revokedBefore);
+
 }

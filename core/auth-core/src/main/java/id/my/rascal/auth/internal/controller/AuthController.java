@@ -80,11 +80,11 @@ public class AuthController {
             throw new UnauthorizedException("Refresh token is missing");
 
         RefreshResultResponse result = authService.refresh(rawRefreshToken);
+        ResponseCookie refreshCookie = refreshTokenCookieFactory.create(result.rawRefreshToken());
 
-        return ApiResponse.success(
-            HttpStatus.OK, 
-            Map.of("accessToken", result.accessToken())
-        );
+        return ResponseEntity.ok()
+            .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
+            .body(ApiResponse.success(HttpStatus.OK, Map.of("accessToken", result.accessToken())).getBody());
     }
 
     @PostMapping("/logout")
