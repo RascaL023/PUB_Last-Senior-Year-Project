@@ -40,6 +40,9 @@ COPY payment-api/pom.xml      payment-api/pom.xml
 COPY payment-xendit/pom.xml   payment-xendit/pom.xml
 COPY dining-api/pom.xml       dining-api/pom.xml
 COPY dining-core/pom.xml      dining-core/pom.xml
+COPY image-api/pom.xml        image-api/pom.xml
+COPY image-core/pom.xml       image-core/pom.xml
+COPY image-imagekit/pom.xml   image-imagekit/pom.xml
 COPY core-app/pom.xml         core-app/pom.xml
 
 # --- Layer 2: Resolve dependencies using persistent Maven cache ---

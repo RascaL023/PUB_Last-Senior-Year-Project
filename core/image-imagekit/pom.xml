@@ -8,68 +8,35 @@
         <version>0.0.1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
-    <artifactId>menu-core</artifactId>
+    <artifactId>image-imagekit</artifactId>
     <packaging>jar</packaging>
-    
+
     <dependencies>
-        <!-- Common module for project -->
         <dependency>
             <groupId>id.my.rascal</groupId>
             <artifactId>common</artifactId>
         </dependency>
-
-        <!-- Menu API (contract antar-module) -->
-        <dependency>
-            <groupId>id.my.rascal</groupId>
-            <artifactId>menu-api</artifactId>
-        </dependency>
-
-        <!-- Image API (image for menu catalog) -->
         <dependency>
             <groupId>id.my.rascal</groupId>
             <artifactId>image-api</artifactId>
         </dependency>
-
-        <!-- Starter Web -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
-
-        <!-- Lombok -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-json</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <optional>true</optional>
         </dependency>
-
-        <!-- Validation -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-validation</artifactId>
-        </dependency>
-
-        <!-- JPA -->
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-data-jpa</artifactId>
-		</dependency>
-
-        <!-- Database Drivers -->
-        <dependency>
-            <groupId>org.postgresql</groupId>
-            <artifactId>postgresql</artifactId>
-            <scope>runtime</scope>
-        </dependency>
-        
-        <!-- Hibernate -->
-        <dependency>
-            <groupId>com.h2database</groupId>
-            <artifactId>h2</artifactId>
-            <scope>runtime</scope>
-        </dependency>
-
-        <!-- Test -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
@@ -77,4 +44,3 @@
         </dependency>
     </dependencies>
 </project>
-

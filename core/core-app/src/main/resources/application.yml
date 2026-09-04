@@ -40,12 +40,17 @@ id:
       jwt-bypass-uris:
         - /api/v1/auths/refresh
         - /api/v1/payments/webhooks/xendit
+        - /api/v1/images/webhooks/imagekit
 logging.level.id.rascal.filter: ${SECURITY_FILTER_LOG_LEVEL:WARN}
 
 imagekit:
+  base-url: ${IMAGEKIT_BASE_URL:""}
   url-endpoint: ${IMAGEKIT_URL_ENDPOINT:""}
   public-key: ${IMAGEKIT_PUBLIC_KEY:""}
   private-key: ${IMAGEKIT_PRIVATE_KEY:""}
+  webhooks:
+    endpoint: ${IMAGEKIT_WEBHOOKS_ENDPOINT:""}
+    secret: ${IMAGEKIT_WEBHOOKS_SECRET:""}
 
 xendit:
   base-url: ${XENDIT_BASE_URL:https://api.xendit.co}

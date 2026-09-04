@@ -5,7 +5,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import id.my.rascal.common.image.ImageService;
+import id.my.rascal.image.api.ImageApi;
 import id.my.rascal.menu.internal.entity.Menu;
 import id.my.rascal.menu.internal.entity.MenuCategory;
 import id.my.rascal.menu.internal.entity.ModifierOption;
@@ -21,11 +21,11 @@ import id.my.rascal.menu.internal.model.response.ModifierTypeResponse;
 public class MenuV1ApplicationService {
 
     private final MenuService menuService;
-    private final ImageService imageService;
+    private final ImageApi imageApi;
 
-    public MenuV1ApplicationService(MenuService menuService, ImageService imageService) {
+    public MenuV1ApplicationService(MenuService menuService, ImageApi imageApi) {
         this.menuService = menuService;
-        this.imageService = imageService;
+        this.imageApi = imageApi;
     }
 
     @Transactional
@@ -65,7 +65,7 @@ public class MenuV1ApplicationService {
             menu.getName(),
             menu.getDescription(),
             menu.getCategories().stream().map(this::toCategoryResponse).toList(),
-            menu.getImageUrls().stream().map(imageService::resolveUrl).toList(),
+            menu.getImageUrls().stream().map(imageApi::resolveUrl).toList(),
             menu.getBasePrice(),
             menu.getIsAvailable(),
             menu.getCreatedAt(),
