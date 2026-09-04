@@ -83,4 +83,11 @@ public interface MenuRepository extends JpaRepository<Menu, Long> {
     """)
     List<Menu> findByCategoryId(@Param("id") Long id);
 
+    @Query("""
+        select distinct m from Menu m
+        join m.imageUrls iu
+        where iu = :imageUrl
+    """)
+    List<Menu> findByImageUrl(@Param("imageUrl") String imageUrl);
+
 }

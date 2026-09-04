@@ -35,6 +35,9 @@
 
     <modules>
         <module>common</module>
+        <module>image-api</module>
+        <module>image-core</module>
+        <module>image-imagekit</module>
         <module>auth-api</module>
         <module>auth-core</module>
         <module>menu-api</module>
@@ -54,6 +57,22 @@
             <dependency>
                 <groupId>id.my.rascal</groupId>
                 <artifactId>common</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>id.my.rascal</groupId>
+                <artifactId>image-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>id.my.rascal</groupId>
+                <artifactId>image-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>id.my.rascal</groupId>
+                <artifactId>image-imagekit</artifactId>
                 <version>${project.version}</version>
             </dependency>
 

@@ -1,5 +1,7 @@
 package id.my.rascal.payment.internal.config;
 
+import java.security.SecureRandom;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -12,5 +14,10 @@ public class ModuleConfig {
     public ObjectMapper objectMapper() {
         return new ObjectMapper();
     }
-    
+
+    @Bean
+    public SecureRandom secureRandom() {
+        return new SecureRandom();
+    }
+
 }

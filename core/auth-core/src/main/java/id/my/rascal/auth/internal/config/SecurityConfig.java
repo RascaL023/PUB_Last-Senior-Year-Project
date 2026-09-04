@@ -53,7 +53,8 @@ public class SecurityConfig {
                 FilterChain filterChain
             ) throws ServletException, IOException {
                 String uri = request.getRequestURI();
-                if ("/api/v1/auths/refresh".equals(uri) || "/api/v1/payments/webhooks/xendit".equals(uri)) {
+                System.out.println("Received request with uri: " + uri);
+                if ("/api/v1/auths/refresh".equals(uri) || "/api/v1/payments/webhooks/xendit".equals(uri) || "/api/v1/images/imagekit/webhooks".equals(uri)) {
                     filterChain.doFilter(request, response);
                     return;
                 }
@@ -71,7 +72,8 @@ public class SecurityConfig {
                 .requestMatchers(
                     "/api/v1/auths/login", 
                     "/api/v1/auths/refresh",
-                    "/api/v1/payments/webhooks/xendit"
+                    "/api/v1/payments/webhooks/xendit",
+                    "/api/v1/images/imagekit/webhooks"
                 ).permitAll()
                 .anyRequest().authenticated()
                 // .anyRequest().permitAll()
