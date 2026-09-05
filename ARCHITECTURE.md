@@ -12,48 +12,45 @@ independen dan siap di-extract menjadi microservice kapan saja.
 
 ```
 backend/
-├── pom.xml                  ← Parent POM (extends spring-boot-starter-parent)
-│                               Mengelola versi & daftar module
+├── core/pom.xml             ← Parent POM (extends spring-boot-starter-parent)
+│                               Mengelola versi & daftar 18 module
 │
-├── common/
-│   └── jar                  ← Shared response format, exception classes,
-│                               global exception handler, seed framework,
-│                               image service abstraction, utilities
+├── core/common/             ← Shared response format, exception classes,
+│                               global exception handler, seed framework, utilities
 │
-├── auth-api/
-│   └── jar                  ← Auth contract (AuthApi interface + DTO records)
-│                               Boleh diakses oleh module eksternal
+├── core/auth-api/           ← Auth contract (boleh diakses modul eksternal)
+├── core/auth-core/          ← Implementasi domain auth (controllers, services,
+│                               repositories, entities, seeders)
 │
-├── auth-core/
-│   └── jar                  ← Implementasi domain auth (controllers,
-│                               services, repositories, entities)
-│
-├── menu-api/
-│   └── jar                  ← Menu contract (MenuApi interface + snapshot DTOs)
+├── core/menu-api/           ← Menu contract (MenuApi interface + snapshot DTOs)
 │                               Snapshot berisi modifierTypes untuk validasi modifier
+├── core/menu-core/          ← Implementasi domain menu (CRUD, modifier, category,
+│                               admin search via Meilisearch read projection)
 │
-├── menu-core/
-│   └── jar                  ← Implementasi domain menu (CRUD, modifier, image upload)
+├── core/order-api/          ← Order contract (OrderApi interface + DTO records)
+│                               payment-core dan dining-core depend ke modul ini
+├── core/order-core/         ← Implementasi domain order (CRUD, reconcile, status flow)
 │
-├── order-api/
-│   └── jar                  ← Order contract (OrderApi interface + DTO records)
-│                               payment-core depend ke modul ini
+├── core/payment-api/        ← Payment contract (PaymentProcessor interface + DTOs)
+├── core/payment-core/       ← Implementasi domain payment (CRUD payment,
+│                               status flow, target-based referencing ke ORDER/DINE_IN)
+├── core/payment-xendit/     ← Adapter Xendit (invoice + webhook, implementasi
+│                               PaymentProcessor untuk provider XENDIT)
 │
-├── order-core/
-│   └── jar                  ← Implementasi domain order (CRUD, reconcile, status flow)
+├── core/dining-api/         ← Dining contract (DiningApi interface + DTO records)
+├── core/dining-core/        ← Implementasi domain dining (session, table, order item)
 │
-├── payment-core/
-│   └── jar                  ← Implementasi domain payment (Payment + PaymentMethod,
-│                               status flow policy, target-based referencing)
+├── core/image-api/          ← Image contract (ImageApi, ImageRegistryApi,
+│                               upload-auth & webhook payload DTOs, domain events)
+├── core/image-core/         ← Registry metadata + upload-auth controller
+├── core/image-imagekit/     ← Adapter ImageKit (upload auth, webhook verify & parse)
 │
-├── dining-api/
-│   └── jar                  ← Dining contract (DiningApi interface + DTO records)
+├── core/search-api/         ← Search abstraction (SearchApi, IndexSettings,
+│                               SearchIndexInitializer, SearchUnavailableException)
+├── core/search-meilisearch/ ← Adapter Meilisearch (RestClient, bootstrap settings
+│                               saat ApplicationReadyEvent)
 │
-├── dining-core/
-│   └── jar                  ← Implementasi domain dining (session, table, order item)
-│
-└── core-app/
-    └── jar                  ← Entry point aplikasi (@SpringBootApplication)
+└── core/core-app/           ← Entry point aplikasi (@SpringBootApplication)
                                 Hanya bootstrapping + konfigurasi global
 ```
 
@@ -62,33 +59,46 @@ backend/
 ## Dependency Graph
 
 ```
-                    ┌──────────┐
-                    │  common  │ ← spring-webmvc, jackson-annotations,
-                    └────┬─────┘   seed framework, image service, utilities
-                         │
-       ┌────────┬────────┼────────┬────────┐
-       │        │        │        │        │
-  ┌────▼───┐ ┌──▼──┐ ┌──▼───┐ ┌─▼──┐ ┌───▼────┐
-  │auth-api│ │menu │ │order │ │dining│ │(modul  │
-  └────────┘ │-api │ │-api  │ │-api │ │ lain)  │
-             └──┬──┘ └──┬───┘ └──┬──┘ └────────┘
-                │       │        │
-  ┌─────────────┤   ┌────┘   ┌───┘
-  │             │   │        │
-┌─▼──────┐ ┌───▼───▼─┐  ┌──▼────────┐
-│auth-core│ │menu-core│  │order-core │ ← common, menu-api, order-api
-└───┬─────┘ └─────────┘  └───┬───────┘
-    │                        │
-    │     ┌──────────────────┤
-    │     │                  │
-┌───▼─────▼──────┐    ┌─────▼────────┐
-│    core-app    │    │ payment-core  │ ← common, order-api
-└────────────────┘    └──────────────┘
-                          │
-                    ┌─────▼────────┐
-                    │ dining-core  │ ← common, menu-api, dining-api, order-api
-                    └──────────────┘
+                              ┌──────────┐
+                              │  common  │ ← response format, exception handler,
+                              └────┬─────┘   seed framework, utilities
+                                   │
+     ┌─────────┬─────────┬─────────┼──────────┬──────────┬──────────┐
+     │         │         │         │          │          │          │
+┌────▼───┐ ┌───▼───┐ ┌───▼───┐ ┌───▼────┐ ┌───▼────┐ ┌───▼────┐ ┌───▼──────┐
+│auth-api│ │menu-  │ │order- │ │payment-│ │dining- │ │image-  │ │search-   │
+│        │ │api    │ │api    │ │api     │ │api     │ │api     │ │api       │
+└───┬────┘ └───┬───┘ └───┬───┘ └───┬────┘ └───┬────┘ └───┬────┘ └────┬─────┘
+    │          │         │         │          │          │           │
+┌───▼────┐ ┌───▼───────────┐ ┌─────▼────┐ ┌───▼────────────────┐ ┌───▼────────┐
+│auth-   │ │menu-core      │ │order-core│ │payment-core        │ │search-     │
+│core    │ │← common,      │ │← common, │ │← common,           │ │meilisearch │
+│← common│ │  menu-api,    │ │  order-  │ │  payment-api,      │ │← search-api│
+│  auth- │ │  image-api,   │ │  api,    │ │  order-api,        │ └────────────┘
+│  api   │ │  search-api   │ │  menu-api│ │  dining-api        │
+└───┬────┘ └───────┬───────┘ └────┬─────┘ └────────┬───────────┘
+    │              │              │                │
+    │              │   ┌──────────┘   ┌────────────┴───────────┐
+    │              │   │              │                        │
+    │              │ ┌─▼──────────┐ ┌─▼────────────┐ ┌─────────▼─────────┐
+    │              │ │dining-core │ │payment-xendit│ │image-core         │
+    │              │ │← common,   │ │← common,     │ │image-imagekit     │
+    │              │ │  dining-   │ │  payment-api,│ │← common, image-api│
+    │              │ │  api,      │ │  order-api,  │ └───────────────────┘
+    │              │ │  order-api │ │  dining-api  │
+    │              │ └────────────┘ └──────────────┘
+    │              │
+    │   ┌──────────▼───────────────────────────────────────────┐
+    │   │  core-app ← auth-core, menu-core, order-core (+api), │
+    │   │  payment-core (+api), payment-xendit, dining-core,   │
+    │   │  image-core, image-imagekit, search-meilisearch      │
+    └───┤  (hanya registrasi modul — tanpa logika bisnis)      │
+        └──────────────────────────────────────────────────────┘
 ```
+
+> Tidak ada modul `payment-methods` — kolom `payment_method` di entity `Payment`
+> hanyalah string denormalisasi, bukan relasi. Tidak ada dependensi langsung
+> antar `*-core` — selalu lewat `*-api`.
 
 ### Aturan Dependensi
 
@@ -102,9 +112,13 @@ backend/
 ### Contoh Arah Dependensi yang Benar
 
 - `order-core` → `menu-api` (untuk snapshot menu) ✅
-- `payment-core` → `order-api` (untuk akses order) ✅
+- `payment-core` → `payment-api` + `order-api` + `dining-api` (resolusi target pembayaran) ✅
+- `payment-xendit` → `payment-api` + `order-api` + `dining-api` ✅
 - `payment-core` → `order-core` ❌ (tidak boleh langsung ke core lain)
-- `dining-core` → `menu-api` + `order-api` ✅
+- `dining-core` → `dining-api` + `order-api` ✅
+- `menu-core` → `menu-api` + `image-api` (resolve URL gambar) + `search-api` (read projection) ✅
+- `image-core` / `image-imagekit` → `image-api` ✅
+- `search-meilisearch` → `search-api` ✅
 - `menu-core` → `auth-api` ❌ (tidak perlu, menu tidak terkait auth)
 
 ---
@@ -223,31 +237,32 @@ Semua response API melalui `common` module dengan format terstruktur:
 public class RoleController {
 
     @PostMapping
-    public ResponseEntity<?> create(@RequestBody @Valid RoleRequest request) {
-        RoleResponse data = roleService.create(request);
-        return ApiResponse.success(HttpStatus.CREATED, data);
-    }
-
-    @GetMapping
-    public ResponseEntity<?> getAll() {
-        List<RoleResponse> data = roleService.getAll();
-        return ApiResponse.success(HttpStatus.OK, data);
-    }
-
-    @GetMapping
-    public ResponseEntity<?> getAllPaged(
-        @RequestParam(defaultValue = "1") int page,
-        @RequestParam(defaultValue = "10") int size
+    public ResponseEntity<SuccessTemplate<RoleResponse>> create(
+        @Valid @RequestBody RoleRequest request
     ) {
-        Page<RoleResponse> pageResult = roleService.getAllPaged(page, size);
+        return ApiResponse.success(
+            HttpStatus.CREATED,
+            "Role successfully created",
+            roleService.create(request)
+        );
+    }
+
+    @GetMapping
+    public ResponseEntity<SuccessPagedTemplate<List<RoleResponse>>> getAllPaged(
+        @RequestParam(required = false) String name,
+        @PageableDefault(size = 10, sort = "name", direction = Sort.Direction.ASC)
+        Pageable pageable
+    ) {
+        Page<RoleResponse> page = roleService.getAllPaged(name, pageable);
         return ApiResponse.paged(
             HttpStatus.OK,
-            pageResult.getContent(),
-            pageResult.getNumber() + 1,
-            pageResult.getSize(),
-            pageResult.getTotalElements(),
-            pageResult.hasNext(),
-            pageResult.hasPrevious()
+            "Role successfully retrieved",
+            page.getContent(),
+            page.getNumber() + 1, // Pageable 0-based → response 1-based
+            page.getSize(),
+            page.getTotalElements(),
+            page.hasNext(),
+            page.hasPrevious()
         );
     }
 }
@@ -332,15 +347,15 @@ java -jar app.jar --spring.profiles.active=formal-seed
 
 ---
 
-## Image Service
+## Image Modules
 
-`common` menyediakan abstraksi untuk upload/gambar via ImageKit:
+Abstraksi gambar tidak lagi di `common` — sudah diekstrak menjadi tiga modul sendiri:
 
-| Komponen | Fungsi |
-|---|---|
-| `ImageService` | Interface: `buildPath()`, `resolveUrl()`, `deleteByPath()`, `generateUploadAuth()` |
-| `ImageKitImageService` | Implementasi ImageKit — resolve relative path ke URL, delete via API, signed upload auth |
-| `ImageUploadAuth` | Record: publicKey, token, expire, signature |
+| Modul | Isi | Fungsi |
+|---|---|---|
+| `image-api` | `ImageApi`, `ImageRegistryApi`, `ImageUploadAuthApiResponse`, `ImageWebhookApiPayload`, event `ImageCreated/Updated/DeletedEvent` | Contract — dipakai `menu-core` (resolve URL) dan consumer lain |
+| `image-core` | `ImageMetadata` (entity), `ImageRegistryApiImpl`, `ImageUploadAuthController` | Registry metadata + endpoint `GET /api/v1/images/auth` |
+| `image-imagekit` | `ImageKitService`, `ImageKitWebhookController`, `ImageKitProperties` | Adapter ImageKit — signed upload auth, verifikasi dan parse webhook |
 
 DB hanya menyimpan **relative path** (mis. `/assets/images/menus/<code>/nama_file`).
 Resolve ke URL dilakukan saat response dibangun, bukan saat penyimpanan.
@@ -348,9 +363,22 @@ Resolve ke URL dilakukan saat response dibangun, bukan saat penyimpanan.
 ### Env Vars
 
 ```
-imagekit.url-endpoint=https://ik.imagekit.io/xxxx
-imagekit.public-key=public_xxxx
-imagekit.private-key=private_xxxx
+IMAGEKIT_BASE_URL=https://api.imagekit.io
+IMAGEKIT_URL_ENDPOINT=https://ik.imagekit.io/xxxx
+IMAGEKIT_PUBLIC_KEY=public_xxxx
+IMAGEKIT_PRIVATE_KEY=private_xxxx
+IMAGEKIT_WEBHOOKS_ENDPOINT=
+IMAGEKIT_WEBHOOKS_SECRET=
+```
+
+### Cara Pakai di Service
+
+```java
+// menu-core memakai contract, bukan implementasi
+private final ImageApi imageApi;
+
+String url = imageApi.resolveUrl(relativePath);
+ImageUploadAuthApiResponse auth = imageApi.getAuthenticationParameters();
 ```
 
 ---
@@ -422,12 +450,21 @@ Tidak ada perubahan kode bisnis yang diperlukan.
 
 | File | Lokasi |
 |---|---|
-| ApiResponse utility | `common/.../ApiResponse.java` |
-| Response templates | `common/.../template/*.java` |
-| Custom exceptions | `common/.../exception/*.java` (kecuali handler) |
-| Exception handler | `common/.../exception/GlobalExceptionHandler.java` |
-| Seed framework | `common/.../seed/*.java` |
-| Image service | `common/.../image/*.java` |
-| String utilities | `common/.../util/StringUtil.java` |
-| Parent POM | `backend/pom.xml` |
-| Entry point | `core-app/.../CoreAppApplication.java` |
+| ApiResponse utility | `core/common/src/main/java/id/my/rascal/common/ApiResponse.java` |
+| Response templates | `core/common/.../template/*.java` |
+| Custom exceptions | `core/common/.../exception/*.java` (kecuali handler) |
+| Exception handler | `core/common/.../exception/GlobalExceptionHandler.java` |
+| Seed framework | `core/common/.../seed/*.java` |
+| Image contract | `core/image-api/src/main/java/id/my/rascal/image/api/*.java` |
+| Image registry + upload auth | `core/image-core/.../internal/{entity,adapter,controller}/` |
+| ImageKit adapter + webhook | `core/image-imagekit/.../internal/{service,controller,component}/` |
+| Search abstraction | `core/search-api/src/main/java/id/my/rascal/search/api/*.java` |
+| Meilisearch adapter | `core/search-meilisearch/.../internal/{adapter,config}/` |
+| Security (JWT filter lib) | Eksternal `id.rascal:filter` — bukan modul internal |
+| String utilities | `core/common/.../util/StringUtil.java` |
+| Parent POM | `core/pom.xml` (18 modul) |
+| Entry point | `core/core-app/.../CoreAppApplication.java` |
+
+Dokumen pendamping: `API_CONTRACT.md` (spesifikasi endpoint),
+`API_CONTRACT_EN.md` (versi presisi untuk agent), `SEARCH.md` (read projection),
+`AUTH.md` (token lifecycle), `DOCKER-SETUP.md` (cara menjalankan).
