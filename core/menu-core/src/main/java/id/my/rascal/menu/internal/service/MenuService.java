@@ -5,11 +5,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -32,15 +32,19 @@ public class MenuService {
     private final MenuRepository menuRepository;
     private final ModifierHelper modifierHelper;
     private final MenuCategoryHelper menuCategoryHelper;
+    private final ApplicationEventPublisher eventPublisher;
 
     public MenuService(
         MenuRepository menuRepository,
         ModifierHelper modifierHelper,
-        MenuCategoryHelper menuCategoryHelper
+        MenuCategoryHelper menuCategoryHelper,
+        MenuSearchService menuSearchService,
+        ApplicationEventPublisher eventPublisher
     ) {
         this.menuRepository = menuRepository;
         this.modifierHelper = modifierHelper;
         this.menuCategoryHelper = menuCategoryHelper;
+        this.eventPublisher = eventPublisher;
     }
 
     @Transactional
@@ -62,7 +66,9 @@ public class MenuService {
         );
 
         menu.setCreatedAt(LocalDateTime.now());
-        return menuRepository.save(menu);
+        Menu saved = menuRepository.save(menu);
+        eventPublisher.publishEvent(new MenuIndexEvent(saved));
+        return saved;
     }
 
     @Transactional(readOnly = true)
@@ -81,6 +87,11 @@ public class MenuService {
     }
 
     @Transactional(readOnly = true)
+    public List<Menu> getAllByIds(Collection<Long> ids) {
+        return menuRepository.findAllByIds(ids);
+    }
+
+    @Transactional(readOnly = true)
     public Page<Menu> getAllPaged(String name, Long categoryId, Pageable pageable) {
         name = StringUtil.normalizeSearch(name);
 
@@ -96,40 +107,37 @@ public class MenuService {
                 .findFirst()
                 .ifPresent(ordered::add);
         }
-        menus = ordered;
 
+        menus = ordered;
         return new PageImpl<>(menus, pageable, idPage.getTotalElements());
     }
 
-    @Transactional(readOnly = true)
-    public Page<List<MenuIdView>> getAllPagedCached(
-        String name,
-        Long categoryId,
-        Pageable pageable
-    ) {
-        name = StringUtil.normalizeSearch(name);
-
-        Page<Long> idPage = menuRepository.findSearchIds(name, categoryId, false, pageable);
-
-        if (idPage.isEmpty())
-            return Page.empty(pageable);
-
-        List<MenuIdView> rows = menuRepository.findViewByIds(idPage.getContent(), false);
-
-        Map<Long, List<MenuIdView>> grouped = rows.stream()
-            .collect(Collectors.groupingBy(MenuIdView::getMenuId));
-
-        List<List<MenuIdView>> content = idPage.getContent().stream()
-            .map(id -> grouped.get(id))
-            .filter(Objects::nonNull)
-            .toList();
-
-        return new PageImpl<>(
-            content,
-            pageable,
-            idPage.getTotalElements()
-        );
-    }
+    // @Transactional(readOnly = true)
+    // public Page<List<MenuIdView>> getAllPagedCached(
+    //     String name,
+    //     Long categoryId,
+    //     Pageable pageable
+    // ) {
+    //     name = StringUtil.normalizeSearch(name);
+    //     Page<Long> idPage = menuRepository.findSearchIds(name, categoryId, false, pageable);
+    //
+    //     if (idPage.isEmpty()) return Page.empty(pageable);
+    //     List<MenuIdView> rows = menuRepository.findViewByIds(idPage.getContent(), false);
+    //
+    //     Map<Long, List<MenuIdView>> grouped = rows.stream()
+    //         .collect(Collectors.groupingBy(MenuIdView::getMenuId));
+    //
+    //     List<List<MenuIdView>> content = idPage.getContent().stream()
+    //         .map(id -> grouped.get(id))
+    //         .filter(Objects::nonNull)
+    //         .toList();
+    //
+    //     return new PageImpl<>(
+    //         content,
+    //         pageable,
+    //         idPage.getTotalElements()
+    //     );
+    // }
 
     @Transactional
     public Menu update(Long id, MenuPutRequest request) {
@@ -155,7 +163,9 @@ public class MenuService {
         );
 
         menu.setUpdatedAt(LocalDateTime.now());
-        return menuRepository.save(menu);
+        Menu updated = menuRepository.save(menu);
+        eventPublisher.publishEvent(new MenuIndexEvent(updated));
+        return updated;
     }
 
     @Transactional
@@ -165,7 +175,9 @@ public class MenuService {
         
         menu.setDeletedAt(null);
         menu.setUpdatedAt(LocalDateTime.now());
-        return menuRepository.save(menu);
+        Menu restored = menuRepository.save(menu);
+        eventPublisher.publishEvent(new MenuIndexEvent(restored));
+        return restored;
     }
 
     @Transactional
@@ -175,6 +187,7 @@ public class MenuService {
 
         menu.setDeletedAt(LocalDateTime.now());
         menuRepository.save(menu);
+        eventPublisher.publishEvent(new MenuIndexEvent(menu));
     }
 
 

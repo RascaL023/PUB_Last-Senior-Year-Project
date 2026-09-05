@@ -37,6 +37,34 @@ public interface MenuRepository extends JpaRepository<Menu, Long> {
     List<Menu> findAllByIds(@Param("ids") Collection<Long> ids);
 
     @Query("""
+        select m.id
+        from Menu m
+        where (:name is null or lower(m.name) like lower(concat('%', cast(:name as string), '%')))
+          and (:categoryId is null or exists (
+              select 1 from m.categories c where c.id = :categoryId
+          ))
+          and (:minPrice is null or m.basePrice >= :minPrice)
+          and (:maxPrice is null or m.basePrice <= :maxPrice)
+          and (:isAvailable is null or m.isAvailable = :isAvailable)
+          and ((:showDeleted = true and m.deletedAt is not null)
+               or (:showDeleted = false and m.deletedAt is null)
+               or :showDeleted is null)
+        order by m.name
+    """)
+    Page<Long> findSearchIdsForScope(
+        @Param("name") String name,
+        @Param("categoryId") Long categoryId,
+        @Param("minPrice") Integer minPrice,
+        @Param("maxPrice") Integer maxPrice,
+        @Param("isAvailable") Boolean isAvailable,
+        @Param("showDeleted") Boolean showDeleted,
+        Pageable pageable
+    );
+
+    @Query("select m from Menu m where m.id = :id")
+    Optional<Menu> findAnyWithRelationsById(@Param("id") Long id);
+
+    @Query("""
         select m from Menu m
         where m.id = :id
           and ((:showDeleted = true and m.deletedAt is not null) or (:showDeleted = false and m.deletedAt is null))

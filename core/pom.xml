@@ -46,6 +46,8 @@
         <module>payment-xendit</module>
         <module>dining-api</module>
         <module>dining-core</module>
+        <module>search-api</module>
+        <module>search-meilisearch</module>
         <module>core-app</module>
     </modules>
 
@@ -117,6 +119,16 @@
                 <version>${project.version}</version>
             </dependency>
 
+            <dependency>
+                <groupId>id.my.rascal</groupId>
+                <artifactId>search-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>id.my.rascal</groupId>
+                <artifactId>search-meilisearch</artifactId>
+                <version>${project.version}</version>
+            </dependency>
 
             <dependency>
                 <groupId>io.jsonwebtoken</groupId>
@@ -133,6 +145,7 @@
                 <artifactId>jjwt-jackson</artifactId>
                 <version>${jjwt.version}</version>
             </dependency>
-        </dependencies>
+
+            </dependencies>
     </dependencyManagement>
 </project>

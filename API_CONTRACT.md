@@ -531,11 +531,20 @@ POST /api/v1/auths/logout-all
 | Method | Path | Keterangan |
 |---|---|---|
 | `POST /` | Create menu | |
-| `GET /` | List menus | Filter: `name` (substring), `categoryId` |
+| `GET /` | List menus | Filter: `name` (substring), `categoryId`, `minPrice`, `maxPrice` |
 | `GET /{id}` | Get by ID | |
 | `PUT /{id}` | Full update | |
 | `PATCH /{id}/restore` | Restore soft-deleted | |
 | `DELETE /{id}` | Soft delete | Response: `204 No Content` |
+
+**Admin read endpoints (`/api/v1/admin/menus`):**
+
+| Method | Path | Keterangan |
+|---|---|---|
+| `GET /search` | Search menu | Filter: `name`, `categoryId`, `minPrice`, `maxPrice`, `isAvailable`, `deleted=active\|deleted\|all` (default `active`) |
+| `GET /{id}` | Get by ID | Termasuk menu soft-deleted; `deletedAt` terisi bila deleted |
+
+> ℹ️ **Baca (V1 & admin) di-backend oleh Meilisearch (read projection).** Saat Meilisearch down, search & detail otomatis fallback ke PostgreSQL. Tanpa param `sort`, hasil diurutkan oleh relevance ranking Meilisearch — untuk urutan deterministik kirim `sort=name|basePrice|createdAt` (+ `asc`/`desc`). Endpoint customer **selalu** memfilter `isDeleted=false` di sisi server; menu soft-deleted tidak pernah muncul.
 
 **Create/Update Menu Request:**
 ```json
@@ -576,9 +585,11 @@ POST /api/v1/auths/logout-all
         { "id": 2, "name": "Extra", "additionalPrice": 2000 }
       ]
     }
-  ]
+  ],
+  "deletedAt": null
 }
 ```
+> `deletedAt` (nullable) — baru (additive). Selalu `null` di response customer; admin (`/api/v1/admin/menus/{id}`) mengisinya saat menu di-soft-delete. FE: `deletedAt: string | null`.
 
 ---
 
