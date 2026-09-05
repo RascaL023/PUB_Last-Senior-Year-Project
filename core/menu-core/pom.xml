@@ -30,6 +30,12 @@
             <artifactId>image-api</artifactId>
         </dependency>
 
+        <!-- Search abstraction -->
+        <dependency>
+            <groupId>id.my.rascal</groupId>
+            <artifactId>search-api</artifactId>
+        </dependency>
+
         <!-- Starter Web -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -76,5 +82,6 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
 </project>
 

@@ -57,3 +57,7 @@ xendit:
   private-key: ${XENDIT_PRIVATE_KEY:""}
   public-key: ${XENDIT_PUBLIC_KEY:""}
   callback-token: ${XENDIT_CALLBACK_TOKEN:""}
+
+meilisearch:
+  url: ${MEILISEARCH_URL:http://localhost:7700}
+  api-key: ${MEILISEARCH_API_KEY:}

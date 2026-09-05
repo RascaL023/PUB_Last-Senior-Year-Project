@@ -1,11 +1,13 @@
 package id.my.rascal.menu.internal.service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,15 +18,25 @@ import id.my.rascal.menu.internal.entity.ModifierType;
 import id.my.rascal.menu.internal.model.request.MenuPutRequest;
 import id.my.rascal.menu.internal.model.request.MenuRequest;
 import id.my.rascal.menu.internal.model.response.MenuResponseCached;
+import id.my.rascal.menu.internal.model.search.MenuSearchDocument;
 import id.my.rascal.menu.internal.repository.MenuIdView;
+import id.my.rascal.menu.internal.repository.MenuRepository;
 
 @Service
 public class MenuV2ApplicationService {
 
     private final MenuService menuService;
+    private final MenuSearchService menuSearchService;
+    private final MenuRepository menuRepository;
 
-    public MenuV2ApplicationService(MenuService menuService) {
+    public MenuV2ApplicationService(
+        MenuService menuService,
+        MenuSearchService menuSearchService,
+        MenuRepository menuRepository
+    ) {
         this.menuService = menuService;
+        this.menuSearchService = menuSearchService;
+        this.menuRepository = menuRepository;
     }
 
     @Transactional
@@ -44,7 +56,28 @@ public class MenuV2ApplicationService {
         Long categoryId,
         Pageable pageable
     ) {
-        return menuService.getAllPagedCached(name, categoryId, pageable).map(this::toResponse);
+        // Use Meilisearch with PostgreSQL fallback for ID resolution
+        Page<MenuSearchDocument> searchResults = menuSearchService.searchPaged(name, categoryId, pageable);
+
+        List<Long> menuIds = searchResults.getContent().stream()
+            .map(MenuSearchDocument::getId)
+            .toList();
+
+        if (menuIds.isEmpty())
+            return Page.empty(pageable);
+
+        // Resolve cached views using the ordered IDs from search
+        List<MenuIdView> rows = menuRepository.findViewByIds(menuIds, false);
+        Map<Long, List<MenuIdView>> grouped = rows.stream()
+            .collect(Collectors.groupingBy(MenuIdView::getMenuId));
+
+        List<MenuResponseCached> content = menuIds.stream()
+            .map(id -> grouped.get(id))
+            .filter(Objects::nonNull)
+            .map(this::toResponse)
+            .toList();
+
+        return new PageImpl<>(content, pageable, searchResults.getTotalElements());
     }
 
     @Transactional

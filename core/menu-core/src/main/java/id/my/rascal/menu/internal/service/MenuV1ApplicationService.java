@@ -1,105 +1,80 @@
 package id.my.rascal.menu.internal.service;
 
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import id.my.rascal.image.api.ImageApi;
-import id.my.rascal.menu.internal.entity.Menu;
-import id.my.rascal.menu.internal.entity.MenuCategory;
-import id.my.rascal.menu.internal.entity.ModifierOption;
-import id.my.rascal.menu.internal.entity.ModifierType;
+import id.my.rascal.common.exception.NotFoundException;
 import id.my.rascal.menu.internal.model.request.MenuPutRequest;
 import id.my.rascal.menu.internal.model.request.MenuRequest;
-import id.my.rascal.menu.internal.model.response.MenuCategoryResponse;
 import id.my.rascal.menu.internal.model.response.MenuResponse;
-import id.my.rascal.menu.internal.model.response.ModifierOptionResponse;
-import id.my.rascal.menu.internal.model.response.ModifierTypeResponse;
+import id.my.rascal.menu.internal.model.search.DeletedScope;
+import id.my.rascal.menu.internal.model.search.MenuSearchDocument;
 
 @Service
 public class MenuV1ApplicationService {
 
     private final MenuService menuService;
-    private final ImageApi imageApi;
+    private final MenuSearchService menuSearchService;
+    private final MenuResponseMapper menuResponseMapper;
 
-    public MenuV1ApplicationService(MenuService menuService, ImageApi imageApi) {
+    public MenuV1ApplicationService(
+        MenuService menuService,
+        MenuSearchService menuSearchService,
+        MenuResponseMapper menuResponseMapper
+    ) {
         this.menuService = menuService;
-        this.imageApi = imageApi;
+        this.menuSearchService = menuSearchService;
+        this.menuResponseMapper = menuResponseMapper;
     }
 
     @Transactional
     public MenuResponse create(MenuRequest request) {
-        return toResponse(menuService.create(request));
+        return menuResponseMapper.from(menuService.create(request));
     }
 
-    @Transactional(readOnly = true)
     public MenuResponse getById(Long id) {
-        return toResponse(menuService.getById(id));
+        return menuSearchService.getById(id, DeletedScope.ACTIVE)
+            .map(menuResponseMapper::from)
+            .orElseThrow(() -> new NotFoundException("Menu with id " + id + " not found"));
     }
 
-    @Transactional(readOnly = true)
-    public Page<MenuResponse> getAllPaged(String name, Long categoryId, Pageable pageable) {
-        return menuService.getAllPaged(name, categoryId, pageable).map(this::toResponse);
+    public Page<MenuResponse> getAllPaged(
+        String name,
+        Long categoryId,
+        Integer minPrice,
+        Integer maxPrice,
+        Pageable pageable
+    ) {
+        Page<MenuSearchDocument> searchResults = menuSearchService.searchPaged(
+            name, categoryId, 
+            minPrice, maxPrice, 
+            null, pageable, 
+            DeletedScope.ACTIVE
+        );
+
+        return new PageImpl<>(
+            searchResults.getContent().stream()
+                .map(menuResponseMapper::from)
+                .toList(),
+            pageable,
+            searchResults.getTotalElements()
+        );
     }
 
     @Transactional
     public MenuResponse update(Long id, MenuPutRequest request) {
-        return toResponse(menuService.update(id, request));
+        return menuResponseMapper.from(menuService.update(id, request));
     }
 
     @Transactional
-    public MenuResponse restore(Long id) {
-        return toResponse(menuService.restore(id));
+    public MenuResponse restore(Long id) { 
+        return menuResponseMapper.from(menuService.restore(id)); 
     }
 
     @Transactional
-    public void delete(Long id) {
-        menuService.delete(id);
-    }
-
-
-    private MenuResponse toResponse(Menu menu) {
-        return new MenuResponse(
-            menu.getId(),
-            menu.getName(),
-            menu.getDescription(),
-            menu.getCategories().stream().map(this::toCategoryResponse).toList(),
-            menu.getImageUrls().stream().map(imageApi::resolveUrl).toList(),
-            menu.getBasePrice(),
-            menu.getIsAvailable(),
-            menu.getCreatedAt(),
-            menu.getUpdatedAt(),
-            menu.getModifierTypes().stream().map(this::toModifierTypeResponse).toList()
-        );
-    }
-
-    private MenuCategoryResponse toCategoryResponse(MenuCategory category) {
-        return new MenuCategoryResponse(
-            category.getId(),
-            category.getDisplayName(),
-            category.getCategoryCode(),
-            category.getDisplayOrder()
-        );
-    }
-
-    private ModifierTypeResponse toModifierTypeResponse(ModifierType modifierType) {
-        return new ModifierTypeResponse(
-            modifierType.getId(),
-            modifierType.getName(),
-            modifierType.getMinSelection(),
-            modifierType.getMaxSelection(),
-            modifierType.getModifierOptions().stream()
-                .map(this::toOptionResponse).toList()
-        );
-    }
-
-    private ModifierOptionResponse toOptionResponse(ModifierOption option) {
-        return new ModifierOptionResponse(
-            option.getId(),
-            option.getName(),
-            option.getAdditionalPrice()
-        );
-    }
+    public void delete(Long id) { menuService.delete(id); }
 
 }

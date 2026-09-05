@@ -13,6 +13,6 @@ public record MenuResponse(
     Boolean isAvailable,
     LocalDateTime createdAt,
     LocalDateTime updatedAt,
-    List<ModifierTypeResponse> modifierTypes
-) {
-}
+    List<ModifierTypeResponse> modifierTypes,
+    LocalDateTime deletedAt
+) {}
