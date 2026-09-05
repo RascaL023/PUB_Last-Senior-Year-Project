@@ -30,9 +30,32 @@ services:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USERNAME} -d ${DATABASE_NAMES_CORE_BACKEND}"]
-      interval: 5s
+      interval: 45s
       timeout: 5s
       retries: 5
+      start_period: 20s
+      start_interval: 5s
+
+  # ── Meilisearch ─────────────────────────────────────────
+  meilisearch:
+    image: getmeili/meilisearch:v1.53.1
+    container_name: cafe-meilisearch
+    restart: unless-stopped
+    environment:
+      MEILI_MASTER_KEY: ${MEILISEARCH_API_KEY}
+      MEILI_ENV: production
+    ports:
+      - "${MEILI_EXTERNAL_PORT:-7700}:7700"
+    volumes:
+      - meili_data:/meili_data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fs http://127.0.0.1:7700/health || exit 1"]
+      # test: ["CMD-SHELL", "sh -c 'cat < /dev/null > /dev/tcp/127.0.0.1/7700'"]
+      interval: 45s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+      start_interval: 2s
 
   # ── Backend (Spring Boot) ───────────────────────────────
   # Config source: config/docker.env (via APP_ENV=docker)
@@ -53,6 +76,8 @@ services:
       - ./config:/app/config
     depends_on:
       postgres:
+        condition: service_healthy
+      meilisearch:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "pgrep -f 'java.*app.jar' || exit 1"]
@@ -76,3 +101,4 @@ services:
 
 volumes:
   postgres_data:
+  meili_data:

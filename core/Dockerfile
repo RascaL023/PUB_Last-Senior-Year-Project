@@ -28,22 +28,24 @@ RUN printf '<settings>\n\
 COPY pom.xml .
 
 # Module POMs — order matters! (layered build)
-COPY common/pom.xml           common/pom.xml
-COPY auth-api/pom.xml         auth-api/pom.xml
-COPY auth-core/pom.xml        auth-core/pom.xml
-COPY menu-api/pom.xml         menu-api/pom.xml
-COPY menu-core/pom.xml        menu-core/pom.xml
-COPY order-api/pom.xml        order-api/pom.xml
-COPY order-core/pom.xml       order-core/pom.xml
-COPY payment-core/pom.xml     payment-core/pom.xml
-COPY payment-api/pom.xml      payment-api/pom.xml
-COPY payment-xendit/pom.xml   payment-xendit/pom.xml
-COPY dining-api/pom.xml       dining-api/pom.xml
-COPY dining-core/pom.xml      dining-core/pom.xml
-COPY image-api/pom.xml        image-api/pom.xml
-COPY image-core/pom.xml       image-core/pom.xml
-COPY image-imagekit/pom.xml   image-imagekit/pom.xml
-COPY core-app/pom.xml         core-app/pom.xml
+COPY common/pom.xml                 common/pom.xml
+COPY auth-api/pom.xml               auth-api/pom.xml
+COPY auth-core/pom.xml              auth-core/pom.xml
+COPY menu-api/pom.xml               menu-api/pom.xml
+COPY menu-core/pom.xml              menu-core/pom.xml
+COPY order-api/pom.xml              order-api/pom.xml
+COPY order-core/pom.xml             order-core/pom.xml
+COPY payment-core/pom.xml           payment-core/pom.xml
+COPY payment-api/pom.xml            payment-api/pom.xml
+COPY payment-xendit/pom.xml         payment-xendit/pom.xml
+COPY dining-api/pom.xml             dining-api/pom.xml
+COPY dining-core/pom.xml            dining-core/pom.xml
+COPY image-api/pom.xml              image-api/pom.xml
+COPY image-core/pom.xml             image-core/pom.xml
+COPY image-imagekit/pom.xml         image-imagekit/pom.xml
+COPY search-api/pom.xml             search-api/pom.xml
+COPY search-meilisearch/pom.xml     search-meilisearch/pom.xml
+COPY core-app/pom.xml               core-app/pom.xml
 
 # --- Layer 2: Resolve dependencies using persistent Maven cache ---
 RUN --mount=type=cache,target=/root/.m2 \
