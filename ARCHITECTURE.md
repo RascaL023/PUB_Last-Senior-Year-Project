@@ -50,6 +50,10 @@ backend/
 ├── core/search-meilisearch/ ← Adapter Meilisearch (RestClient, bootstrap settings
 │                               saat ApplicationReadyEvent)
 │
+├── core/report-api/         ← Report contract (DashboardSummaryApiResponse untuk FE)
+├── core/report-core/        ← Orchestrasi summary: agregasi lewat contract
+│                               order/payment/dining-api — bukan tabel domain lain
+│
 └── core/core-app/           ← Entry point aplikasi (@SpringBootApplication)
                                 Hanya bootstrapping + konfigurasi global
 ```
@@ -119,6 +123,7 @@ backend/
 - `menu-core` → `menu-api` + `image-api` (resolve URL gambar) + `search-api` (read projection) ✅
 - `image-core` / `image-imagekit` → `image-api` ✅
 - `search-meilisearch` → `search-api` ✅
+- `report-core` → `order-api` + `payment-api` + `dining-api` (agregasi report lewat contract, bukan tabel domain) ✅
 - `menu-core` → `auth-api` ❌ (tidak perlu, menu tidak terkait auth)
 
 ---

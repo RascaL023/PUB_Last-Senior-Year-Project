@@ -1,0 +1,25 @@
+###### REPORTS ######
+### Dashboard summary - default (today, Asia/Jakarta)
+### grossRevenue & topMenus come from projection tables (updated AFTER_COMMIT by payment/order events);
+### other metrics are live via domain contracts. Dates before the projection deployment return 0.
+GET {{baseUrl}}/reports/dashboard/summary
+Authorization: Bearer {{token}}
+
+### Dashboard summary - explicit range
+GET {{baseUrl}}/reports/dashboard/summary?from=2026-09-01&to=2026-09-07
+Authorization: Bearer {{token}}
+
+### Dashboard summary - single day
+GET {{baseUrl}}/reports/dashboard/summary?from=2026-09-07&to=2026-09-07
+Authorization: Bearer {{token}}
+
+### Dashboard summary - month to date
+GET {{baseUrl}}/reports/dashboard/summary?from=2026-09-01
+Authorization: Bearer {{token}}
+
+### Dashboard summary - invalid ('to' before 'from') (400)
+GET {{baseUrl}}/reports/dashboard/summary?from=2026-09-07&to=2026-09-01
+Authorization: Bearer {{token}}
+
+### Dashboard summary - no auth (401)
+GET {{baseUrl}}/reports/dashboard/summary

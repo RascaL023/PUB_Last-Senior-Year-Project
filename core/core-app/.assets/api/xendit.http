@@ -1,0 +1,110 @@
+###### PAYMENT WEBHOOKS (XENDIT) ######
+### Simulates Xendit invoice callbacks. No Bearer token — auth is via X-Callback-Token.
+### Handler: POST /api/v1/payments/webhooks/xendit (payment-xendit module)
+### The external_id must match an existing PENDING payment — copy the real value from the
+### create payment response. status=PAID marks the payment as paid and feeds the report
+### projection (report_daily_sales / report_menu_daily).
+
+### Webhook - PAID (marks payment as paid)
+POST {{baseUrl}}/payments/webhooks/xendit
+X-Callback-Token: {{xenditCallbackToken}}
+Content-Type: application/json
+
+{
+    "id": "inv_6200-0001",
+    "external_id": "INV-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+    "status": "PAID",
+    "amount": 22000,
+    "paid_amount": 22000,
+    "payment_method": "QRIS",
+    "payment_channel": "QRIS",
+    "currency": "IDR",
+    "description": "Testing xendit",
+    "created": "2026-09-07T10:00:00.000Z",
+    "updated": "2026-09-07T10:01:00.000Z",
+    "merchant_name": "Rascal"
+}
+
+### Webhook - PENDING (no state change on payment)
+POST {{baseUrl}}/payments/webhooks/xendit
+X-Callback-Token: {{xenditCallbackToken}}
+Content-Type: application/json
+
+{
+    "external_id": "INV-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+    "status": "PENDING",
+    "amount": 22000,
+    "payment_method": "QRIS",
+    "payment_channel": "QRIS",
+    "currency": "IDR"
+}
+
+### Webhook - EXPIRED
+POST {{baseUrl}}/payments/webhooks/xendit
+X-Callback-Token: {{xenditCallbackToken}}
+Content-Type: application/json
+
+{
+    "external_id": "INV-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+    "status": "EXPIRED",
+    "amount": 22000,
+    "payment_method": "QRIS",
+    "payment_channel": "QRIS",
+    "currency": "IDR"
+}
+
+### Webhook - REFUNDED (report projection subtracts revenue on the original payment date)
+POST {{baseUrl}}/payments/webhooks/xendit
+X-Callback-Token: {{xenditCallbackToken}}
+Content-Type: application/json
+
+{
+    "external_id": "INV-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+    "status": "REFUNDED",
+    "amount": 22000,
+    "payment_method": "QRIS",
+    "payment_channel": "QRIS",
+    "currency": "IDR"
+}
+
+### Webhook - unknown status (maps to FAILED on payment)
+POST {{baseUrl}}/payments/webhooks/xendit
+X-Callback-Token: {{xenditCallbackToken}}
+Content-Type: application/json
+
+{
+    "external_id": "INV-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+    "status": "WEIRD_STATUS",
+    "amount": 22000,
+    "currency": "IDR"
+}
+
+### Webhook - invalid callback token (401)
+POST {{baseUrl}}/payments/webhooks/xendit
+X-Callback-Token: wrong-token
+Content-Type: application/json
+
+{
+    "external_id": "INV-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+    "status": "PAID",
+    "amount": 22000,
+    "currency": "IDR"
+}
+
+### Webhook - missing callback token (401)
+POST {{baseUrl}}/payments/webhooks/xendit
+Content-Type: application/json
+
+{
+    "external_id": "INV-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+    "status": "PAID",
+    "amount": 22000,
+    "currency": "IDR"
+}
+
+### Webhook - malformed JSON (400)
+POST {{baseUrl}}/payments/webhooks/xendit
+X-Callback-Token: {{xenditCallbackToken}}
+Content-Type: application/json
+
+{ "external_id": "INV-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx", "status": "PAID",, }

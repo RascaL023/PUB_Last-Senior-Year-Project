@@ -433,13 +433,48 @@ Login ────────────────────────�
 | `POST /auths/logout-all` | Ya (Bearer) | — |
 | `POST /payments/webhooks/xendit` | Tidak (server-to-server) | — |
 | `POST /images/imagekit/webhooks` | Tidak (server-to-server) | — |
-| `CRUD /auths/users` | Ya | Cukup login |
+| `POST /auths/users` | Ya | `user.create` / `user.*` |
+| `GET /auths/users`, `GET /auths/users/{id}` | Ya | `user.read` / `user.*` |
+| `PUT/PATCH /auths/users/{id}` | Ya | `user.update` / `user.*` |
+| `DELETE /auths/users/{id}` | Ya | `user.delete` / `user.*` |
 | `GET/DELETE /auths/authorities` | Ya | `authority.read` / `authority.delete` / `authority.*` |
 | `GET /auths/authorities/{id}` | Ya | `authority.create` / `authority.*` (quirk, lihat bawah) |
 | `CRUD /auths/roles` | Ya | `role.create` / `role.read` / `role.update` / `role.delete` / `role.*` |
-| Menu (V1, V2, admin, categories, modifiers), Order, Payment, Dining, Table, Images | Ya | Cukup login |
+| Menu V1/V2: `POST /` | Ya | `menu.create` / `menu.*` |
+| Menu V1: `GET /`, `GET /{id}` | Tidak | Public (permitAll di SecurityConfig) |
+| Menu V2: `GET /`, `GET /{id}` | Tidak | Public (permitAll di SecurityConfig) |
+| Menu V1/V2: `PUT /{id}`, `PATCH /{id}/restore` | Ya | `menu.update` / `menu.*` |
+| Menu V1/V2: `DELETE /{id}` | Ya | `menu.delete` / `menu.*` |
+| Admin menu: `GET /search`, `GET /{id}` | Ya | `menu.read` / `menu.*` |
+| Kategori menu: `POST /` | Ya | `menu-category.create` / `menu-category.*` |
+| Kategori menu: `GET /`, `GET /{id}` | Ya | `menu-category.read` / `menu-category.*` |
+| Kategori menu: `PUT /{id}`, `PATCH /{id}/restore` | Ya | `menu-category.update` / `menu-category.*` |
+| Kategori menu: `DELETE /{id}` | Ya | `menu-category.delete` / `menu-category.*` |
+| Modifier: `POST /` | Ya | `menu-modifier.create` / `menu-modifier.*` |
+| Modifier: `GET /`, `GET /{id}` | Ya | `menu-modifier.read` / `menu-modifier.*` |
+| Modifier: `PUT /{id}` | Ya | `menu-modifier.update` / `menu-modifier.*` |
+| Modifier: `DELETE /{id}` | Ya | `menu-modifier.delete` / `menu-modifier.*` |
+| Order: `POST /` | Ya | `order.create` / `order.*` |
+| Order: `GET /`, `GET /{id}` | Ya | `order.read` / `order.*` |
+| Order: `PUT /{id}`, `PATCH /{id}`, `POST /{id}/confirm`, `POST /{id}/cancel` | Ya | `order.update` / `order.*` |
+| Order: `POST /{id}/prepare` | Ya | `order.mark.preparing` / `order.*` |
+| Order: `POST /{id}/ready` | Ya | `order.mark.ready` / `order.*` |
+| Order: `POST /{id}/complete` | Ya | `order.mark.completed` / `order.*` |
+| Order: `DELETE /{id}` | Ya | `order.delete` / `order.*` |
+| Payment: `POST /` | Ya | `payment.create` / `payment.*` |
+| Payment: `GET /`, `GET /{id}` | Ya | `payment.read` / `payment.*` |
+| Payment: `POST /{id}/expire` / `/fail` / `/refund` | Ya | `payment.update` / `payment.*` |
+| Dining: `POST /` | Ya | `dining.create` / `dining.*` |
+| Dining: `GET /`, `GET /{id}` | Ya | `dining.read` / `dining.*` |
+| Dining: `POST /{id}/orders`, `POST /{id}/close` | Ya | `dining.update` / `dining.*` |
+| Table: `POST /` | Ya | `table.create` / `table.*` |
+| Table: `GET /`, `GET /{id}` | Ya | `table.read` / `table.*` |
+| Table: `PUT /{id}`, `PATCH /{id}` | Ya | `table.update` / `table.*` |
+| Table: `DELETE /{id}` | Ya | `table.delete` / `table.*` |
+| `GET /images/auth` | Ya | `image.create` / `image.*` |
+| `GET /reports/dashboard/summary` | Ya | `report.read` (tanpa wildcard — hanya ADMIN & CASHIER) |
 
-> Quirk yang perlu diketahui: `GET /auths/authorities/{id}` membutuhkan authority `authority.create` (bukan `read`) karena anotasi di implementasi backend memakai nilai tersebut. Anotasi `@PreAuthorize` untuk menu saat ini di-comment, jadi seluruh endpoint menu hanya membutuhkan login.
+> Quirk yang perlu diketahui: `GET /auths/authorities/{id}` membutuhkan authority `authority.create` (bukan `read`) karena anotasi di implementasi backend memakai nilai tersebut. Seluruh endpoint lain sudah memakai `@PreAuthorize` granular; wildcard literal (mis. `menu.*`) hanya dimiliki ADMIN.
 
 ---
 
@@ -559,7 +594,7 @@ Modul ini read-only ditambah delete — tidak ada endpoint create maupun update.
 
 ### D. Menus V1 (`/api/v1/menus`)
 
-Membutuhkan login. Operasi baca didukung Meilisearch sebagai read projection dengan fallback otomatis ke PostgreSQL saat Meilisearch tidak tersedia.
+Operasi write membutuhkan login (`menu.create/update/delete`); `GET /` dan `GET /{id}` bersifat **public** (permitAll di `SecurityConfig`, tanpa token). Operasi baca didukung Meilisearch sebagai read projection dengan fallback otomatis ke PostgreSQL saat Meilisearch tidak tersedia.
 
 | Method | Path | Keterangan |
 |---|---|---|
@@ -1110,6 +1145,58 @@ Membutuhkan login.
 
 ---
 
+### O. Reports (`/api/v1/reports`)
+
+Membutuhkan authority `report.read` (dimiliki ADMIN & CASHIER; selain itu `403 FORBIDDEN`).
+
+| Method | Path | Keterangan |
+|---|---|---|
+| `GET` | `/dashboard/summary` | Ringkasan dashboard SIM. Hybrid (Phase 4 Level 1): `grossRevenue` & `topMenus` dari tabel projection milik `report-core` (`report_daily_sales`, `report_menu_daily` — diisi listener event AFTER_COMMIT); `paidOrders`, `unpaidOrders`, `operations`, `recentActivity` tetap live via contract (`OrderReportApi`/`PaymentReportApi`/`DiningReportApi`). Periode sebelum deployment projection menampilkan `0`. |
+
+**Parameter query:**
+
+| Param | Tipe | Wajib | Default | Keterangan |
+|---|---|---|---|---|
+| `from` | `date` (`YYYY-MM-DD`) | Tidak | Hari ini | Awal periode, inklusif (dari 00:00) |
+| `to` | `date` (`YYYY-MM-DD`) | Tidak | Hari ini | Akhir periode, inklusif (sampai 24:00) |
+
+Ketentuan periode:
+
+- Default = **hari ini dalam timezone `Asia/Jakarta` (WIB)**; batas `[from 00:00, to+1 00:00)` dikonversi ke zona waktu server sebelum query.
+- `to` sebelum `from` → `400 BAD_REQUEST`.
+
+Semantik angka (keputusan user saat implementasi):
+
+- `sales.grossRevenue` dihitung dari **projection `report_daily_sales`** (bucket tanggal WIB, terisi `PaymentSettledEvent` dari payment berstatus `PAID`; refund mengoreksi tanggal pembayaran awal). `sales.paidOrders` tetap live dari **`payments` berstatus `PAID`** (jumlah target `ORDER` unik) — aman dari edge case double-payment.
+- `sales.unpaidOrders` = order ber-`paid_status UNPAID` non-cancelled (filter `created_at` dalam periode).
+- `sales.averageOrderValue` = `grossRevenue ÷ paidOrders`; `0` jika belum ada order lunas.
+- `operations`: `openDinings` (dining `OPEN`), `occupiedTables` / `availableTables` (dari `dining_tables`), `ordersInProgress` (order `CREATED`/`CONFIRMED`/`PREPARING`).
+- `topMenus` = 10 menu teratas dari order berbayar non-cancelled (urut revenue, `menuId` bisa `null` untuk item bebas).
+- `recentActivity` = 10 order terbaru (`created_at` DESC) — **tanpa** filter periode; memenuhi syarat RULE "Aktivitas terbaru".
+
+**Response `200`:**
+
+```json
+{
+  "isSuccess": true,
+  "message": "Dashboard summary successfully retrieved",
+  "data": {
+    "period": { "from": "2026-09-06", "to": "2026-09-06" },
+    "sales": { "grossRevenue": 125000, "paidOrders": 3, "unpaidOrders": 1, "averageOrderValue": 41666 },
+    "operations": { "openDinings": 2, "occupiedTables": 2, "availableTables": 8, "ordersInProgress": 4 },
+    "topMenus": [
+      { "menuId": 1, "name": "Nasi Goreng", "qty": 5, "revenue": 100000 }
+    ],
+    "recentActivity": [
+      { "orderId": 12, "orderNumber": "ORD-20260906-001", "status": "COMPLETED", "paidStatus": "PAID", "totalPrice": 45000, "createdAt": "2026-09-06T14:30:00" }
+    ]
+  },
+  "meta": { "timestamp": "2026-09-06T07:00:00Z" }
+}
+```
+
+---
+
 ## 7. Error Codes Reference
 
 | ErrorCode | HTTP Status | Keterangan |
@@ -1255,4 +1342,7 @@ GET    /api/v1/tables/{id}
 PUT    /api/v1/tables/{id}
 PATCH  /api/v1/tables/{id}
 DELETE /api/v1/tables/{id}
+
+REPORTS (report.read — ADMIN & CASHIER saja)
+GET    /api/v1/reports/dashboard/summary?from=YYYY-MM-DD&to=YYYY-MM-DD   (default: hari ini WIB)
 ```

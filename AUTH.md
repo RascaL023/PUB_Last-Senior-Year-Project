@@ -101,7 +101,7 @@ sehingga gate-nya hanya authority tunggal itu (ADMIN & CASHIER).
 | `DELETE /auths/authorities/{id}` | `authority.delete` / `authority.*` |
 | Menu V1/V2: `POST /` | `menu.create` / `menu.*` |
 | Menu V1: `GET /`, `GET /{id}` | Public — permitAll di SecurityConfig, tanpa auth |
-| Menu V2: `GET /`, `GET /{id}` | `menu.read` / `menu.*` |
+| Menu V2: `GET /`, `GET /{id}` | Public — permitAll di SecurityConfig, tanpa auth |
 | Menu V1/V2: `PUT /{id}`, `PATCH /{id}/restore` | `menu.update` / `menu.*` |
 | Menu V1/V2: `DELETE /{id}` | `menu.delete` / `menu.*` |
 | Admin menu: `GET /search`, `GET /{id}` | `menu.read` / `menu.*` |
