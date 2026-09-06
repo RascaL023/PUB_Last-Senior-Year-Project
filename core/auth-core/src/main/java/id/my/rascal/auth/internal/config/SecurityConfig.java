@@ -51,7 +51,9 @@ public class SecurityConfig {
                 ).permitAll()
                 .requestMatchers(HttpMethod.GET,
                     "/api/v1/menus",
-                    "/api/v1/menus/{id}"
+                    "/api/v1/menus/{id}",
+                    "/api/v2/menus",
+                    "/api/v2/menus/{id}"
                 ).permitAll()
                 .anyRequest().authenticated()
                 // .anyRequest().permitAll()

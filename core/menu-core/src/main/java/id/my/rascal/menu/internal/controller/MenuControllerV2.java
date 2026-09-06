@@ -53,7 +53,7 @@ public class MenuControllerV2 {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyAuthority('menu.read', 'menu.*')")
+    // @PreAuthorize("hasAnyAuthority('menu.read', 'menu.*')")
     public ResponseEntity<SuccessPagedTemplate<List<MenuResponseCached>>> getAll(
         @RequestParam(required = false) String name,
         @RequestParam(required = false) Long categoryId,
@@ -74,7 +74,7 @@ public class MenuControllerV2 {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('menu.read', 'menu.*')")
+    // @PreAuthorize("hasAnyAuthority('menu.read', 'menu.*')")
     public ResponseEntity<SuccessTemplate<MenuResponseCached>> getById(@PathVariable("id") Long id) {
         return ApiResponse.success(
             HttpStatus.OK,

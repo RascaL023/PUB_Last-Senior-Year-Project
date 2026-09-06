@@ -103,4 +103,34 @@ public class OrderReportRepository {
             .toList();
     }
 
+    public List<OrderItemLineRow> findItemLinesByOrderIds(Collection<Long> orderIds) {
+        List<Object[]> rows = entityManager
+            .createQuery("""
+                select oi.order.id, oi.menuId, oi.itemName, oi.quantity, oi.subtotal
+                from OrderItem oi
+                where oi.order.id in :orderIds
+                  and oi.order.deletedAt is null
+                """, Object[].class)
+            .setParameter("orderIds", orderIds)
+            .getResultList();
+
+        return rows.stream()
+            .map(row -> new OrderItemLineRow(
+                (Long) row[0],
+                (Long) row[1],
+                (String) row[2],
+                (Integer) row[3],
+                (Integer) row[4]
+            ))
+            .toList();
+    }
+
+    public record OrderItemLineRow(
+        Long orderId,
+        Long menuId,
+        String itemName,
+        Integer quantity,
+        Integer subtotal
+    ) {}
+
 }

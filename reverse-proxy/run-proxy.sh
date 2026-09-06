@@ -63,6 +63,7 @@ render_conf() {
     export NGINX_PORT="$(get_env_val "NGINX_PORT" "9000")"
     export SERVICES_CORE_PORT="$(get_env_val "SERVICES_CORE_PORT" "8081")"
     export SERVICES_FRONTEND_PORT="$(get_env_val "SERVICES_FRONTEND_PORT" "5173")"
+    export SERVICES_FRONTEND_ORIGIN="$(get_env_val "SERVICES_FRONTEND_ORIGIN" "")"
     export FRONTEND_BUILD_DIR="$(get_env_val "FRONTEND_BUILD_DIR" "../frontend/build")"
     export NGINX_RATE_LIMIT="$(get_env_val "NGINX_RATE_LIMIT" "10r/s")"
     export NGINX_RATE_BURST="$(get_env_val "NGINX_RATE_BURST" "20")"

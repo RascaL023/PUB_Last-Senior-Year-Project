@@ -130,6 +130,29 @@ DELETE {{baseUrl}}/menus/1
 Authorization: Bearer {{token}}
 
 
+###### MENUS V2 (CACHED) ######
+### Get by ID (PUBLIC - no auth needed)
+GET {{baseUrlV2}}/menus/1
+
+### Search active or GetAll (PUBLIC - no auth needed)
+GET {{baseUrlV2}}/menus?categoryId=1
+
+### Create
+POST {{baseUrlV2}}/menus
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "name": "Americano",
+    "categoryIds": [1],
+    "description": "Strong coffee shot",
+    "imageUrls": ["/assets/images/menus/coffee/americano.jpg"],
+    "basePrice": 7000,
+    "isAvailable": true,
+    "ModifierTypeIds": [1]
+}
+
+
 ###### UPLOADS ######
 ### Get Upload Auth
 GET {{baseUrl}}/images/auth

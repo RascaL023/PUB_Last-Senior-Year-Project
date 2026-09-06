@@ -4,6 +4,7 @@ import id.my.rascal.common.exception.BadRequestException;
 import id.my.rascal.common.exception.ConflictException;
 import id.my.rascal.common.exception.NotFoundException;
 import id.my.rascal.common.util.StringUtil;
+import id.my.rascal.order.api.OrderPaidEvent;
 import id.my.rascal.order.internal.entity.Order;
 import id.my.rascal.order.internal.entity.OrderItem;
 import id.my.rascal.order.internal.model.enums.OrderPaidStatus;
@@ -17,8 +18,10 @@ import id.my.rascal.order.internal.model.request.OrderItemModifierRequest;
 import id.my.rascal.order.internal.model.request.OrderItemRequest;
 import id.my.rascal.order.internal.model.request.OrderRequest;
 import id.my.rascal.order.internal.model.response.OrderResponse;
+import id.my.rascal.order.internal.repository.OrderReportRepository;
 import id.my.rascal.order.internal.repository.OrderRepository;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,7 +29,9 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 @Service
 public class OrderService {
@@ -39,15 +44,21 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final OrderItemService orderItemService;
     private final OrderStatusFlowPolicy orderStatusFlowPolicy;
+    private final OrderReportRepository orderReportRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     public OrderService(
         OrderRepository orderRepository,
         OrderItemService orderItemService,
-        OrderStatusFlowPolicy orderStatusFlowPolicy
+        OrderStatusFlowPolicy orderStatusFlowPolicy,
+        OrderReportRepository orderReportRepository,
+        ApplicationEventPublisher eventPublisher
     ) {
         this.orderRepository = orderRepository;
         this.orderItemService = orderItemService;
         this.orderStatusFlowPolicy = orderStatusFlowPolicy;
+        this.orderReportRepository = orderReportRepository;
+        this.eventPublisher = eventPublisher;
     }
 
     @Transactional
@@ -176,12 +187,48 @@ public class OrderService {
 
         order.setUpdatedAt(LocalDateTime.now());
         orderRepository.save(order);
+        publishPaidEvent(order, order.getOrderItems());
     }
 
     @Transactional
     public void markPaid(Collection<Long> orderIds) {
         if (orderIds == null || orderIds.isEmpty()) return;
         orderRepository.markPaidByIds(orderIds, OrderPaidStatus.PAID, LocalDateTime.now());
+
+        List<OrderReportRepository.OrderItemLineRow> lines =
+            orderReportRepository.findItemLinesByOrderIds(orderIds);
+        Map<Long, List<OrderPaidEvent.ItemLine>> linesByOrder = lines.stream()
+            .collect(Collectors.groupingBy(
+                OrderReportRepository.OrderItemLineRow::orderId,
+                Collectors.mapping(
+                    row -> new OrderPaidEvent.ItemLine(
+                        row.menuId(), row.itemName(), row.quantity(), row.subtotal()),
+                    Collectors.toList()
+                )
+            ));
+
+        LocalDateTime now = LocalDateTime.now();
+        for (Long orderId : orderIds) {
+            eventPublisher.publishEvent(new OrderPaidEvent(
+                orderId, now, linesByOrder.getOrDefault(orderId, List.of())
+            ));
+        }
+    }
+
+    private void publishPaidEvent(Order order, List<OrderItem> items) {
+        List<OrderPaidEvent.ItemLine> lines = items.stream()
+            .map(item -> new OrderPaidEvent.ItemLine(
+                item.getMenuId(),
+                item.getItemName(),
+                item.getQuantity(),
+                item.getSubtotal()
+            ))
+            .toList();
+        eventPublisher.publishEvent(new OrderPaidEvent(
+            order.getId(),
+            LocalDateTime.now(),
+            lines
+        ));
     }
 
     @Transactional

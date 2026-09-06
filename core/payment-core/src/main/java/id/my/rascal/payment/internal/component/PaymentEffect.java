@@ -3,11 +3,13 @@ package id.my.rascal.payment.internal.component;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 
 import id.my.rascal.common.exception.BadRequestException;
 import id.my.rascal.dining.api.DiningApi;
 import id.my.rascal.order.api.OrderApi;
+import id.my.rascal.payment.api.PaymentSettledEvent;
 import id.my.rascal.payment.internal.entity.Payment;
 import id.my.rascal.payment.internal.model.enums.PaymentStatus;
 
@@ -16,13 +18,16 @@ public class PaymentEffect {
 
     private final OrderApi orderApi;
     private final DiningApi diningApi;
+    private final ApplicationEventPublisher eventPublisher;
 
     public PaymentEffect(
         DiningApi diningApi,
-        OrderApi orderApi
+        OrderApi orderApi,
+        ApplicationEventPublisher eventPublisher
     ) {
         this.diningApi = diningApi;
         this.orderApi = orderApi;
+        this.eventPublisher = eventPublisher;
     }
 
     public void applyEffectIfPaid(Payment payment) {
@@ -34,6 +39,20 @@ public class PaymentEffect {
         payment.setPaidAt(now);
         payment.setUpdatedAt(now);
         applyOrderSideEffect(payment);
+    }
+
+    public void publishSettledEvent(Payment saved) {
+        if (saved.getStatus() != PaymentStatus.PAID)
+            return;
+
+        eventPublisher.publishEvent(new PaymentSettledEvent(
+            saved.getId(),
+            saved.getExternalId(),
+            saved.getTargetType().name(),
+            saved.getTargetId(),
+            saved.getAmount(),
+            saved.getPaidAt()
+        ));
     }
     
 

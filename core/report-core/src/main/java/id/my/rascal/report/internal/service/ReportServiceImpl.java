@@ -17,6 +17,7 @@ import id.my.rascal.report.api.DashboardSummaryApiResponse.Period;
 import id.my.rascal.report.api.DashboardSummaryApiResponse.RecentActivityEntry;
 import id.my.rascal.report.api.DashboardSummaryApiResponse.Sales;
 import id.my.rascal.report.api.DashboardSummaryApiResponse.TopMenuEntry;
+import id.my.rascal.report.internal.repository.ReportSummaryRepository;
 
 @Service
 public class ReportServiceImpl implements ReportService {
@@ -28,32 +29,33 @@ public class ReportServiceImpl implements ReportService {
     private final OrderReportApi orderReportApi;
     private final PaymentReportApi paymentReportApi;
     private final DiningReportApi diningReportApi;
+    private final ReportSummaryRepository reportSummaryRepository;
 
     public ReportServiceImpl(
         OrderReportApi orderReportApi,
         PaymentReportApi paymentReportApi,
-        DiningReportApi diningReportApi
+        DiningReportApi diningReportApi,
+        ReportSummaryRepository reportSummaryRepository
     ) {
         this.orderReportApi = orderReportApi;
         this.paymentReportApi = paymentReportApi;
         this.diningReportApi = diningReportApi;
+        this.reportSummaryRepository = reportSummaryRepository;
     }
 
     @Override
     public DashboardSummaryApiResponse getDashboardSummary(LocalDate from, LocalDate to) {
         LocalDate today = LocalDate.now(JAKARTA);
-
         LocalDate fromDate = from == null ? today : from;
         LocalDate toDate = to == null ? today : to;
 
-        if (toDate.isBefore(fromDate)) {
+        if (toDate.isBefore(fromDate))
             throw new BadRequestException("'to' date must not be before 'from' date");
-        }
 
         LocalDateTime start = startOfDayInServerZone(fromDate);
         LocalDateTime end = startOfDayInServerZone(toDate.plusDays(1));
 
-        long grossRevenue = paymentReportApi.sumPaidAmount(start, end);
+        long grossRevenue = reportSummaryRepository.sumRevenueBetween(fromDate, toDate);
         long paidOrders = paymentReportApi.countPaidOrders(start, end);
         long unpaidOrders = orderReportApi.countUnpaidOrders(start, end);
         long averageOrderValue = paidOrders == 0 ? 0 : grossRevenue / paidOrders;
@@ -67,9 +69,10 @@ public class ReportServiceImpl implements ReportService {
             orderReportApi.countOrdersInProgress()
         );
 
-        List<TopMenuEntry> topMenus = orderReportApi.topMenus(start, end, TOP_MENUS_LIMIT)
+        List<TopMenuEntry> topMenus = reportSummaryRepository
+            .findTopMenusBetween(fromDate, toDate, TOP_MENUS_LIMIT)
             .stream()
-            .map(row -> new TopMenuEntry(row.menuId(), row.name(), row.qty(), row.revenue()))
+            .map(row -> new TopMenuEntry(row.menuId(), row.menuName(), row.qty(), row.revenue()))
             .toList();
 
         List<RecentActivityEntry> recentActivity = orderReportApi.recentActivity(RECENT_ACTIVITY_LIMIT)

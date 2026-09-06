@@ -6,6 +6,7 @@ import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -20,6 +21,7 @@ import id.my.rascal.order.api.OrderApiResponse;
 import id.my.rascal.payment.api.PaymentProcessor;
 import id.my.rascal.payment.api.PaymentProcessorRequest;
 import id.my.rascal.payment.api.PaymentProcessorResponse;
+import id.my.rascal.payment.api.PaymentRefundedEvent;
 import id.my.rascal.payment.internal.entity.Payment;
 import id.my.rascal.payment.internal.component.PaymentEffect;
 import id.my.rascal.payment.internal.component.PaymentProcessorResolver;
@@ -42,6 +44,7 @@ public class PaymentService {
     private final PaymentEffect paymentEffect;
     private final OrderApi orderApi;
     private final DiningApi diningApi;
+    private final ApplicationEventPublisher eventPublisher;
 
     public PaymentService(
         PaymentRepository paymentRepository,
@@ -49,7 +52,8 @@ public class PaymentService {
         PaymentProcessorResolver paymentProcessorResolver,
         OrderApi orderApi,
         DiningApi diningApi,
-        PaymentEffect paymentEffect
+        PaymentEffect paymentEffect,
+        ApplicationEventPublisher eventPublisher
     ) {
         this.paymentRepository = paymentRepository;
         this.paymentStatusFlowPolicy = paymentStatusFlowPolicy;
@@ -57,8 +61,10 @@ public class PaymentService {
         this.orderApi = orderApi;
         this.diningApi = diningApi;
         this.paymentEffect = paymentEffect;
+        this.eventPublisher = eventPublisher;
     }
 
+    @Transactional
     public PaymentResponse create(PaymentRequest request) {
         ResolvedTarget target = resolveTarget(request.targetType(), request.targetId());
         String externalId = "INV-" + UUID.randomUUID();
@@ -99,7 +105,9 @@ public class PaymentService {
         payment.setInvoiceUrl(processorResponse.invoiceUrl());
         payment.setCreatedAt(LocalDateTime.now());
 
-        return toResponse(paymentRepository.save(payment));
+        Payment saved = paymentRepository.save(payment);
+        paymentEffect.publishSettledEvent(saved);
+        return toResponse(saved);
     }
 
     @Transactional(readOnly = true)
@@ -137,7 +145,14 @@ public class PaymentService {
         paymentStatusFlowPolicy.validateFlow(payment.getStatus(), PaymentStatus.REFUNDED);
         payment.setStatus(PaymentStatus.REFUNDED);
         payment.setUpdatedAt(LocalDateTime.now());
-        return toResponse(paymentRepository.save(payment));
+        Payment saved = paymentRepository.save(payment);
+
+        eventPublisher.publishEvent(new PaymentRefundedEvent(
+            saved.getId(),
+            saved.getAmount(),
+            saved.getPaidAt()
+        ));
+        return toResponse(saved);
     }
 
 

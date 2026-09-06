@@ -48,9 +48,11 @@
             <artifactId>jackson-annotations</artifactId>
         </dependency>
 
+        <!-- (GlobalExceptionHandler: DataIntegrityViolationException). 
+            spring-tx artifact, pemilik paket ini — bukan spring-jdbc yang lebih berat. -->
         <dependency>
             <groupId>org.springframework</groupId>
-            <artifactId>spring-jdbc</artifactId>
+            <artifactId>spring-tx</artifactId>
         </dependency>
     </dependencies>
 </project>
