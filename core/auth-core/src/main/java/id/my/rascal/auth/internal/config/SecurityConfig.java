@@ -49,6 +49,10 @@ public class SecurityConfig {
                     "/api/v1/payments/webhooks/xendit",
                     "/api/v1/images/imagekit/webhooks"
                 ).permitAll()
+                .requestMatchers(HttpMethod.GET,
+                    "/api/v1/menus",
+                    "/api/v1/menus/{id}"
+                ).permitAll()
                 .anyRequest().authenticated()
                 // .anyRequest().permitAll()
             ).exceptionHandling(ex -> ex

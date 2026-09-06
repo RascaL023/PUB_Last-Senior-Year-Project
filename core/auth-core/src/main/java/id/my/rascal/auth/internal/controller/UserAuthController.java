@@ -10,10 +10,14 @@ import id.my.rascal.common.exception.BadRequestException;
 import id.my.rascal.common.template.SuccessPagedTemplate;
 import id.my.rascal.common.template.SuccessTemplate;
 import jakarta.validation.Valid;
+
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -27,19 +31,22 @@ public class UserAuthController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyAuthority('user.create', 'user.*')")
     public ResponseEntity<SuccessTemplate<UserAuthResponse>> create(@RequestBody @Valid UserAuthRequest request) {
         UserAuthResponse data = userAuthService.create(request);
         return ApiResponse.success(HttpStatus.CREATED, "User successfully created", data);
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('user.read', 'user.*')")
     public ResponseEntity<SuccessTemplate<UserAuthResponse>> getById(@PathVariable Long id) {
         UserAuthResponse data = userAuthService.getById(id);
         return ApiResponse.success(HttpStatus.OK, "User successfully retrieved", data);
     }
 
     @GetMapping
-    public ResponseEntity<SuccessPagedTemplate<java.util.List<UserAuthResponse>>> getAll(
+    @PreAuthorize("hasAnyAuthority('user.read', 'user.*')")
+    public ResponseEntity<SuccessPagedTemplate<List<UserAuthResponse>>> getAll(
         @RequestParam(required = false) String email,
         Pageable pageable
     ) {
@@ -58,6 +65,7 @@ public class UserAuthController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('user.update', 'user.*')")
     public ResponseEntity<SuccessTemplate<UserAuthResponse>> updatePut(
         @PathVariable Long id,
         @RequestBody @Valid UserAuthPutRequest request
@@ -67,6 +75,7 @@ public class UserAuthController {
     }
 
     @PatchMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('user.update', 'user.*')")
     public ResponseEntity<SuccessTemplate<UserAuthResponse>> updatePatch(
         @PathVariable Long id,
         @RequestBody UserAuthPatchRequest request
@@ -79,6 +88,7 @@ public class UserAuthController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('user.delete', 'user.*')")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         if (id <= 0)
             throw new BadRequestException("Invalid ID: " + id);
@@ -86,4 +96,5 @@ public class UserAuthController {
         userAuthService.delete(id);
         return ResponseEntity.noContent().build();
     }
+
 }

@@ -8,6 +8,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -42,6 +43,7 @@ public class MenuControllerV2 {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyAuthority('menu.create', 'menu.*')")
     public ResponseEntity<SuccessTemplate<MenuResponseCached>> create(@Valid @RequestBody MenuRequest request) {
         return ApiResponse.success(
             HttpStatus.CREATED,
@@ -51,6 +53,7 @@ public class MenuControllerV2 {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyAuthority('menu.read', 'menu.*')")
     public ResponseEntity<SuccessPagedTemplate<List<MenuResponseCached>>> getAll(
         @RequestParam(required = false) String name,
         @RequestParam(required = false) Long categoryId,
@@ -71,6 +74,7 @@ public class MenuControllerV2 {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('menu.read', 'menu.*')")
     public ResponseEntity<SuccessTemplate<MenuResponseCached>> getById(@PathVariable("id") Long id) {
         return ApiResponse.success(
             HttpStatus.OK,
@@ -80,6 +84,7 @@ public class MenuControllerV2 {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('menu.update', 'menu.*')")
     public ResponseEntity<SuccessTemplate<MenuResponseCached>> update(
         @PathVariable("id") Long id,
         @Valid @RequestBody MenuPutRequest request
@@ -92,6 +97,7 @@ public class MenuControllerV2 {
     }
 
     @PatchMapping("/{id}/restore")
+    @PreAuthorize("hasAnyAuthority('menu.update', 'menu.*')")
     public ResponseEntity<SuccessTemplate<MenuResponseCached>> restore(
         @PathVariable("id") Long id
     ) {
@@ -103,6 +109,7 @@ public class MenuControllerV2 {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('menu.delete', 'menu.*')")
     public ResponseEntity<Void> delete(@PathVariable("id") Long id) {
         menuV2Service.delete(id);
 

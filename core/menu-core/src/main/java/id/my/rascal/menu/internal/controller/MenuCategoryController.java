@@ -8,6 +8,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -42,6 +43,7 @@ public class MenuCategoryController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyAuthority('menu-category.create', 'menu-category.*')")
     public ResponseEntity<SuccessTemplate<MenuCategoryResponse>> create(@Valid @RequestBody MenuCategoryRequest request) {
         return ApiResponse.success(
             HttpStatus.CREATED, 
@@ -51,6 +53,7 @@ public class MenuCategoryController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyAuthority('menu-category.read', 'menu-category.*')")
     public ResponseEntity<SuccessPagedTemplate<List<MenuCategoryResponse>>> getAll(
         @RequestParam(required = false) String name,
         @PageableDefault(size = 10, sort = "displayName", direction = Sort.Direction.ASC) Pageable pageable
@@ -70,6 +73,7 @@ public class MenuCategoryController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('menu-category.read', 'menu-category.*')")
     public ResponseEntity<SuccessTemplate<MenuCategoryResponse>> getById(@PathVariable("id") Long id) {
         return ApiResponse.success(
             HttpStatus.OK, 
@@ -79,6 +83,7 @@ public class MenuCategoryController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('menu-category.update', 'menu-category.*')")
     public ResponseEntity<SuccessTemplate<MenuCategoryResponse>> update(
         @PathVariable("id") Long id,
         @Valid @RequestBody MenuCategoryPutRequest request
@@ -91,6 +96,7 @@ public class MenuCategoryController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('menu-category.delete', 'menu-category.*')")
     public ResponseEntity<Void> delete(@PathVariable("id") Long id) {
         menuCategoryService.delete(id);
 
@@ -98,6 +104,7 @@ public class MenuCategoryController {
     }
 
     @PatchMapping("/{id}/restore")
+    @PreAuthorize("hasAnyAuthority('menu-category.update', 'menu-category.*')")
     public ResponseEntity<SuccessTemplate<MenuCategoryResponse>> restore(
         @PathVariable("id") Long id
     ) {

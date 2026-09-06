@@ -36,6 +36,7 @@ public final class AuthorityCatalog {
             ),
             entity("customer", "customer"),
             entity("table", "table"),
+            entity("dining", "dining"),
             List.of(
                 new AuthoritySeed("kitchen.read", "Can read kitchen"),
                 new AuthoritySeed("kitchen.update", "Can update kitchen"),

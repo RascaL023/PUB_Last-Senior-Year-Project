@@ -7,6 +7,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -41,8 +42,8 @@ public class MenuController {
         this.menuV1Service = menuV1Service;
     }
 
-    // @PreAuthorize("hasAnyAuthority('menu.create', 'menu.*')")
     @PostMapping
+    @PreAuthorize("hasAnyAuthority('menu.create', 'menu.*')")
     public ResponseEntity<SuccessTemplate<MenuResponse>> create(@Valid @RequestBody MenuRequest request) {
         return ApiResponse.success(
             HttpStatus.CREATED, 
@@ -51,8 +52,8 @@ public class MenuController {
         );
     }
 
-    // @PreAuthorize("hasAnyAuthority('menu.read', 'menu.*')")
     @GetMapping
+    // @PreAuthorize("hasAnyAuthority('menu.read', 'menu.*')")
     public ResponseEntity<SuccessPagedTemplate<List<MenuResponse>>> getAll(
         @RequestParam(required = false) String name,
         @RequestParam(required = false) @Min(0) Long categoryId,
@@ -74,8 +75,8 @@ public class MenuController {
         );
     }
 
-    // @PreAuthorize("hasAnyAuthority('menu.read', 'menu.*')")
     @GetMapping("/{id}")
+    // @PreAuthorize("hasAnyAuthority('menu.read', 'menu.*')")
     public ResponseEntity<SuccessTemplate<MenuResponse>> getById(@PathVariable("id") Long id) {
         return ApiResponse.success(
             HttpStatus.OK, 
@@ -84,8 +85,8 @@ public class MenuController {
         );
     }
 
-    // @PreAuthorize("hasAnyAuthority('menu.update', 'menu.*')")
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('menu.update', 'menu.*')")
     public ResponseEntity<SuccessTemplate<MenuResponse>> update(
         @PathVariable("id") Long id,
         @Valid @RequestBody MenuPutRequest request
@@ -97,8 +98,8 @@ public class MenuController {
         );
     }
 
-    // @PreAuthorize("hasAnyAuthority('menu.update', 'menu.*')")
     @PatchMapping("/{id}/restore")
+    @PreAuthorize("hasAnyAuthority('menu.update', 'menu.*')")
     public ResponseEntity<SuccessTemplate<MenuResponse>> restore(
         @PathVariable("id") Long id
     ) {
@@ -109,8 +110,8 @@ public class MenuController {
         );
     }
 
-    // @PreAuthorize("hasAnyAuthority('menu.delete', 'menu.*')")
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('menu.delete', 'menu.*')")
     public ResponseEntity<Void> delete(@PathVariable("id") Long id) {
         menuV1Service.delete(id);
 

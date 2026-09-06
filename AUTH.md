@@ -73,10 +73,13 @@ sebagai `permitAll`:
 | `/api/v1/images/imagekit/webhooks` | Publik, server-to-server |
 
 Semua request lain wajib `authenticated()`. Method security
-(`@EnableMethodSecurity`) hanya dipakai `RoleController` dan
-`AuthorityController` lewat `@PreAuthorize`; anotasi otorisasi di
-controller menu saat ini di-comment sehingga seluruh endpoint menu hanya
-membutuhkan login.
+(`@EnableMethodSecurity`) aktif dan `@PreAuthorize` granular dipasang di
+seluruh controller resource (user, role, authority, menu, order, payment,
+dining, table, image, report) sesuai matriks §4. Wildcard literal
+(`menu.*`, `order.*`, dst.) ikut dicek karena ADMIN memegang string
+tersebut sebagai authority; role non-admin lolos lewat permission
+granular. Khusus `report.read` tidak ada wildcard `report.*` di catalog,
+sehingga gate-nya hanya authority tunggal itu (ADMIN & CASHIER).
 
 ---
 
@@ -85,7 +88,10 @@ membutuhkan login.
 | Endpoint | Syarat |
 |---|---|
 | `POST /auths/login`, `POST /auths/refresh`, kedua webhook | Publik |
-| `POST /auths/users`, `GET /auths/users`, `GET /auths/users/{id}`, `PUT/PATCH/DELETE /auths/users/{id}` | Login |
+| `POST /auths/users` | `user.create` / `user.*` |
+| `GET /auths/users`, `GET /auths/users/{id}` | `user.read` / `user.*` |
+| `PUT/PATCH /auths/users/{id}` | `user.update` / `user.*` |
+| `DELETE /auths/users/{id}` | `user.delete` / `user.*` |
 | `POST /auths/roles` | `role.create` / `role.*` |
 | `GET /auths/roles`, `GET /auths/roles/{id}` | `role.read` / `role.*` |
 | `PUT/PATCH /auths/roles/{id}` | `role.update` / `role.*` |
@@ -93,7 +99,69 @@ membutuhkan login.
 | `GET /auths/authorities` | `authority.read` / `authority.*` |
 | `GET /auths/authorities/{id}` | `authority.create` / `authority.*` (quirk — bukan `read`, mengikuti anotasi di source) |
 | `DELETE /auths/authorities/{id}` | `authority.delete` / `authority.*` |
-| Menu (V1, V2, admin, categories, modifiers), Order, Payment, Dining, Table, `GET /images/auth` | Login |
+| Menu V1/V2: `POST /` | `menu.create` / `menu.*` |
+| Menu V1: `GET /`, `GET /{id}` | Public — permitAll di SecurityConfig, tanpa auth |
+| Menu V2: `GET /`, `GET /{id}` | `menu.read` / `menu.*` |
+| Menu V1/V2: `PUT /{id}`, `PATCH /{id}/restore` | `menu.update` / `menu.*` |
+| Menu V1/V2: `DELETE /{id}` | `menu.delete` / `menu.*` |
+| Admin menu: `GET /search`, `GET /{id}` | `menu.read` / `menu.*` |
+| Kategori menu: `POST /` | `menu-category.create` / `menu-category.*` |
+| Kategori menu: `GET /`, `GET /{id}` | `menu-category.read` / `menu-category.*` |
+| Kategori menu: `PUT /{id}`, `PATCH /{id}/restore` | `menu-category.update` / `menu-category.*` |
+| Kategori menu: `DELETE /{id}` | `menu-category.delete` / `menu-category.*` |
+| Modifier: `POST /` | `menu-modifier.create` / `menu-modifier.*` |
+| Modifier: `GET /`, `GET /{id}` | `menu-modifier.read` / `menu-modifier.*` |
+| Modifier: `PUT /{id}` | `menu-modifier.update` / `menu-modifier.*` |
+| Modifier: `DELETE /{id}` | `menu-modifier.delete` / `menu-modifier.*` |
+| Order: `POST /` | `order.create` / `order.*` |
+| Order: `GET /`, `GET /{id}` | `order.read` / `order.*` |
+| Order: `PUT /{id}`, `PATCH /{id}`, `POST /{id}/confirm`, `POST /{id}/cancel` | `order.update` / `order.*` |
+| Order: `POST /{id}/prepare` | `order.mark.preparing` / `order.*` |
+| Order: `POST /{id}/ready` | `order.mark.ready` / `order.*` |
+| Order: `POST /{id}/complete` | `order.mark.completed` / `order.*` |
+| Order: `DELETE /{id}` | `order.delete` / `order.*` |
+| Payment: `POST /` | `payment.create` / `payment.*` |
+| Payment: `GET /`, `GET /{id}` | `payment.read` / `payment.*` |
+| Payment: `POST /{id}/expire` / `/fail` / `/refund` | `payment.update` / `payment.*` |
+| Dining: `POST /` | `dining.create` / `dining.*` |
+| Dining: `GET /`, `GET /{id}` | `dining.read` / `dining.*` |
+| Dining: `POST /{id}/orders`, `POST /{id}/close` | `dining.update` / `dining.*` |
+| Table: `POST /` | `table.create` / `table.*` |
+| Table: `GET /`, `GET /{id}` | `table.read` / `table.*` |
+| Table: `PUT /{id}`, `PATCH /{id}` | `table.update` / `table.*` |
+| Table: `DELETE /{id}` | `table.delete` / `table.*` |
+| `GET /images/auth` | `image.create` / `image.*` |
+| `GET /reports/dashboard/summary` | `report.read` (tanpa wildcard — hanya ADMIN & CASHIER) |
+
+### 4.1 Matriks Role × Authority (sumber kebenaran seeder)
+
+Role final: **ADMIN, CASHIER, WAITER, KITCHEN**. Tidak ada role `CUSTOMER`
+(pembeli bukan aktor sistem — guest checkout tetap) dan tidak ada `OWNER`
+(dobel konsep dengan ADMIN). Berlaku untuk `DevRoleSeeder` dan
+`FormalRoleSeeder`; seluruh authority dijamin ada di `AuthorityCatalog`.
+
+| Group | ADMIN | CASHIER | WAITER | KITCHEN |
+|---|---|---|---|---|
+| user / role / authority | semua | — | — | — |
+| menu / category / modifier / image | semua | read | read | read |
+| order CRUD (tanpa delete agresif) | semua | create/read/update | create/read/update | read |
+| `order.mark.preparing` / `order.mark.ready` | ✓ | — | — | ✓ |
+| `order.mark.completed` | ✓ | ✓ | ✓ | — |
+| payment create/read/update | ✓ | ✓ | read saja | — |
+| `payment.resolve` | ✓ | — | — | — |
+| dining / table | semua | read | create/read/update | — |
+| `kitchen.read` / `kitchen.update` | ✓ | — | — | ✓ |
+| `report.read` | ✓ | ✓ | — | — |
+
+Catatan penyesuaian saat implementasi (matriks inti roadmap disesuaikan):
+
+- WAITER mendapat `payment.read` (read-only, pilihan "— atau read saja");
+  tidak mendapat `order.mark.preparing/ready` (opsional, tidak di-assign).
+- CASHIER mendapat `dining.read` + `table.read` (read-only); `customer.read`
+  dipertahankan sebagai persiapan Phase 5 (kasir cari member), bukan
+  pembuatan modul customer.
+- Assignment granular (tanpa wildcard) kecuali ADMIN yang memegang semua
+  authority termasuk `x.*` untuk keperluan assign/UI.
 
 ---
 

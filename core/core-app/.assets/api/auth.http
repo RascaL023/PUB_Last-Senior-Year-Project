@@ -67,7 +67,7 @@ Authorization: Bearer {{token}}
 
 ### Get by ID
 GET {{baseUrl}}/auths/users/1
-Authorization: Bearer {{accessToken}}
+Authorization: Bearer {{token}}
 
 ### Search active or GetAll
 GET {{baseUrl}}/auths/users?email=admin

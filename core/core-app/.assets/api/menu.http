@@ -17,12 +17,15 @@ Content-Type: application/json
 
 ### Get
 GET {{baseUrl}}/menus/modifiers/1
+Authorization: Bearer {{token}}
 
 ### Search active or GetAll
 GET {{baseUrl}}/menus/modifiers
+Authorization: Bearer {{token}}
 
 ### Update
 PUT {{baseUrl}}/menus/modifiers/2
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -38,6 +41,7 @@ Content-Type: application/json
 
 ### Delete
 DELETE {{baseUrl}}/menus/modifiers/2
+Authorization: Bearer {{token}}
 
 
 ###### MENU CATEGORIES ######
@@ -54,12 +58,15 @@ Content-Type: application/json
 
 ### Get
 GET {{baseUrl}}/menus/categories/1
+Authorization: Bearer {{token}}
 
 ### Search active or GetAll
 GET {{baseUrl}}/menus/categories?displayName=cof&showDeleted=false
+Authorization: Bearer {{token}}
 
 ### Update
 PUT {{baseUrl}}/menus/categories/1
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -70,9 +77,11 @@ Content-Type: application/json
 
 ### Delete
 DELETE {{baseUrl}}/menus/categories/2
+Authorization: Bearer {{token}}
 
 ### Restore
 PATCH {{baseUrl}}/menus/categories/1/restore
+Authorization: Bearer {{token}}
 
 
 ###### MENUS ######
@@ -91,14 +100,15 @@ Content-Type: application/json
     "ModifierTypeIds": [1]
 }
 
-### Get
+### Get by ID (PUBLIC - no auth needed)
 GET {{baseUrl}}/menus/1
 
-### Search active or GetAll
+### Search active or GetAll (PUBLIC - no auth needed)
 GET {{baseUrl}}/menus?categoryId=1&showDeleted=false
 
 ### Update
 PUT {{baseUrl}}/menus/1
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -113,11 +123,14 @@ Content-Type: application/json
 
 ### Restore Deleted
 PATCH {{baseUrl}}/menus/1/restore
+Authorization: Bearer {{token}}
 
 ### Delete
 DELETE {{baseUrl}}/menus/1
+Authorization: Bearer {{token}}
 
 
 ###### UPLOADS ######
 ### Get Upload Auth
 GET {{baseUrl}}/images/auth
+Authorization: Bearer {{token}}

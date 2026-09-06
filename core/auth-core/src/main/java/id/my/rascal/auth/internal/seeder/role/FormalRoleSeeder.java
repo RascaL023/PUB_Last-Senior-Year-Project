@@ -23,7 +23,7 @@ public class FormalRoleSeeder implements Seeder {
     private static final List<RoleSeed> ROLES = List.of(
         new RoleSeed(
             "admin",
-            "Owner / administrator with full access",
+            "Full system access",
             AuthorityCatalog.names()
         )
     );

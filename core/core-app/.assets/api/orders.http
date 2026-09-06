@@ -2,6 +2,7 @@
 ### Create - invalid (exceeds max selection of a modifier type)
 ### Temperature (modifier type 1) has maxSelection = 1, so picking both hot(1) and ice(2) must be rejected.
 POST {{baseUrl}}/orders
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -21,6 +22,7 @@ Content-Type: application/json
 
 ### Create - invalid (modifier option not attached to the menu)
 POST {{baseUrl}}/orders
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -83,12 +85,14 @@ Authorization: Bearer {{token}}
 
 ### Search active or GetAll
 GET {{baseUrl}}/orders?keyword=BUDI&status=PENDING
+Authorization: Bearer {{token}}
 
 
 ### Update (PUT) - item & modifier IDs are preserved
 ### Echo the id from the GET response so existing rows are updated in place
 ### (adjust ids to match the created order)
 PUT {{baseUrl}}/orders/1
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -110,6 +114,7 @@ Content-Type: application/json
 
 ### Update (PUT) - add a new line (no id -> inserted with new id)
 PUT {{baseUrl}}/orders/1
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -137,6 +142,7 @@ Content-Type: application/json
 
 ### Patch - notes and items (preserve item/modifier ids)
 PATCH {{baseUrl}}/orders/1
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -157,3 +163,4 @@ Content-Type: application/json
 
 ### Delete
 DELETE {{baseUrl}}/orders/1
+Authorization: Bearer {{token}}

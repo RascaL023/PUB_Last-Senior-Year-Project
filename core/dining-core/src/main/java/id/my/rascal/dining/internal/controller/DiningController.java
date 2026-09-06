@@ -8,6 +8,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -35,6 +36,7 @@ public class DiningController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyAuthority('dining.create', 'dining.*')")
     public ResponseEntity<SuccessTemplate<DiningResponse>> open(
         @Valid @RequestBody OpenDiningRequest request
     ) {
@@ -46,6 +48,7 @@ public class DiningController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyAuthority('dining.read', 'dining.*')")
     public ResponseEntity<SuccessPagedTemplate<List<DiningResponse>>> getAll(
         @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
@@ -64,6 +67,7 @@ public class DiningController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('dining.read', 'dining.*')")
     public ResponseEntity<SuccessTemplate<DiningResponse>> getById(@PathVariable("id") Long id) {
         return ApiResponse.success(
             HttpStatus.OK,
@@ -73,6 +77,7 @@ public class DiningController {
     }
 
     @PostMapping("/{id}/orders")
+    @PreAuthorize("hasAnyAuthority('dining.update', 'dining.*')")
     public ResponseEntity<SuccessTemplate<DiningResponse>> addOrder(
         @PathVariable("id") Long id,
         @Valid @RequestBody CreateDiningOrderRequest request
@@ -85,6 +90,7 @@ public class DiningController {
     }
 
     @PostMapping("/{id}/close")
+    @PreAuthorize("hasAnyAuthority('dining.update', 'dining.*')")
     public ResponseEntity<SuccessTemplate<DiningResponse>> close(@PathVariable("id") Long id) {
         return ApiResponse.success(
             HttpStatus.OK,

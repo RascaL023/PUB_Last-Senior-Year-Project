@@ -8,6 +8,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -47,6 +48,7 @@ public class PaymentController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyAuthority('payment.create', 'payment.*')")
     public ResponseEntity<SuccessTemplate<PaymentResponse>> create(@Valid @RequestBody PaymentRequest request) {
         return ApiResponse.success(
             HttpStatus.CREATED,
@@ -62,24 +64,28 @@ public class PaymentController {
     // }
 
     @PostMapping("/{id}/expire")
+    @PreAuthorize("hasAnyAuthority('payment.update', 'payment.*')")
     public ResponseEntity<SuccessTemplate<PaymentResponse>> expire(@PathVariable Long id) {
         validateId(id);
         return ApiResponse.success(HttpStatus.OK, "Payment successfully marked as expired", paymentService.markExpired(id));
     }
 
     @PostMapping("/{id}/fail")
+    @PreAuthorize("hasAnyAuthority('payment.update', 'payment.*')")
     public ResponseEntity<SuccessTemplate<PaymentResponse>> fail(@PathVariable Long id) {
         validateId(id);
         return ApiResponse.success(HttpStatus.OK, "Payment successfully marked as failed", paymentService.markFailed(id));
     }
 
     @PostMapping("/{id}/refund")
+    @PreAuthorize("hasAnyAuthority('payment.update', 'payment.*')")
     public ResponseEntity<SuccessTemplate<PaymentResponse>> refund(@PathVariable Long id) {
         validateId(id);
         return ApiResponse.success(HttpStatus.OK, "Payment successfully marked as refunded", paymentService.markRefunded(id));
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyAuthority('payment.read', 'payment.*')")
     public ResponseEntity<SuccessPagedTemplate<List<PaymentResponse>>> getAll(
         @RequestParam(required = false) String keyword,
         @RequestParam(required = false) String targetType,
@@ -110,6 +116,7 @@ public class PaymentController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('payment.read', 'payment.*')")
     public ResponseEntity<SuccessTemplate<PaymentResponse>> getById(@PathVariable("id") Long id) {
         return ApiResponse.success(
             HttpStatus.OK,

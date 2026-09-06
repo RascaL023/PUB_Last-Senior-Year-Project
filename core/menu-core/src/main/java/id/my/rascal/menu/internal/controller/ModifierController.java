@@ -6,6 +6,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -39,6 +40,7 @@ public class ModifierController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyAuthority('menu-modifier.create', 'menu-modifier.*')")
     public ResponseEntity<SuccessTemplate<ModifierTypeResponse>> create(@Valid @RequestBody ModifierTypeRequest request) {
         return ApiResponse.success(
             HttpStatus.CREATED, 
@@ -48,6 +50,7 @@ public class ModifierController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyAuthority('menu-modifier.read', 'menu-modifier.*')")
     public ResponseEntity<SuccessPagedTemplate<java.util.List<ModifierTypeResponse>>> getAll(
         @RequestParam(required = false) String name,
         @PageableDefault(size = 10, sort = "name", direction = Sort.Direction.ASC) Pageable pageable
@@ -67,6 +70,7 @@ public class ModifierController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('menu-modifier.read', 'menu-modifier.*')")
     public ResponseEntity<SuccessTemplate<ModifierTypeResponse>> getById(@PathVariable("id") Long id) {
         return ApiResponse.success(
             HttpStatus.OK, 
@@ -76,6 +80,7 @@ public class ModifierController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('menu-modifier.update', 'menu-modifier.*')")
     public ResponseEntity<SuccessTemplate<ModifierTypeResponse>> update(
         @PathVariable("id") Long id,
         @Valid @RequestBody ModifierTypePutRequest request
@@ -88,6 +93,7 @@ public class ModifierController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('menu-modifier.delete', 'menu-modifier.*')")
     public ResponseEntity<Void> delete(@PathVariable("id") Long id) {
         modifierService.delete(id);
 

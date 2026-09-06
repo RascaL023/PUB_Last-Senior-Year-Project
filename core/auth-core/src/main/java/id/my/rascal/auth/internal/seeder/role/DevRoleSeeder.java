@@ -23,7 +23,7 @@ public class DevRoleSeeder implements Seeder {
     private static final List<RoleSeed> ROLES = List.of(
         new RoleSeed(
             "admin",
-            "Owner / administrator with full access",
+            "Full system access",
             AuthorityCatalog.names()
         ),
         new RoleSeed(
@@ -36,6 +36,9 @@ public class DevRoleSeeder implements Seeder {
                 "menu.read",
                 "menu-category.read",
                 "menu-modifier.read",
+                "image.read",
+                "dining.read",
+                "table.read",
                 "report.read"
             )
         ),
@@ -44,29 +47,25 @@ public class DevRoleSeeder implements Seeder {
             "Waiter serving orders and managing tables",
             List.of(
                 "order.create", "order.read", "order.update",
+                "order.mark.completed",
+                "payment.read",
                 "menu.read",
                 "menu-category.read",
                 "menu-modifier.read",
-                "table.read", "table.update"
+                "image.read",
+                "dining.create", "dining.read", "dining.update",
+                "table.create", "table.read", "table.update"
             )
         ),
         new RoleSeed(
             "kitchen",
             "Kitchen staff preparing orders",
             List.of(
-                "order.read", "order.update",
-                "kitchen.read", "kitchen.update",
-                "menu.read"
-            )
-        ),
-        new RoleSeed(
-            "owner",
-            "Business owner with read-only analytics",
-            List.of(
-                "report.read",
                 "order.read",
-                "payment.read",
-                "customer.read"
+                "order.mark.preparing", "order.mark.ready",
+                "kitchen.read", "kitchen.update",
+                "menu.read",
+                "image.read"
             )
         )
     );

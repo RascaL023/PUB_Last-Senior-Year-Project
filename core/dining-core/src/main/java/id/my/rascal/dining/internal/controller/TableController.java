@@ -8,6 +8,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -41,6 +42,7 @@ public class TableController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyAuthority('table.create', 'table.*')")
     public ResponseEntity<SuccessTemplate<DiningTableResponse>> create(
         @Valid @RequestBody DiningTableRequest request
     ) {
@@ -52,6 +54,7 @@ public class TableController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyAuthority('table.read', 'table.*')")
     public ResponseEntity<SuccessPagedTemplate<List<DiningTableResponse>>> getAll(
         @RequestParam(required = false) String keyword,
         @PageableDefault(size = 10, sort = "tableNumber", direction = Sort.Direction.ASC) Pageable pageable
@@ -71,6 +74,7 @@ public class TableController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('table.read', 'table.*')")
     public ResponseEntity<SuccessTemplate<DiningTableResponse>> getById(@PathVariable("id") Long id) {
         return ApiResponse.success(
             HttpStatus.OK,
@@ -80,6 +84,7 @@ public class TableController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('table.update', 'table.*')")
     public ResponseEntity<SuccessTemplate<DiningTableResponse>> update(
         @PathVariable("id") Long id,
         @Valid @RequestBody DiningTablePutRequest request
@@ -92,6 +97,7 @@ public class TableController {
     }
 
     @PatchMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('table.update', 'table.*')")
     public ResponseEntity<SuccessTemplate<DiningTableResponse>> patch(
         @PathVariable("id") Long id,
         @RequestBody DiningTablePatchRequest request
@@ -107,6 +113,7 @@ public class TableController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('table.delete', 'table.*')")
     public ResponseEntity<Void> delete(@PathVariable("id") Long id) {
         tableService.delete(id);
         return ResponseEntity.noContent().build();

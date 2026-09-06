@@ -8,6 +8,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -49,6 +50,7 @@ public class OrderController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyAuthority('order.create', 'order.*')")
     public ResponseEntity<SuccessTemplate<OrderResponse>> create(@Valid @RequestBody OrderRequest request) {
         return ApiResponse.success(
             HttpStatus.CREATED,
@@ -58,6 +60,7 @@ public class OrderController {
     }
 
     @PostMapping("/{id}/confirm")
+    @PreAuthorize("hasAnyAuthority('order.update', 'order.*')")
     public ResponseEntity<SuccessTemplate<OrderResponse>> confirm(@PathVariable Long id) {
         validateId(id);
         return ApiResponse.success(
@@ -68,6 +71,7 @@ public class OrderController {
     }
 
     @PostMapping("/{id}/prepare")
+    @PreAuthorize("hasAnyAuthority('order.mark.preparing', 'order.*')")
     public ResponseEntity<SuccessTemplate<OrderResponse>> prepare(@PathVariable Long id) {
         validateId(id);
         return ApiResponse.success(
@@ -78,6 +82,7 @@ public class OrderController {
     }
 
     @PostMapping("/{id}/ready")
+    @PreAuthorize("hasAnyAuthority('order.mark.ready', 'order.*')")
     public ResponseEntity<SuccessTemplate<OrderResponse>> ready(@PathVariable Long id) {
         validateId(id);
         return ApiResponse.success(
@@ -88,6 +93,7 @@ public class OrderController {
     }
 
     @PostMapping("/{id}/complete")
+    @PreAuthorize("hasAnyAuthority('order.mark.completed', 'order.*')")
     public ResponseEntity<SuccessTemplate<OrderResponse>> complete(@PathVariable Long id) {
         validateId(id);
         return ApiResponse.success(
@@ -98,6 +104,7 @@ public class OrderController {
     }
 
     @PostMapping("/{id}/cancel")
+    @PreAuthorize("hasAnyAuthority('order.update', 'order.*')")
     public ResponseEntity<SuccessTemplate<OrderResponse>> cancel(@PathVariable Long id) {
         validateId(id);
         return ApiResponse.success(
@@ -108,6 +115,7 @@ public class OrderController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyAuthority('order.read', 'order.*')")
     public ResponseEntity<SuccessPagedTemplate<List<OrderResponse>>> getAll(
         @RequestParam(required = false) String keyword,
         @RequestParam(required = false) String status,
@@ -134,6 +142,7 @@ public class OrderController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('order.read', 'order.*')")
     public ResponseEntity<SuccessTemplate<OrderResponse>> getById(@PathVariable("id") Long id) {
         return ApiResponse.success(
             HttpStatus.OK,
@@ -143,6 +152,7 @@ public class OrderController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('order.update', 'order.*')")
     public ResponseEntity<SuccessTemplate<OrderResponse>> update(
         @PathVariable("id") Long id,
         @Valid @RequestBody OrderPutRequest request
@@ -155,6 +165,7 @@ public class OrderController {
     }
 
     @PatchMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('order.update', 'order.*')")
     public ResponseEntity<SuccessTemplate<OrderResponse>> patch(
         @PathVariable("id") Long id,
         @RequestBody OrderPatchRequest request
@@ -170,6 +181,7 @@ public class OrderController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('order.delete', 'order.*')")
     public ResponseEntity<Void> delete(@PathVariable("id") Long id) {
         orderService.delete(id);
         return ResponseEntity.noContent().build();
