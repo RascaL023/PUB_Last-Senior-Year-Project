@@ -49,6 +49,8 @@
         <module>payment-xendit</module>
         <module>dining-api</module>
         <module>dining-core</module>
+        <module>customer-api</module>
+        <module>customer-core</module>
         <module>search-api</module>
         <module>search-meilisearch</module>
         <module>core-app</module>
@@ -135,6 +137,17 @@
             <dependency>
                 <groupId>id.my.rascal</groupId>
                 <artifactId>dining-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>id.my.rascal</groupId>
+                <artifactId>customer-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>id.my.rascal</groupId>
+                <artifactId>customer-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
 

@@ -55,6 +55,11 @@
 
         <dependency>
             <groupId>id.my.rascal</groupId>
+            <artifactId>customer-core</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>id.my.rascal</groupId>
             <artifactId>image-core</artifactId>
         </dependency>
 

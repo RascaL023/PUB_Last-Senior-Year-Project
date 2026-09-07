@@ -6,16 +6,32 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import id.my.rascal.auth.api.AuthApi;
+import id.my.rascal.auth.api.CreateAccountRequest;
 import id.my.rascal.auth.api.UserAuthApiResponse;
+import id.my.rascal.auth.internal.entity.Role;
+import id.my.rascal.auth.internal.entity.UserAuth;
+import id.my.rascal.auth.internal.repository.RoleRepository;
 import id.my.rascal.auth.internal.repository.UserAuthRepository;
+import id.my.rascal.common.exception.BadRequestException;
+import id.my.rascal.common.exception.ConflictException;
+import id.my.rascal.common.exception.NotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Component
 public class AuthApiImpl implements AuthApi {
 
     private final UserAuthRepository userAuthRepository;
+    private final RoleRepository roleRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public AuthApiImpl(UserAuthRepository userAuthRepository) {
+    public AuthApiImpl(
+        UserAuthRepository userAuthRepository,
+        RoleRepository roleRepository,
+        PasswordEncoder passwordEncoder
+    ) {
         this.userAuthRepository = userAuthRepository;
+        this.roleRepository = roleRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
@@ -31,5 +47,29 @@ public class AuthApiImpl implements AuthApi {
         return userAuthRepository.findActiveByEmail(email)
             .map(u -> new UserAuthApiResponse(u.getId(), u.getEmail()));
     }
-    
+
+    @Override
+    @Transactional
+    public UserAuthApiResponse createAccount(CreateAccountRequest request) {
+        if (request.email() == null || request.email().isBlank())
+            throw new BadRequestException("Email is required");
+        if (request.password() == null || request.password().length() < 8)
+            throw new BadRequestException("Password must be at least 8 characters");
+        if (userAuthRepository.findActiveByEmail(request.email()).isPresent())
+            throw new ConflictException("Email already exists: " + request.email());
+
+        Role role = roleRepository.findByName(request.roleName())
+            .filter(r -> r.getDeletedAt() == null)
+            .orElseThrow(() -> new NotFoundException("Role not found: " + request.roleName()));
+
+        UserAuth userAuth = new UserAuth();
+        userAuth.setEmail(request.email());
+        userAuth.setHashedPassword(passwordEncoder.encode(request.password()));
+        userAuth.setCreatedAt(java.time.LocalDateTime.now());
+        userAuth.setRoles(new java.util.HashSet<>(java.util.Set.of(role)));
+
+        userAuth = userAuthRepository.save(userAuth);
+        return new UserAuthApiResponse(userAuth.getId(), userAuth.getEmail());
+    }
+
 }

@@ -32,7 +32,7 @@ public class DevRoleSeeder implements Seeder {
             List.of(
                 "order.create", "order.read", "order.update",
                 "payment.create", "payment.read", "payment.update",
-                "customer.read",
+                "customer.create", "customer.read", "customer.update",
                 "menu.read",
                 "menu-category.read",
                 "menu-modifier.read",
@@ -48,6 +48,7 @@ public class DevRoleSeeder implements Seeder {
             List.of(
                 "order.create", "order.read", "order.update",
                 "order.mark.completed",
+                "customer.read",
                 "payment.read",
                 "menu.read",
                 "menu-category.read",
@@ -67,6 +68,11 @@ public class DevRoleSeeder implements Seeder {
                 "menu.read",
                 "image.read"
             )
+        ),
+        new RoleSeed(
+            "customer_base",
+            "Customer login identity without staff permissions",
+            List.of()
         )
     );
 

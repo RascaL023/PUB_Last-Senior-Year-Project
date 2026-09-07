@@ -25,6 +25,11 @@ public class FormalRoleSeeder implements Seeder {
             "admin",
             "Full system access",
             AuthorityCatalog.names()
+        ),
+        new RoleSeed(
+            "customer_base",
+            "Customer login identity without staff permissions",
+            List.of()
         )
     );
 

@@ -428,6 +428,7 @@ Login ────────────────────────�
 | Endpoint | Auth Required | Authority |
 |---|---|---|
 | `POST /auths/login` | Tidak | — |
+| `POST /customers/register` | Tidak | — |
 | `POST /auths/refresh` | Tidak (hanya cookie) | — |
 | `POST /auths/logout` | Cookie (boleh kosong) | — |
 | `POST /auths/logout-all` | Ya (Bearer) | — |
@@ -853,7 +854,7 @@ Membutuhkan login.
 }
 ```
 
-Field `type` wajib diisi — enum `DINE_IN` atau `TAKEAWAY` (backend juga menerima alias `TAKE_AWAY`). `customerId`, `customerName`, dan `notes` opsional dengan batasan panjang yang wajar, sedangkan `items` minimal berisi satu item dengan `quantity` minimal 1.
+Field `type` wajib diisi — enum `DINE_IN` atau `TAKEAWAY` (backend juga menerima alias `TAKE_AWAY`). `customerId`, `customerName`, dan `notes` opsional dengan batasan panjang yang wajar, sedangkan `items` minimal berisi satu item dengan `quantity` minimal 1. Bila `customerId` diisi, backend memvalidasi ke `customers.id` (404 bila tidak ada); `customerName` tetap snapshot manual.
 
 #### Update Order (PUT/PATCH) — Reconcile Pattern
 
@@ -1066,6 +1067,43 @@ Bentuknya sama seperti create order, hanya saja tanpa field `type` karena order 
 
 ---
 
+### M1. Customers (`/api/v1/customers`)
+
+Member loyalty + akun login customer. `auth_users` adalah satu-satunya penegak
+`email` unique; `customers.email` hanya snapshot non-unique. `orders.customer_id`
+menunjuk `customers.id` (bukan `UserAuth.id`); guest (`customerId=null`) tetap bisa order.
+
+| Method | Path | Keamanan | Keterangan |
+|---|---|---|---|
+| `POST /` | Register + buat akun | Publik | Body `{name, email, password(min 8), phone?}` → buat `auth_users` (role `CUSTOMER_BASE`) + profil; duplikat email → `409` |
+| `POST /` | Create member (tanpa login) | `customer.create` | Body `{name, email?, phone?, notes?}` → `userAuthId=null` |
+| `GET /` | List/search | `customer.read` | Filter `keyword` (name/email/phone), default `sort=createdAt,desc` |
+| `GET /{id}` | Get by ID | `customer.read` | |
+| `PUT /{id}` | Full update | `customer.update` | Profil saja (tidak mengubah akun) |
+| `PATCH /{id}` | Partial update | `customer.update` | Minimal satu field terisi |
+| `POST /{id}/claim` | Tautkan akun ke member lama | `customer.update` | Body `{email, password}`; gagal bila sudah punya `userAuthId` |
+| `DELETE /{id}` | Soft delete | `customer.delete` | Response `204`; akun `auth_users` tidak ikut terhapus |
+
+Login customer memakai endpoint yang sama: `POST /api/v1/auths/login`.
+Token customer (`CUSTOMER_BASE`, nol authority staf) otomatis `403` di endpoint staf.
+
+**CustomerResponse:**
+
+```json
+{
+  "id": 1,
+  "userAuthId": 10,
+  "name": "Budi Santoso",
+  "email": "budi@example.com",
+  "phone": "081234567890",
+  "notes": null,
+  "createdAt": "2026-09-06T10:00:00Z",
+  "updatedAt": null
+}
+```
+
+`userAuthId` nullable — `null` berarti member tanpa login (didaftarkan kasir).
+
 ### M. Tables (`/api/v1/tables`)
 
 Membutuhkan login.
@@ -1247,6 +1285,16 @@ GET    /api/v1/dinings?page=&size=
 GET    /api/v1/dinings/{id}
 POST   /api/v1/dinings/{id}/orders
 POST   /api/v1/dinings/{id}/close
+
+CUSTOMERS
+POST   /api/v1/customers/register   (public, member + akun)
+POST   /api/v1/customers
+GET    /api/v1/customers?keyword=&page=&size=
+GET    /api/v1/customers/{id}
+PUT    /api/v1/customers/{id}
+PATCH  /api/v1/customers/{id}
+POST   /api/v1/customers/{id}/claim
+DELETE /api/v1/customers/{id}
 
 TABLES
 POST   /api/v1/tables

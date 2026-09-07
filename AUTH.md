@@ -75,7 +75,7 @@ sebagai `permitAll`:
 Semua request lain wajib `authenticated()`. Method security
 (`@EnableMethodSecurity`) aktif dan `@PreAuthorize` granular dipasang di
 seluruh controller resource (user, role, authority, menu, order, payment,
-dining, table, image, report) sesuai matriks §4. Wildcard literal
+dining, table, image, report, customer) sesuai matriks §4. Wildcard literal
 (`menu.*`, `order.*`, dst.) ikut dicek karena ADMIN memegang string
 tersebut sebagai authority; role non-admin lolos lewat permission
 granular. Khusus `report.read` tidak ada wildcard `report.*` di catalog,
@@ -87,7 +87,7 @@ sehingga gate-nya hanya authority tunggal itu (ADMIN & CASHIER).
 
 | Endpoint | Syarat |
 |---|---|
-| `POST /auths/login`, `POST /auths/refresh`, kedua webhook | Publik |
+| `POST /auths/login`, `POST /auths/refresh`, kedua webhook, `POST /customers/register` | Publik |
 | `POST /auths/users` | `user.create` / `user.*` |
 | `GET /auths/users`, `GET /auths/users/{id}` | `user.read` / `user.*` |
 | `PUT/PATCH /auths/users/{id}` | `user.update` / `user.*` |
@@ -132,13 +132,21 @@ sehingga gate-nya hanya authority tunggal itu (ADMIN & CASHIER).
 | Table: `DELETE /{id}` | `table.delete` / `table.*` |
 | `GET /images/auth` | `image.create` / `image.*` |
 | `GET /reports/dashboard/summary` | `report.read` (tanpa wildcard — hanya ADMIN & CASHIER) |
+| Customer: `POST /customers/register` | Publik (buat akun `auth_users` + profil member) |
+| Customer: `POST /` | `customer.create` / `customer.*` |
+| Customer: `GET /`, `GET /{id}` | `customer.read` / `customer.*` |
+| Customer: `PUT/PATCH /{id}`, `POST /{id}/claim` | `customer.update` / `customer.*` |
+| Customer: `DELETE /{id}` | `customer.delete` / `customer.*` |
 
 ### 4.1 Matriks Role × Authority (sumber kebenaran seeder)
 
-Role final: **ADMIN, CASHIER, WAITER, KITCHEN**. Tidak ada role `CUSTOMER`
-(pembeli bukan aktor sistem — guest checkout tetap) dan tidak ada `OWNER`
-(dobel konsep dengan ADMIN). Berlaku untuk `DevRoleSeeder` dan
-`FormalRoleSeeder`; seluruh authority dijamin ada di `AuthorityCatalog`.
+Role final: **ADMIN, CASHIER, WAITER, KITCHEN + CUSTOMER_BASE**.
+`CUSTOMER_BASE` adalah pengecualian eksplisit atas larangan role `CUSTOMER`:
+murni identitas login customer (nol authority staf → otomatis 403 di semua
+endpoint staf), bukan guard untuk memaksa login sebelum pesan — guest
+checkout tetap. Tidak ada `OWNER` (dobel konsep dengan ADMIN). Berlaku
+untuk `DevRoleSeeder` dan `FormalRoleSeeder`; seluruh authority dijamin
+ada di `AuthorityCatalog`.
 
 | Group | ADMIN | CASHIER | WAITER | KITCHEN |
 |---|---|---|---|---|
@@ -157,9 +165,9 @@ Catatan penyesuaian saat implementasi (matriks inti roadmap disesuaikan):
 
 - WAITER mendapat `payment.read` (read-only, pilihan "— atau read saja");
   tidak mendapat `order.mark.preparing/ready` (opsional, tidak di-assign).
-- CASHIER mendapat `dining.read` + `table.read` (read-only); `customer.read`
-  dipertahankan sebagai persiapan Phase 5 (kasir cari member), bukan
-  pembuatan modul customer.
+- CASHIER mendapat `dining.read` + `table.read` (read-only);
+  `customer.create/read/update` (kelola member + claim akun); WAITER
+  mendapat `customer.read` (cari member).
 - Assignment granular (tanpa wildcard) kecuali ADMIN yang memegang semua
   authority termasuk `x.*` untuk keperluan assign/UI.
 
