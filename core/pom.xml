@@ -44,6 +44,8 @@
         <module>menu-core</module>
         <module>order-api</module>
         <module>order-core</module>
+        <module>invoice-api</module>
+        <module>invoice-core</module>
         <module>payment-core</module>
         <module>payment-api</module>
         <module>payment-xendit</module>
@@ -108,6 +110,17 @@
             <dependency>
                 <groupId>id.my.rascal</groupId>
                 <artifactId>order-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>id.my.rascal</groupId>
+                <artifactId>invoice-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>id.my.rascal</groupId>
+                <artifactId>invoice-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
 

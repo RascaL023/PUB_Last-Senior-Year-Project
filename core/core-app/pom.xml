@@ -37,6 +37,15 @@
 
         <dependency>
             <groupId>id.my.rascal</groupId>
+            <artifactId>invoice-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>id.my.rascal</groupId>
+            <artifactId>invoice-api</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>id.my.rascal</groupId>
             <artifactId>payment-core</artifactId>
         </dependency>
         <dependency>
