@@ -4,19 +4,47 @@ import id.my.rascal.invoice.api.InvoiceApiResponse;
 import id.my.rascal.invoice.api.InvoiceItemApiResponse;
 import id.my.rascal.invoice.internal.entity.Invoice;
 import id.my.rascal.invoice.internal.entity.InvoiceItem;
+import id.my.rascal.invoice.internal.model.request.InvoiceItemRequest;
 import id.my.rascal.invoice.internal.model.response.InvoiceItemResponse;
 import id.my.rascal.invoice.internal.model.response.InvoiceResponse;
 
+import java.time.LocalDateTime;
 import java.util.List;
+
+import id.my.rascal.common.exception.BadRequestException;
+import id.my.rascal.common.util.StringUtil;
 
 public class InvoiceMapper {
 
     private InvoiceMapper() { }
 
+    public static InvoiceItem toItemEntity(Invoice invoice, InvoiceItemRequest request) {
+        if (request.orderItemId() == null || request.orderItemId() < 1)
+            throw new BadRequestException("Order item ID is required");
+        if (request.quantity() == null || request.quantity() < 1)
+            throw new BadRequestException("Quantity must be at least 1");
+        if (request.unitPrice() == null || request.unitPrice() < 0)
+            throw new BadRequestException("Unit price cannot be negative");
+        if (request.amount() == null || request.amount() < 0)
+            throw new BadRequestException("Amount cannot be negative");
+
+        InvoiceItem item = new InvoiceItem();
+        item.setInvoice(invoice);
+        item.setOrderItemId(request.orderItemId());
+        item.setOrderId(request.orderId());
+        item.setDescription(StringUtil.normalizeSpaces(request.description()));
+        item.setQuantity(request.quantity());
+        item.setUnitPrice(request.unitPrice());
+        item.setAmount(request.amount());
+        item.setCreatedAt(LocalDateTime.now());
+        return item;
+    }
+
     public static InvoiceApiResponse toApiResponse(Invoice invoice) {
         return new InvoiceApiResponse(
             invoice.getId(),
             invoice.getInvoiceNumber(),
+            invoice.getDiningId(),
             invoice.getStatus().name(),
             invoice.getTotalAmount(),
             invoice.getPaidAmount(),
@@ -31,6 +59,7 @@ public class InvoiceMapper {
         return new InvoiceApiResponse(
             response.id(),
             response.invoiceNumber(),
+            response.diningId(),
             response.status().name(),
             response.totalAmount(),
             response.paidAmount(),
@@ -49,6 +78,7 @@ public class InvoiceMapper {
         return new InvoiceResponse(
             invoice.getId(),
             invoice.getInvoiceNumber(),
+            invoice.getDiningId(),
             invoice.getStatus(),
             invoice.getTotalAmount(),
             invoice.getPaidAmount(),
@@ -63,6 +93,7 @@ public class InvoiceMapper {
     public static InvoiceItemResponse toItemResponse(InvoiceItem item) {
         return new InvoiceItemResponse(
             item.getId(),
+            item.getOrderItemId(),
             item.getOrderId(),
             item.getDescription(),
             item.getQuantity(),
@@ -74,6 +105,7 @@ public class InvoiceMapper {
     public static InvoiceItemApiResponse toItemApiResponse(InvoiceItem item) {
         return new InvoiceItemApiResponse(
             item.getId(),
+            item.getOrderItemId(),
             item.getOrderId(),
             item.getDescription(),
             item.getQuantity(),
@@ -85,6 +117,7 @@ public class InvoiceMapper {
     public static InvoiceItemApiResponse toItemApiResponse(InvoiceItemResponse response) {
         return new InvoiceItemApiResponse(
             response.id(),
+            response.orderItemId(),
             response.orderId(),
             response.description(),
             response.quantity(),

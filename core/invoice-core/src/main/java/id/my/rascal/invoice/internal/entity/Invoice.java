@@ -31,7 +31,7 @@ public class Invoice {
     @Column(name = "invoice_number", nullable = false, unique = true)
     private String invoiceNumber;
 
-    @Column(name = "dining_id")
+    @Column(name = "dining_id", unique = true)
     private Long diningId;
 
     @Enumerated(EnumType.STRING)

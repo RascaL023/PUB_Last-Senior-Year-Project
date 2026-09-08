@@ -1,6 +1,6 @@
 # API Contract — Backend Modular Monolith
 
-> Spesifikasi API lengkap untuk integrasi frontend, diverifikasi langsung dari source code per **6 September 2026**.
+> Spesifikasi API lengkap untuk integrasi frontend, diverifikasi langsung dari source code per **8 September 2026**.
 
 ---
 
@@ -438,6 +438,7 @@ Login ────────────────────────�
 | `GET /auths/authorities/{id}` | Ya | `authority.create` / `authority.*` (quirk, lihat bawah) |
 | `CRUD /auths/roles` | Ya | `role.create` / `role.read` / `role.update` / `role.delete` / `role.*` |
 | Menu (V1, V2, admin, categories, modifiers), Order, Payment, Dining, Table, Images | Ya | Cukup login |
+| `GET/POST /invoices` dkk | Ya | `invoice.create` / `invoice.read` / `invoice.update` / `invoice.delete` / `invoice.*` |
 
 > Quirk yang perlu diketahui: `GET /auths/authorities/{id}` membutuhkan authority `authority.create` (bukan `read`) karena anotasi di implementasi backend memakai nilai tersebut. Anotasi `@PreAuthorize` untuk menu saat ini di-comment, jadi seluruh endpoint menu hanya membutuhkan login.
 
@@ -803,34 +804,36 @@ Membutuhkan login.
 
 | Dari | Ke | Syarat |
 |---|---|---|
-| `CREATED` | `CONFIRMED` | Tipe `TAKEAWAY` wajib `paidStatus=PAID` dulu |
+| `CREATED` | `CONFIRMED` | Bebas |
 | `CREATED` | `CANCELLED` | Bebas |
 | `CONFIRMED` | `PREPARING` | — |
 | `CONFIRMED` | `CANCELLED` | Bebas |
 | `PREPARING` | `READY` | — |
-| `READY` | `COMPLETED` | `paidStatus` wajib `PAID` |
+| `READY` | `COMPLETED` | — |
 | `COMPLETED` / `CANCELLED` | — | Terminal — tidak bisa diubah lagi |
 
 #### CRUD Endpoints
 
 | Method | Path | Keterangan |
 |---|---|---|
-| `POST /` | Create order | Response `201` |
-| `GET /` | List orders | Filter `keyword` (orderNumber/customerName), `status`, `paidStatus`; default `sort=createdAt,desc` |
+| `POST /` | Create order | Response `201`. Order standalone otomatis membuat Invoice sendiri via event (lihat bagian Invoice) |
+| `GET /` | List orders | Filter `keyword` (orderNumber/customerName), `status`; default `sort=createdAt,desc` |
 | `GET /{id}` | Get by ID | |
-| `PUT /{id}` | Full update (reconcile items) | |
-| `PATCH /{id}` | Partial update (reconcile items), minimal satu field terisi | |
-| `DELETE /{id}` | Hard delete | Response `204 No Content` |
+| `PUT /{id}` | Full update (reconcile items) | Hanya saat status `CREATED`/`CONFIRMED`/`PREPARING`/`READY`; invoice yang sudah terbit tidak ikut diperbarui (snapshot) |
+| `PATCH /{id}` | Partial update (reconcile items), minimal satu field terisi | Batasan status sama seperti `PUT` |
+| `DELETE /{id}` | Soft delete | Response `204 No Content` |
 
 #### Status Transition Endpoints
 
 | Method | Path | Syarat |
 |---|---|---|
-| `POST /{id}/confirm` | Confirm order | Tipe `TAKEAWAY` wajib bayar dulu |
+| `POST /{id}/confirm` | Confirm order | Status harus CREATED |
 | `POST /{id}/prepare` | Mulai proses | Status harus CONFIRMED |
 | `POST /{id}/ready` | Siap disajikan | Status harus PREPARING |
-| `POST /{id}/complete` | Selesai | Status harus READY dan sudah PAID |
-| `POST /{id}/cancel` | Batal | Status harus CREATED atau CONFIRMED |
+| `POST /{id}/complete` | Selesai | Status harus READY |
+| `POST /{id}/cancel` | Batal | Status harus CREATED atau CONFIRMED; invoice standalone yang belum dibayar ikut di-void |
+
+> Order tidak lagi punya status bayar — tidak ada gate `PAID` di transisi mana pun. Settlement finansial sepenuhnya dimiliki Invoice.
 
 #### Create Order Request
 
@@ -882,7 +885,6 @@ Pada contoh di atas, baris `id: 1` di-update, baris baru (`menuId: 2`) ditambahk
   "orderNumber": "ORD-20260823-0001",
   "status": "CREATED",
   "type": "DINE_IN",
-  "paidStatus": "UNPAID",
   "customerId": 1,
   "customerName": "John Doe",
   "notes": "Pedas sedang",
@@ -917,7 +919,8 @@ Pada contoh di atas, baris `id: 1` di-update, baris baru (`menuId: 2`) ditambahk
 |---|---|
 | `status` | `CREATED`, `CONFIRMED`, `PREPARING`, `READY`, `COMPLETED`, `CANCELLED` (query juga menerima alias `CREATE`, `PREPARE`, `COMPLETE`, `CANCEL`) |
 | `type` | `DINE_IN`, `TAKEAWAY` |
-| `paidStatus` | `UNPAID`, `PAID` |
+
+> `paidStatus` (`UNPAID`/`PAID`) sudah dihapus dari Order. Settlement finansial dimiliki Invoice (`OPEN`/`PARTIALLY_PAID`/`PAID`/`VOID`); payment menarget `INVOICE` (`ORDER`/`DINE_IN` masih didukung, deprecated).
 
 ---
 
@@ -935,7 +938,7 @@ Membutuhkan login, kecuali webhook.
     └──fail──> [FAILED]     (terminal)
 ```
 
-Status `PAID` dicapai lewat webhook Xendit sebagai efek samping (bukan lewat endpoint langsung). Endpoint yang aktif untuk mengubah status secara manual hanya `expire`, `fail`, dan `refund`.
+Status `PAID` dicapai lewat webhook Xendit atau langsung saat create dengan provider `INTERNAL` (tunai/CASH). Payment yang `PAID` dan menarget `INVOICE` otomatis meneruskan nominalnya ke invoice (`OPEN` → `PARTIALLY_PAID` → `PAID`). Endpoint yang aktif untuk mengubah status secara manual hanya `expire`, `fail`, dan `refund`.
 
 | Dari | Ke | Syarat |
 |---|---|---|
@@ -964,14 +967,14 @@ Endpoint berikut di-comment di source code dan tidak boleh dipakai: `POST /{id}/
 
 ```json
 {
-  "targetType": "ORDER",
+  "targetType": "INVOICE",
   "targetId": 1,
   "paymentProvider": "XENDIT",
   "paymentDetail": "BCA Virtual Account"
 }
 ```
 
-Hanya ada 4 field: `targetType` (`ORDER` atau `DINE_IN`) untuk menunjukkan pembayaran milik order atau sesi dining, `targetId` (minimal 1), `paymentProvider` (`INTERNAL` yang berarti tunai/CASH, atau `XENDIT`), dan `paymentDetail` opsional (maksimal 255 karakter). Field seperti `externalId` dan `invoiceUrl` diisi oleh backend, bukan oleh frontend.
+Ada 4 field: `targetType` (`INVOICE` untuk membayar tagihan — didukung juga `ORDER` atau `DINE_IN` yang sudah deprecated), `targetId` (minimal 1; untuk `INVOICE` nominal yang ditagihkan = sisa belum bayar / `remainingAmount`), `paymentProvider` (`INTERNAL` yang berarti tunai/CASH, atau `XENDIT`), dan `paymentDetail` opsional (maksimal 255 karakter). Field seperti `externalId` dan `invoiceUrl` diisi oleh backend, bukan oleh frontend.
 
 #### PaymentResponse
 
@@ -1006,8 +1009,8 @@ Membutuhkan login. Tidak ada endpoint delete untuk dining.
 | `POST /` | Buka sesi dining baru | Response `201` |
 | `GET /` | List sesi | Pagination, default `sort=createdAt,desc` |
 | `GET /{id}` | Detail sesi | |
-| `POST /{id}/orders` | Tambah order ke sesi | Response `201` |
-| `POST /{id}/close` | Tutup sesi | Meja kembali AVAILABLE |
+| `POST /{id}/orders` | Tambah order ke sesi | Response `201`; item-item order otomatis ditambahkan ke Invoice milik dining |
+| `POST /{id}/close` | Tutup sesi | Meja kembali AVAILABLE; hanya bila semua order sudah `COMPLETED`/`CANCELLED` |
 
 **Open Dining Request:**
 
@@ -1101,11 +1104,70 @@ Membutuhkan login.
 
 ---
 
-### N. Webhooks — Server-to-Server (Frontend Tidak Memanggil Langsung)
+### N. Invoices (`/api/v1/invoices`)
+
+Invoice adalah **financial obligation / tagihan yang harus dibayar** — pemilik tunggal status settlement (`OPEN` → `PARTIALLY_PAID` → `PAID`, atau `VOID`). Invoice terdiri dari baris-baris (`InvoiceItem`) yang masing-masing merupakan snapshot dari satu `OrderItem` (`orderItemId`, nama, `quantity`, `unitPrice`, `amount` final — harga sudah termasuk modifier).
+
+Invoice umumnya **dibuat otomatis oleh backend via event**, bukan oleh frontend:
+
+| Pemicu | Hasil |
+|---|---|
+| `POST /api/v1/orders` (standalone) | 1 Invoice (`diningId: null`) berisi 1 baris per OrderItem |
+| `POST /api/v1/dinings/{id}/orders` | Baris-baris order ditambahkan ke **satu Invoice milik dining** (`diningId` terisi); order berikutnya menempel ke Invoice yang sama |
+| `POST /api/v1/orders/{id}/cancel` | Invoice standalone yang belum dibayar ikut di-void |
+| Payment `PAID` menarget `INVOICE` | Nominal diteruskan ke invoice (`paidAmount`/`remainingAmount`/`status` ter-update) |
+
+| Method | Path | Authority | Keterangan |
+|---|---|---|---|
+| `POST /` | Create manual | `invoice.create` / `invoice.*` | Response `201`; untuk kebutuhan admin — operational flow memakai event |
+| `GET /` | List invoices | `invoice.read` / `invoice.*` | Filter `keyword` (nomor invoice), `status`; default `sort=createdAt,desc` |
+| `GET /{id}` | Get by ID | `invoice.read` / `invoice.*` | |
+| `POST /{id}/payments` | Catat pembayaran manual | `invoice.update` / `invoice.*` | Body `{ "amount": 60000 }` (`amount` minimal 1, tidak boleh melebihi sisa) |
+| `POST /{id}/void` | Void invoice | `invoice.update` / `invoice.*` | Hanya dari `OPEN`/`PARTIALLY_PAID`; invoice `PAID` tidak bisa di-void |
+| `DELETE /{id}` | Soft delete | `invoice.delete` / `invoice.*` | Response `204 No Content` |
+
+**InvoiceResponse:**
+
+```json
+{
+  "id": 900,
+  "invoiceNumber": "INV-08092026-A1B2C3",
+  "diningId": null,
+  "status": "PARTIALLY_PAID",
+  "totalAmount": 58000,
+  "paidAmount": 40000,
+  "remainingAmount": 18000,
+  "issuedAt": "2026-09-08T10:00:00Z",
+  "createdAt": "2026-09-08T10:00:00Z",
+  "updatedAt": "2026-09-08T10:05:00Z",
+  "items": [
+    {
+      "id": 1,
+      "orderItemId": 11,
+      "orderId": 101,
+      "description": "Nasi Goreng",
+      "quantity": 2,
+      "unitPrice": 25000,
+      "amount": 50000
+    }
+  ]
+}
+```
+
+**Enum `InvoiceStatus`:** `OPEN`, `PARTIALLY_PAID`, `PAID`, `VOID` (query juga menerima alias `partial`, `settled`, `voided`, `cancelled`).
+
+Catatan untuk frontend:
+- `invoiceNumber` (bukan `id`) adalah referensi bisnis untuk ditampilkan ke pelanggan.
+- `diningId: null` = tagihan order standalone; terisi = tagihan gabungan satu sesi dining.
+- Invoice adalah snapshot: perubahan order items setelah invoice terbit tidak mengubah invoice yang sudah ada.
+
+---
+
+### O. Webhooks — Server-to-Server (Frontend Tidak Memanggil Langsung)
 
 | Endpoint | Keamanan | Perilaku |
 |---|---|---|
-| `POST /api/v1/payments/webhooks/xendit` | Publik, header `X-Callback-Token` | Xendit memberi tahu pembayaran lunas; backend meng-update payment dan order terkait otomatis. Frontend cukup polling `GET /payments/{id}` atau `GET /orders/{id}` untuk melihat status `PAID`. Response selalu body kosong (`200` sukses, `401` token salah, `400` payload gagal diproses). |
+| `POST /api/v1/payments/webhooks/xendit` | Publik, header `X-Callback-Token` | Xendit memberi tahu pembayaran lunas; backend meng-update payment dan meneruskan nominal ke invoice terkait otomatis. Frontend cukup polling `GET /payments/{id}` atau `GET /invoices/{id}` untuk melihat status `PAID`. Response selalu body kosong (`200` sukses, `401` token salah, `400` payload gagal diproses). |
 | `POST /api/v1/images/imagekit/webhooks` | Publik | ImageKit memberi tahu file dibuat, diubah, atau dihapus; backend meng-update registry internal. Tidak ada aksi yang diperlukan dari frontend. Response body kosong (`200` atau `400`). |
 
 ---
@@ -1218,7 +1280,7 @@ GET    /api/v1/images/auth
 
 ORDERS
 POST   /api/v1/orders
-GET    /api/v1/orders?page=&size=&keyword=&status=&paidStatus=
+GET    /api/v1/orders?page=&size=&keyword=&status=
 GET    /api/v1/orders/{id}
 PUT    /api/v1/orders/{id}
 PATCH  /api/v1/orders/{id}
@@ -1240,6 +1302,14 @@ POST   /api/v1/payments/webhooks/xendit   (public, server-to-server)
 
 IMAGES WEBHOOK
 POST   /api/v1/images/imagekit/webhooks   (public, server-to-server)
+
+INVOICES
+POST   /api/v1/invoices
+GET    /api/v1/invoices?page=&size=&keyword=&status=
+GET    /api/v1/invoices/{id}
+POST   /api/v1/invoices/{id}/payments
+POST   /api/v1/invoices/{id}/void
+DELETE /api/v1/invoices/{id}
 
 DINING
 POST   /api/v1/dinings

@@ -15,6 +15,8 @@ import id.my.rascal.common.exception.BadRequestException;
 import id.my.rascal.common.exception.NotFoundException;
 import id.my.rascal.dining.api.DiningApi;
 import id.my.rascal.dining.api.DiningApiResponse;
+import id.my.rascal.invoice.api.InvoiceApi;
+import id.my.rascal.invoice.api.InvoiceApiResponse;
 import id.my.rascal.order.api.OrderApi;
 import id.my.rascal.order.api.OrderApiResponse;
 import id.my.rascal.payment.api.PaymentProcessor;
@@ -42,6 +44,7 @@ public class PaymentService {
     private final PaymentEffect paymentEffect;
     private final OrderApi orderApi;
     private final DiningApi diningApi;
+    private final InvoiceApi invoiceApi;
 
     public PaymentService(
         PaymentRepository paymentRepository,
@@ -49,6 +52,7 @@ public class PaymentService {
         PaymentProcessorResolver paymentProcessorResolver,
         OrderApi orderApi,
         DiningApi diningApi,
+        InvoiceApi invoiceApi,
         PaymentEffect paymentEffect
     ) {
         this.paymentRepository = paymentRepository;
@@ -56,6 +60,7 @@ public class PaymentService {
         this.paymentProcessorResolver = paymentProcessorResolver;
         this.orderApi = orderApi;
         this.diningApi = diningApi;
+        this.invoiceApi = invoiceApi;
         this.paymentEffect = paymentEffect;
     }
 
@@ -94,7 +99,7 @@ public class PaymentService {
         payment.setExternalId(externalId);
 
         payment.setStatus(PaymentMapper.toPaymentStatus(processorResponse.status()));
-        paymentEffect.applyEffectIfPaid(payment);
+        paymentEffect.applyEffectIfPaid(payment, payment.getAmount());
 
         payment.setInvoiceUrl(processorResponse.invoiceUrl());
         payment.setCreatedAt(LocalDateTime.now());
@@ -153,6 +158,7 @@ public class PaymentService {
         return switch (type) {
             case ORDER -> resolveOrder(targetId);
             case DINE_IN -> resolveDining(targetId);
+            case INVOICE -> resolveInvoice(targetId);
         };
     }
 
@@ -164,6 +170,11 @@ public class PaymentService {
     private ResolvedTarget resolveDining(Long targetId) {
         DiningApiResponse dining = diningApi.getDining(targetId);
         return new ResolvedTarget(dining.totalPrice(), "DINING-" + dining.id());
+    }
+
+    private ResolvedTarget resolveInvoice(Long targetId) {
+        InvoiceApiResponse invoice = invoiceApi.getInvoice(targetId);
+        return new ResolvedTarget(invoice.remainingAmount(), invoice.invoiceNumber());
     }
 
     private Payment findActive(Long id) {

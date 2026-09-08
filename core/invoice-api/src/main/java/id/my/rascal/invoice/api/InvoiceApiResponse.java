@@ -6,6 +6,7 @@ import java.util.List;
 public record InvoiceApiResponse(
     Long id,
     String invoiceNumber,
+    Long diningId,
     String status,
     Integer totalAmount,
     Integer paidAmount,

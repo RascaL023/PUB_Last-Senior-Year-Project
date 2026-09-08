@@ -32,6 +32,7 @@ import id.my.rascal.order.api.OrderApiResponse;
 import id.my.rascal.order.api.OrderItemApiRequest;
 import id.my.rascal.order.api.OrderItemModifierApiRequest;
 import id.my.rascal.order.api.OrderTypeApiResponse;
+import id.my.rascal.order.api.event.dto.OrderItemSnapshot;
 
 @Service
 public class DiningService {
@@ -41,19 +42,22 @@ public class DiningService {
     private final DiningTableRepository diningTableRepository;
     private final TableService tableService;
     private final OrderApi orderApi;
+    private final DiningEventPublisherService diningEventPublisherService;
 
     public DiningService(
         DiningRepository diningRepository,
         DiningOrderRepository diningOrderRepository,
         DiningTableRepository diningTableRepository,
         TableService tableService,
-        OrderApi orderApi
+        OrderApi orderApi,
+        DiningEventPublisherService diningEventPublisherService
     ) {
         this.diningRepository = diningRepository;
         this.diningOrderRepository = diningOrderRepository;
         this.diningTableRepository = diningTableRepository;
         this.tableService = tableService;
         this.orderApi = orderApi;
+        this.diningEventPublisherService = diningEventPublisherService;
     }
 
     @Transactional
@@ -96,13 +100,6 @@ public class DiningService {
         if (hasIncompleteOrders)
             throw new BadRequestException("Cannot close dining with incomplete orders");
 
-        boolean allPaid = orders.stream()
-            .filter(o -> !"CANCELLED".equals(o.status()))
-            .allMatch(o -> "PAID".equals(o.paidStatus()));
-
-        if (!allPaid)
-            throw new BadRequestException("Cannot close dining until all orders are paid");
-
         dining.markClosed();
         dining.setUpdatedAt(LocalDateTime.now());
 
@@ -129,6 +126,9 @@ public class DiningService {
         diningOrder.setOrderId(created.id());
         diningOrder.setCreatedAt(LocalDateTime.now());
         diningOrderRepository.save(diningOrder);
+
+        List<OrderItemSnapshot> items = orderApi.getOrderItems(created.id());
+        diningEventPublisherService.publishOrderAdded(diningId, created.id(), items);
 
         return buildDiningResponse(dining);
     }

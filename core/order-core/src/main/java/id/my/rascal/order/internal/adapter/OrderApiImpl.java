@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import id.my.rascal.order.api.OrderApi;
 import id.my.rascal.order.api.OrderApiCreateRequest;
 import id.my.rascal.order.api.OrderApiResponse;
+import id.my.rascal.order.api.event.dto.OrderItemSnapshot;
 import id.my.rascal.order.internal.model.mapper.OrderMapper;
 import id.my.rascal.order.internal.service.OrderQueryService;
 import id.my.rascal.order.internal.service.OrderService;
@@ -38,14 +39,8 @@ public class OrderApiImpl implements OrderApi {
     }
 
     @Override
-    public void markPaid(Long id) {
-        orderService.markPaid(id);
-    }
-
-    @Override
-    @Transactional
-    public void markPaid(Collection<Long> ids) {
-        orderService.markPaid(ids);
+    public List<OrderItemSnapshot> getOrderItems(Long orderId) {
+        return orderQueryService.findActiveOrderItems(orderId);
     }
 
     @Override

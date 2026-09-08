@@ -88,10 +88,11 @@ public class XenditService {
     }
 
     private PaymentApiWebhookRequest toWebhookRequest(XenditWebhookPayloadResponse payload) {
+        Integer settledAmount = payload.paidAmount() != null ? payload.paidAmount() : payload.amount();
         return new PaymentApiWebhookRequest(
             payload.externalId(),
             resolveStatus(payload.status().trim()),
-            payload.amount(),
+            settledAmount,
             payload.paymentMethod(),
             payload.paymentChannel(),
             payload.currency()

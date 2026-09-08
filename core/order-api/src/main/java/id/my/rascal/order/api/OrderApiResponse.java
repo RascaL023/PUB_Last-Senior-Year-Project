@@ -7,7 +7,6 @@ public record OrderApiResponse(
     OrderTypeApiResponse orderType,
     String orderNumber,
     String status,
-    String paidStatus,
     Long customerId,
     String customerName,
     Integer totalPrice,

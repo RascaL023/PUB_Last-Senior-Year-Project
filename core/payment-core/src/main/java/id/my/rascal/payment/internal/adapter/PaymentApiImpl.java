@@ -48,8 +48,8 @@ public class PaymentApiImpl implements PaymentApi {
         PaymentStatus paymentStatus = PaymentMapper.toPaymentStatus(payloadRequest.status());
         paymentStatusFlowPolicy.validateFlow(payment.getStatus(), paymentStatus);
         payment.setStatus(paymentStatus);
-        paymentEffect.applyEffectIfPaid(payment);
         payment.setAmount(payloadRequest.paidAmount());
+        paymentEffect.applyEffectIfPaid(payment, payloadRequest.paidAmount());
 
         payment.setRawWebhook(raw);
         payment.setPaymentMethodName(payloadRequest.paymentMethod());

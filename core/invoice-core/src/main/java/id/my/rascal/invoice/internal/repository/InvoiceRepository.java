@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -17,9 +18,19 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
 
     boolean existsByInvoiceNumber(String invoiceNumber);
 
+    boolean existsByItemsOrderItemId(Long orderItemId);
+
     @Query("select i from Invoice i where i.deletedAt is null and i.id = :id")
     @EntityGraph(attributePaths = "items")
     Optional<Invoice> findActiveById(@Param("id") Long id);
+
+    @Query("select i from Invoice i where i.deletedAt is null and i.diningId = :diningId")
+    @EntityGraph(attributePaths = "items")
+    Optional<Invoice> findActiveByDiningId(@Param("diningId") Long diningId);
+
+    @Query("select distinct i from Invoice i join i.items it where i.deletedAt is null and it.orderId = :orderId")
+    @EntityGraph(attributePaths = "items")
+    List<Invoice> findActiveByItemsOrderId(@Param("orderId") Long orderId);
 
     @Query("select i from Invoice i where i.deletedAt is null and i.invoiceNumber = :invoiceNumber")
     @EntityGraph(attributePaths = "items")

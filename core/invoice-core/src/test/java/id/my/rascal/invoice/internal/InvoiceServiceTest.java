@@ -1,20 +1,27 @@
 package id.my.rascal.invoice.internal;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 import id.my.rascal.common.exception.BadRequestException;
+import id.my.rascal.dining.api.event.DiningOrderAddedEvent;
 import id.my.rascal.invoice.internal.entity.Invoice;
 import id.my.rascal.invoice.internal.entity.InvoiceItem;
 import id.my.rascal.invoice.internal.entity.InvoiceStatus;
@@ -24,6 +31,10 @@ import id.my.rascal.invoice.internal.model.request.InvoiceItemRequest;
 import id.my.rascal.invoice.internal.model.response.InvoiceResponse;
 import id.my.rascal.invoice.internal.repository.InvoiceRepository;
 import id.my.rascal.invoice.internal.service.InvoiceService;
+import id.my.rascal.order.api.OrderTypeApiResponse;
+import id.my.rascal.order.api.event.OrderCancelledEvent;
+import id.my.rascal.order.api.event.StandaloneOrderCreatedEvent;
+import id.my.rascal.order.api.event.dto.OrderItemSnapshot;
 
 class InvoiceServiceTest {
 
@@ -40,7 +51,7 @@ class InvoiceServiceTest {
 
     @Test
     void create_persistsOpenInvoiceWithGeneratedNumber() {
-        InvoiceResponse response = invoiceService.create(requestOf(225000));
+        InvoiceResponse response = invoiceService.create(requestOf(null, 101L, 225000));
 
         assertTrue(response.invoiceNumber().startsWith("INV-"));
         assertEquals(InvoiceStatus.OPEN, response.status());
@@ -52,7 +63,7 @@ class InvoiceServiceTest {
 
     @Test
     void fullLifecycle_partialThenFull() {
-        InvoiceResponse created = invoiceService.create(requestOf(225000));
+        InvoiceResponse created = invoiceService.create(requestOf(null, 101L, 225000));
         stubFindActive(created.id(), 225000, 0);
 
         InvoiceResponse partial = invoiceService.applyPayment(created.id(), new ApplyPaymentRequest(60000));
@@ -69,11 +80,98 @@ class InvoiceServiceTest {
 
     @Test
     void overpayment_isRejected() {
-        InvoiceResponse created = invoiceService.create(requestOf(225000));
+        InvoiceResponse created = invoiceService.create(requestOf(null, 101L, 225000));
         stubFindActive(created.id(), 225000, 0);
 
         assertThrows(BadRequestException.class,
             () -> invoiceService.applyPayment(created.id(), new ApplyPaymentRequest(225001)));
+    }
+
+    @Test
+    void standaloneOrderCreated_createsOneItemPerOrderItem() {
+        StandaloneOrderCreatedEvent event = new StandaloneOrderCreatedEvent(
+            101L, "ORD-01012026-AAAAAA", 7L, "John Doe", OrderTypeApiResponse.TAKEAWAY, 58000,
+            List.of(
+                new OrderItemSnapshot(1L, 10L, "Nasi Goreng", 2, 25000, 50000),
+                new OrderItemSnapshot(2L, 11L, "Es Teh", 1, 8000, 8000)
+            ),
+            LocalDateTime.now()
+        );
+
+        InvoiceResponse response = invoiceService.handleStandaloneOrderCreated(event);
+
+        assertNotNull(response);
+        assertEquals(InvoiceStatus.OPEN, response.status());
+        assertEquals(2, response.items().size());
+        assertEquals(1L, response.items().get(0).orderItemId());
+        assertEquals(2, response.items().get(0).quantity());
+        assertEquals(25000, response.items().get(0).unitPrice());
+        assertEquals(50000, response.items().get(0).amount());
+        assertEquals(58000, response.totalAmount());
+        assertEquals(58000, response.remainingAmount());
+    }
+
+    @Test
+    void standaloneOrderCreated_duplicateEventCreatesNothing() {
+        when(invoiceRepository.existsByItemsOrderItemId(1L)).thenReturn(true);
+        StandaloneOrderCreatedEvent event = new StandaloneOrderCreatedEvent(
+            101L, "ORD-01012026-AAAAAA", null, null, OrderTypeApiResponse.TAKEAWAY, 50000,
+            List.of(new OrderItemSnapshot(1L, 10L, "Nasi Goreng", 2, 25000, 50000)),
+            LocalDateTime.now()
+        );
+
+        assertNull(invoiceService.handleStandaloneOrderCreated(event));
+        verify(invoiceRepository, never()).save(any());
+    }
+
+    @Test
+    void diningOrders_contributeToSingleInvoice() {
+        when(invoiceRepository.findActiveByDiningId(20L)).thenReturn(Optional.empty());
+
+        InvoiceResponse first = invoiceService.handleOrderAddedToDining(new DiningOrderAddedEvent(
+            20L, 101L,
+            List.of(new OrderItemSnapshot(1L, 10L, "Nasi Goreng", 2, 25000, 50000))
+        ));
+        assertEquals(50000, first.totalAmount());
+        assertEquals(1, first.items().size());
+
+        ArgumentCaptor<Invoice> saved = ArgumentCaptor.forClass(Invoice.class);
+        verify(invoiceRepository).save(saved.capture());
+        Invoice diningInvoice = saved.getValue();
+        diningInvoice.setId(900L);
+        when(invoiceRepository.findActiveByDiningId(20L)).thenReturn(Optional.of(diningInvoice));
+
+        InvoiceResponse second = invoiceService.handleOrderAddedToDining(new DiningOrderAddedEvent(
+            20L, 102L,
+            List.of(new OrderItemSnapshot(3L, 12L, "Kopi", 2, 15000, 30000))
+        ));
+        assertEquals(80000, second.totalAmount());
+        assertEquals(2, second.items().size());
+    }
+
+    @Test
+    void diningOrderAdded_duplicateEventAddsNothing() {
+        Invoice diningInvoice = persistedDiningInvoice(20L, 101L, 1L, 50000);
+        when(invoiceRepository.findActiveByDiningId(20L)).thenReturn(Optional.of(diningInvoice));
+
+        InvoiceResponse response = invoiceService.handleOrderAddedToDining(new DiningOrderAddedEvent(
+            20L, 101L,
+            List.of(new OrderItemSnapshot(1L, 10L, "Nasi Goreng", 2, 25000, 50000))
+        ));
+
+        assertEquals(50000, response.totalAmount());
+        assertEquals(1, response.items().size());
+    }
+
+    @Test
+    void orderCancelled_voidsUnpaidStandaloneInvoice() {
+        Invoice invoice = persistedDiningInvoice(null, 101L, 1L, 50000);
+        when(invoiceRepository.findActiveByItemsOrderId(101L)).thenReturn(List.of(invoice));
+
+        invoiceService.handleOrderCancelled(new OrderCancelledEvent(101L));
+
+        verify(invoiceRepository).save(invoice);
+        assertEquals(InvoiceStatus.VOID, invoice.getStatus());
     }
 
     private void stubFindActive(Long id, int total, int paid) {
@@ -88,13 +186,38 @@ class InvoiceServiceTest {
         if (paid == 0) invoice.markOpen();
         else if (paid == total) invoice.markPaid();
         else invoice.markPartiallyPaid();
-        invoice.setItems(List.of(new InvoiceItem()));
+        invoice.setItems(new ArrayList<>());
         when(invoiceRepository.findActiveById(id)).thenReturn(Optional.of(invoice));
     }
 
-    private CreateInvoiceRequest requestOf(int unitPrice) {
-        return new CreateInvoiceRequest(List.of(
-            new InvoiceItemRequest(1L, "Nasi Goreng", 1, unitPrice)
+    private Invoice persistedDiningInvoice(Long diningId, Long orderId, Long orderItemId, int amount) {
+        Invoice invoice = new Invoice();
+        invoice.setId(900L);
+        invoice.setInvoiceNumber("INV-01012026-ABCDEF");
+        invoice.setDiningId(diningId);
+        invoice.setTotalAmount(amount);
+        invoice.setPaidAmount(0);
+        invoice.setRemainingAmount(amount);
+        invoice.setIssuedAt(LocalDateTime.now());
+        invoice.setCreatedAt(LocalDateTime.now());
+        invoice.markOpen();
+
+        InvoiceItem item = new InvoiceItem();
+        item.setInvoice(invoice);
+        item.setOrderItemId(orderItemId);
+        item.setOrderId(orderId);
+        item.setDescription("Nasi Goreng");
+        item.setQuantity(2);
+        item.setUnitPrice(25000);
+        item.setAmount(amount);
+        item.setCreatedAt(LocalDateTime.now());
+        invoice.setItems(new ArrayList<>(List.of(item)));
+        return invoice;
+    }
+
+    private CreateInvoiceRequest requestOf(Long diningId, Long orderId, int amount) {
+        return new CreateInvoiceRequest(diningId, List.of(
+            new InvoiceItemRequest(1L, orderId, "Nasi Goreng", 1, amount, amount)
         ));
     }
 

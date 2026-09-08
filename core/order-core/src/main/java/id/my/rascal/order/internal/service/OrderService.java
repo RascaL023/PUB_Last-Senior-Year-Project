@@ -1,12 +1,10 @@
 package id.my.rascal.order.internal.service;
 
 import id.my.rascal.common.exception.BadRequestException;
-import id.my.rascal.common.exception.ConflictException;
 import id.my.rascal.common.exception.NotFoundException;
 import id.my.rascal.common.util.StringUtil;
 import id.my.rascal.order.internal.entity.Order;
 import id.my.rascal.order.internal.entity.OrderItem;
-import id.my.rascal.order.internal.model.enums.OrderPaidStatus;
 import id.my.rascal.order.internal.model.enums.OrderStatus;
 import id.my.rascal.order.internal.model.enums.OrderType;
 import id.my.rascal.order.internal.model.mapper.OrderMapper;
@@ -24,7 +22,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Collection;
 import java.util.List;
 import java.util.Random;
 
@@ -39,15 +36,18 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final OrderItemService orderItemService;
     private final OrderStatusFlowPolicy orderStatusFlowPolicy;
+    private final OrderEventPublisherService orderEventPublisherService;
 
     public OrderService(
         OrderRepository orderRepository,
         OrderItemService orderItemService,
-        OrderStatusFlowPolicy orderStatusFlowPolicy
+        OrderStatusFlowPolicy orderStatusFlowPolicy,
+        OrderEventPublisherService orderEventPublisherService
     ) {
         this.orderRepository = orderRepository;
         this.orderItemService = orderItemService;
         this.orderStatusFlowPolicy = orderStatusFlowPolicy;
+        this.orderEventPublisherService = orderEventPublisherService;
     }
 
     @Transactional
@@ -61,11 +61,12 @@ public class OrderService {
         order.setOrderItems(items);
         order.setTotalPrice(orderItemService.computeTotalPrice(items));
         order.setCreatedAt(LocalDateTime.now());
-        order.setType(request.type());
-        order.markUnpaid();
+        order.setType(OrderType.TAKEAWAY); // Dine in order create via dine in module 
         order.markCreated();
 
-        return OrderMapper.toResponse(orderRepository.save(order));
+        Order saved = orderRepository.save(order);
+        orderEventPublisherService.publish(saved, "create");
+        return OrderMapper.toResponse(saved);
     }
 
     @Transactional
@@ -146,7 +147,6 @@ public class OrderService {
         order.setTotalPrice(orderItemService.computeTotalPrice(items));
         order.setCreatedAt(LocalDateTime.now());
         order.setType(OrderType.valueOf(request.type().name()));
-        order.markUnpaid();
         order.markCreated();
 
         return OrderMapper.toResponse(orderRepository.save(order));
@@ -160,28 +160,6 @@ public class OrderService {
         order.markConfirmed();
         order.setUpdatedAt(LocalDateTime.now());
         return OrderMapper.toResponse(orderRepository.save(order));
-    }
-
-    @Transactional
-    public void markPaid(Long id) {
-        Order order = findActiveOrder(id);
-        if (order.getPaidStatus().equals(OrderPaidStatus.PAID))
-            throw new ConflictException("Order already paid");
-        order.markPaid();
-
-        if (order.getType().equals(OrderType.TAKEAWAY)) {
-            orderStatusFlowPolicy.validateTransition(order, OrderStatus.CONFIRMED);
-            order.markConfirmed();
-        }
-
-        order.setUpdatedAt(LocalDateTime.now());
-        orderRepository.save(order);
-    }
-
-    @Transactional
-    public void markPaid(Collection<Long> orderIds) {
-        if (orderIds == null || orderIds.isEmpty()) return;
-        orderRepository.markPaidByIds(orderIds, OrderPaidStatus.PAID, LocalDateTime.now());
     }
 
     @Transactional
@@ -226,7 +204,10 @@ public class OrderService {
 
         order.markCancelled();
         order.setUpdatedAt(LocalDateTime.now());
-        return OrderMapper.toResponse(orderRepository.save(order));
+
+        Order saved = orderRepository.save(order);
+        orderEventPublisherService.publish(order, "cancel");
+        return OrderMapper.toResponse(saved);
     }
 
 

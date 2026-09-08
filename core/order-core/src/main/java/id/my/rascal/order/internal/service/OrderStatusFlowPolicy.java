@@ -4,9 +4,7 @@ import org.springframework.stereotype.Service;
 
 import id.my.rascal.common.exception.BadRequestException;
 import id.my.rascal.order.internal.entity.Order;
-import id.my.rascal.order.internal.model.enums.OrderPaidStatus;
 import id.my.rascal.order.internal.model.enums.OrderStatus;
-import id.my.rascal.order.internal.model.enums.OrderType;
 
 @Service
 public class OrderStatusFlowPolicy {
@@ -32,37 +30,23 @@ public class OrderStatusFlowPolicy {
         Order order,
         OrderStatus n
     ) {
-        if (n == OrderStatus.CANCELLED)
-            return;
-        else if (n != OrderStatus.CONFIRMED)
-            reject();
-
-        if (
-            order.getType() == OrderType.TAKEAWAY && 
-            order.getPaidStatus() != OrderPaidStatus.PAID
-        ) reject("Takeaway order must be paid before confirmation");
+        if (n == OrderStatus.CANCELLED) return;
+        else if (n != OrderStatus.CONFIRMED) reject();
     }
 
     private void validateFromConfirmed(OrderStatus n) {
-        if (n != OrderStatus.PREPARING)
-            reject();
+        if (n != OrderStatus.PREPARING) reject();
     }
 
     private void validateFromPreparing(OrderStatus n) {
-        if (n != OrderStatus.READY) {
-            reject();
-        }
+        if (n != OrderStatus.READY) reject();
     }
 
     private void validateFromReady(
         Order order,
         OrderStatus nextStatus
     ) {
-        if (nextStatus != OrderStatus.COMPLETED)
-            reject();
-
-        if (!order.getPaidStatus().equals(OrderPaidStatus.PAID))
-            reject("Order must be paid before completion");
+        if (nextStatus != OrderStatus.COMPLETED) reject();
     }
 
     private boolean isTerminal(OrderStatus status) {

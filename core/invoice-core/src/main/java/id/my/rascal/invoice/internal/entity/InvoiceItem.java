@@ -10,12 +10,19 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.Getter;
 import lombok.Setter;
 
 @Entity
 @Getter @Setter
-@Table(name = "invoice_items")
+@Table(
+    name = "invoice_items",
+    uniqueConstraints = @UniqueConstraint(
+        name = "uk_invoice_items_invoice_order_item",
+        columnNames = {"invoice_id", "order_item_id"}
+    )
+)
 public class InvoiceItem {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -24,6 +31,9 @@ public class InvoiceItem {
     @ManyToOne
     @JoinColumn(name = "invoice_id", nullable = false)
     private Invoice invoice;
+
+    @Column(name = "order_item_id", nullable = false)
+    private Long orderItemId;
 
     @Column(name = "order_id")
     private Long orderId;
