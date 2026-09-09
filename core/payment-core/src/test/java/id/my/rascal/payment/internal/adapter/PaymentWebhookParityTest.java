@@ -12,7 +12,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.context.ApplicationEventPublisher;
 
-import id.my.rascal.invoice.api.InvoiceApi;
 import id.my.rascal.payment.api.PaymentApiWebhookRequest;
 import id.my.rascal.payment.api.PaymentProcessorStatus;
 import id.my.rascal.payment.api.event.PaymentSettledEvent;
@@ -27,9 +26,8 @@ import id.my.rascal.payment.internal.service.PaymentEventPublisherService;
 class PaymentWebhookParityTest {
 
     @Test
-    void webhookPaid_directSettleAndEventCarryIdenticalFacts() {
+    void webhookPaid_publishesSettledEventWithPayloadFacts() {
         PaymentRepository paymentRepository = mock(PaymentRepository.class);
-        InvoiceApi invoiceApi = mock(InvoiceApi.class);
         ApplicationEventPublisher eventPublisher = mock(ApplicationEventPublisher.class);
         when(paymentRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -44,7 +42,7 @@ class PaymentWebhookParityTest {
 
         PaymentApiImpl handler = new PaymentApiImpl(
             paymentRepository,
-            new PaymentEffect(invoiceApi),
+            new PaymentEffect(),
             new PaymentStatusFlowPolicy(),
             new PaymentEventPublisherService(eventPublisher)
         );
@@ -53,14 +51,12 @@ class PaymentWebhookParityTest {
             "INV-abc", PaymentProcessorStatus.PAID, 58000, "CASH", "INTERNAL_CASH", "IDR"
         ), "{}");
 
-        ArgumentCaptor<Integer> settledAmount = ArgumentCaptor.forClass(Integer.class);
-        verify(invoiceApi).applyPayment(org.mockito.ArgumentMatchers.eq(900L), settledAmount.capture());
-
         ArgumentCaptor<PaymentSettledEvent> event = ArgumentCaptor.forClass(PaymentSettledEvent.class);
         verify(eventPublisher).publishEvent(event.capture());
 
+        assertEquals(5L, event.getValue().paymentId());
         assertEquals(900L, event.getValue().targetId());
-        assertEquals(settledAmount.getValue(), event.getValue().settledAmount());
+        assertEquals("INVOICE", event.getValue().targetType());
         assertEquals(58000, event.getValue().settledAmount());
     }
 

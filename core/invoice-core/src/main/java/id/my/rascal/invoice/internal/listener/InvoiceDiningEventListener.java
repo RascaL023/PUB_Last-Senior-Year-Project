@@ -1,7 +1,6 @@
 package id.my.rascal.invoice.internal.listener;
 
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
@@ -18,7 +17,6 @@ public class InvoiceDiningEventListener {
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    @Transactional
     public void onDiningOrderAdded(DiningOrderAddedEvent event) {
         invoiceService.handleOrderAddedToDining(event);
     }

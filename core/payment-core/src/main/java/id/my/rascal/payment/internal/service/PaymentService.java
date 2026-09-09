@@ -103,7 +103,7 @@ public class PaymentService {
         payment.setExternalId(externalId);
 
         payment.setStatus(PaymentMapper.toPaymentStatus(processorResponse.status()));
-        paymentEffect.applyEffectIfPaid(payment, payment.getAmount());
+        paymentEffect.applyEffectIfPaid(payment);
 
         payment.setInvoiceUrl(processorResponse.invoiceUrl());
         payment.setCreatedAt(LocalDateTime.now());

@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import id.my.rascal.common.exception.BadRequestException;
 import id.my.rascal.payment.api.PaymentApi;
@@ -39,6 +40,7 @@ public class PaymentApiImpl implements PaymentApi {
     }
 
     @Override
+    @Transactional
     public void handleWeebhookRequest(PaymentApiWebhookRequest payloadRequest, String raw) {
         if (payloadRequest == null || payloadRequest.externalId() == null)
             throw new BadRequestException("Invalid Xendit webhook payloadRequest");
@@ -54,7 +56,7 @@ public class PaymentApiImpl implements PaymentApi {
         paymentStatusFlowPolicy.validateFlow(payment.getStatus(), paymentStatus);
         payment.setStatus(paymentStatus);
         payment.setAmount(payloadRequest.paidAmount());
-        paymentEffect.applyEffectIfPaid(payment, payloadRequest.paidAmount());
+        paymentEffect.applyEffectIfPaid(payment);
 
         payment.setRawWebhook(raw);
         payment.setPaymentMethodName(payloadRequest.paymentMethod());

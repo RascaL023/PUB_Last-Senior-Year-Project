@@ -35,6 +35,12 @@
             <artifactId>dining-api</artifactId>
         </dependency>
 
+        <!-- Payment API (event listener) -->
+        <dependency>
+            <groupId>id.my.rascal</groupId>
+            <artifactId>payment-api</artifactId>
+        </dependency>
+
         <!-- Starter Web -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

@@ -50,12 +50,12 @@ class PaymentSettlementParityTest {
             mock(DiningApi.class),
             invoiceApi,
             new PaymentEventPublisherService(eventPublisher),
-            new PaymentEffect(invoiceApi)
+            new PaymentEffect()
         );
     }
 
     @Test
-    void cashPayment_directSettleAndEventCarryIdenticalFacts() {
+    void cashPayment_publishesSettledEventWithTargetFacts() {
         when(invoiceApi.getInvoice(900L)).thenReturn(new InvoiceApiResponse(
             900L, "INV-08092026-AAAAAA", null, "OPEN", 58000, 0, 58000,
             LocalDateTime.now(), LocalDateTime.now(), List.of()
@@ -63,15 +63,11 @@ class PaymentSettlementParityTest {
 
         paymentService.create(new PaymentRequest(PaymentTargetType.INVOICE, 900L, PaymentProvider.INTERNAL, null));
 
-        ArgumentCaptor<Integer> settledAmount = ArgumentCaptor.forClass(Integer.class);
-        verify(invoiceApi).applyPayment(org.mockito.ArgumentMatchers.eq(900L), settledAmount.capture());
-
         ArgumentCaptor<PaymentSettledEvent> event = ArgumentCaptor.forClass(PaymentSettledEvent.class);
         verify(eventPublisher).publishEvent(event.capture());
 
         assertEquals(900L, event.getValue().targetId());
         assertEquals("INVOICE", event.getValue().targetType());
-        assertEquals(settledAmount.getValue(), event.getValue().settledAmount());
         assertEquals(58000, event.getValue().settledAmount());
     }
 
