@@ -45,6 +45,7 @@ public class PaymentService {
     private final OrderApi orderApi;
     private final DiningApi diningApi;
     private final InvoiceApi invoiceApi;
+    private final PaymentEventPublisherService paymentEventPublisherService;
 
     public PaymentService(
         PaymentRepository paymentRepository,
@@ -53,6 +54,7 @@ public class PaymentService {
         OrderApi orderApi,
         DiningApi diningApi,
         InvoiceApi invoiceApi,
+        PaymentEventPublisherService paymentEventPublisherService,
         PaymentEffect paymentEffect
     ) {
         this.paymentRepository = paymentRepository;
@@ -61,9 +63,11 @@ public class PaymentService {
         this.orderApi = orderApi;
         this.diningApi = diningApi;
         this.invoiceApi = invoiceApi;
+        this.paymentEventPublisherService = paymentEventPublisherService;
         this.paymentEffect = paymentEffect;
     }
 
+    @Transactional
     public PaymentResponse create(PaymentRequest request) {
         ResolvedTarget target = resolveTarget(request.targetType(), request.targetId());
         String externalId = "INV-" + UUID.randomUUID();
@@ -104,7 +108,11 @@ public class PaymentService {
         payment.setInvoiceUrl(processorResponse.invoiceUrl());
         payment.setCreatedAt(LocalDateTime.now());
 
-        return toResponse(paymentRepository.save(payment));
+        Payment saved = paymentRepository.save(payment);
+        if (saved.getStatus() == PaymentStatus.PAID)
+            paymentEventPublisherService.publishSettled(saved, saved.getAmount());
+
+        return toResponse(saved);
     }
 
     @Transactional(readOnly = true)
@@ -142,7 +150,9 @@ public class PaymentService {
         paymentStatusFlowPolicy.validateFlow(payment.getStatus(), PaymentStatus.REFUNDED);
         payment.setStatus(PaymentStatus.REFUNDED);
         payment.setUpdatedAt(LocalDateTime.now());
-        return toResponse(paymentRepository.save(payment));
+        Payment saved = paymentRepository.save(payment);
+        paymentEventPublisherService.publishRefunded(saved);
+        return toResponse(saved);
     }
 
 

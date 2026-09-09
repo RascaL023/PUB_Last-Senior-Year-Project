@@ -30,6 +30,7 @@ import id.my.rascal.invoice.internal.model.request.CreateInvoiceRequest;
 import id.my.rascal.invoice.internal.model.request.InvoiceItemRequest;
 import id.my.rascal.invoice.internal.model.response.InvoiceResponse;
 import id.my.rascal.invoice.internal.repository.InvoiceRepository;
+import id.my.rascal.invoice.internal.service.InvoiceEventPublisherService;
 import id.my.rascal.invoice.internal.service.InvoiceService;
 import id.my.rascal.order.api.OrderTypeApiResponse;
 import id.my.rascal.order.api.event.OrderCancelledEvent;
@@ -39,14 +40,16 @@ import id.my.rascal.order.api.event.dto.OrderItemSnapshot;
 class InvoiceServiceTest {
 
     private InvoiceRepository invoiceRepository;
+    private InvoiceEventPublisherService invoiceEventPublisherService;
     private InvoiceService invoiceService;
 
     @BeforeEach
     void setUp() {
         invoiceRepository = mock(InvoiceRepository.class);
+        invoiceEventPublisherService = mock(InvoiceEventPublisherService.class);
         when(invoiceRepository.existsByInvoiceNumber(any())).thenReturn(false);
         when(invoiceRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
-        invoiceService = new InvoiceService(invoiceRepository);
+        invoiceService = new InvoiceService(invoiceRepository, invoiceEventPublisherService);
     }
 
     @Test
@@ -85,6 +88,20 @@ class InvoiceServiceTest {
 
         assertThrows(BadRequestException.class,
             () -> invoiceService.applyPayment(created.id(), new ApplyPaymentRequest(225001)));
+    }
+
+    @Test
+    void applyPayment_publishesPaidEventPerApplication() {
+        InvoiceResponse created = invoiceService.create(requestOf(null, 101L, 225000));
+        verify(invoiceEventPublisherService).publishCreated(any(Invoice.class));
+        stubFindActive(created.id(), 225000, 0);
+
+        invoiceService.applyPayment(created.id(), new ApplyPaymentRequest(60000));
+
+        ArgumentCaptor<Invoice> paid = ArgumentCaptor.forClass(Invoice.class);
+        verify(invoiceEventPublisherService).publishPaid(paid.capture());
+        assertEquals(60000, paid.getValue().getPaidAmount());
+        assertEquals(165000, paid.getValue().getRemainingAmount());
     }
 
     @Test
@@ -129,8 +146,9 @@ class InvoiceServiceTest {
         when(invoiceRepository.findActiveByDiningId(20L)).thenReturn(Optional.empty());
 
         InvoiceResponse first = invoiceService.handleOrderAddedToDining(new DiningOrderAddedEvent(
-            20L, 101L,
-            List.of(new OrderItemSnapshot(1L, 10L, "Nasi Goreng", 2, 25000, 50000))
+            20L, 101L, "ORD-01012026-AAAAAA", 50000,
+            List.of(new OrderItemSnapshot(1L, 10L, "Nasi Goreng", 2, 25000, 50000)),
+            LocalDateTime.now()
         ));
         assertEquals(50000, first.totalAmount());
         assertEquals(1, first.items().size());
@@ -142,8 +160,9 @@ class InvoiceServiceTest {
         when(invoiceRepository.findActiveByDiningId(20L)).thenReturn(Optional.of(diningInvoice));
 
         InvoiceResponse second = invoiceService.handleOrderAddedToDining(new DiningOrderAddedEvent(
-            20L, 102L,
-            List.of(new OrderItemSnapshot(3L, 12L, "Kopi", 2, 15000, 30000))
+            20L, 102L, "ORD-01012026-BBBBBB", 30000,
+            List.of(new OrderItemSnapshot(3L, 12L, "Kopi", 2, 15000, 30000)),
+            LocalDateTime.now()
         ));
         assertEquals(80000, second.totalAmount());
         assertEquals(2, second.items().size());
@@ -155,8 +174,9 @@ class InvoiceServiceTest {
         when(invoiceRepository.findActiveByDiningId(20L)).thenReturn(Optional.of(diningInvoice));
 
         InvoiceResponse response = invoiceService.handleOrderAddedToDining(new DiningOrderAddedEvent(
-            20L, 101L,
-            List.of(new OrderItemSnapshot(1L, 10L, "Nasi Goreng", 2, 25000, 50000))
+            20L, 101L, "ORD-01012026-AAAAAA", 50000,
+            List.of(new OrderItemSnapshot(1L, 10L, "Nasi Goreng", 2, 25000, 50000)),
+            LocalDateTime.now()
         ));
 
         assertEquals(50000, response.totalAmount());

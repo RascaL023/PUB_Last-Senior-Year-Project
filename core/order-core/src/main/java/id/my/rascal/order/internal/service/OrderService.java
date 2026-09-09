@@ -54,6 +54,7 @@ public class OrderService {
     public OrderResponse create(OrderRequest request) {
         Order order = new Order();
         order.setOrderNumber(generateOrderNumber());
+        // TODO(customer-module): validasi request.customerId() via customer-api
         applyCustomer(order, request.customerId(), request.customerName());
         applyNotes(order, request.notes());
 
@@ -81,7 +82,9 @@ public class OrderService {
 
         order.setType(request.type());
         order.setUpdatedAt(LocalDateTime.now());
-        return OrderMapper.toResponse(orderRepository.save(order));
+        Order saved = orderRepository.save(order);
+        orderEventPublisherService.publishItemsChanged(saved);
+        return OrderMapper.toResponse(saved);
     }
 
     @Transactional
@@ -109,7 +112,10 @@ public class OrderService {
         }
 
         order.setUpdatedAt(LocalDateTime.now());
-        return OrderMapper.toResponse(orderRepository.save(order));
+        Order saved = orderRepository.save(order);
+        if (request.items().isPresent())
+            orderEventPublisherService.publishItemsChanged(saved);
+        return OrderMapper.toResponse(saved);
     }
 
     @Transactional

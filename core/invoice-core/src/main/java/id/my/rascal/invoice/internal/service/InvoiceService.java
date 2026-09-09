@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -27,9 +28,14 @@ import java.util.stream.Collectors;
 public class InvoiceService {
 
     private final InvoiceRepository invoiceRepository;
+    private final InvoiceEventPublisherService invoiceEventPublisherService;
 
-    public InvoiceService(InvoiceRepository invoiceRepository) {
+    public InvoiceService(
+        InvoiceRepository invoiceRepository,
+        InvoiceEventPublisherService invoiceEventPublisherService
+    ) {
         this.invoiceRepository = invoiceRepository;
+        this.invoiceEventPublisherService = invoiceEventPublisherService;
     }
 
     @Transactional
@@ -51,11 +57,15 @@ public class InvoiceService {
         invoice.setCreatedAt(now);
         invoice.markOpen();
 
-        return InvoiceMapper.toResponse(invoiceRepository.save(invoice));
+        Invoice saved = invoiceRepository.save(invoice);
+        invoiceEventPublisherService.publishCreated(saved);
+        return InvoiceMapper.toResponse(saved);
     }
 
     @Transactional
     public InvoiceResponse handleStandaloneOrderCreated(StandaloneOrderCreatedEvent event) {
+        // TODO(customer-module): tempelkan snapshot customer (dari event.customerId
+        // via customer-api) ke invoice setelah modulnya tersedia.
         List<InvoiceItemRequest> freshItems = event.items().stream()
             .filter(item -> !invoiceRepository.existsByItemsOrderItemId(item.orderItemId()))
             .map(item -> toItemRequest(event.orderId(), item))
@@ -68,8 +78,9 @@ public class InvoiceService {
 
     @Transactional
     public InvoiceResponse handleOrderAddedToDining(DiningOrderAddedEvent event) {
-        Invoice invoice = invoiceRepository.findActiveByDiningId(event.diningId())
-            .orElseGet(() -> initDiningInvoice(event.diningId()));
+        Optional<Invoice> existing = invoiceRepository.findActiveByDiningId(event.diningId());
+        boolean isNew = existing.isEmpty();
+        Invoice invoice = existing.orElseGet(() -> initDiningInvoice(event.diningId()));
 
         Set<Long> billedItemIds = invoice.getItems().stream()
             .map(InvoiceItem::getOrderItemId)
@@ -86,7 +97,10 @@ public class InvoiceService {
             invoice.setUpdatedAt(LocalDateTime.now());
         }
 
-        return InvoiceMapper.toResponse(invoiceRepository.save(invoice));
+        Invoice saved = invoiceRepository.save(invoice);
+        if (isNew)
+            invoiceEventPublisherService.publishCreated(saved);
+        return InvoiceMapper.toResponse(saved);
     }
 
     @Transactional
@@ -105,7 +119,9 @@ public class InvoiceService {
     public InvoiceResponse applyPayment(Long id, ApplyPaymentRequest request) {
         Invoice invoice = findActiveInvoice(id);
         invoice.applyPayment(request.amount());
-        return InvoiceMapper.toResponse(invoiceRepository.save(invoice));
+        Invoice saved = invoiceRepository.save(invoice);
+        invoiceEventPublisherService.publishPaid(saved);
+        return InvoiceMapper.toResponse(saved);
     }
 
     @Transactional

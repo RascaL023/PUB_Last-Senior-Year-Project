@@ -15,6 +15,7 @@ import id.my.rascal.payment.internal.entity.Payment;
 import id.my.rascal.payment.internal.model.enums.PaymentStatus;
 import id.my.rascal.payment.internal.model.mapper.PaymentMapper;
 import id.my.rascal.payment.internal.repository.PaymentRepository;
+import id.my.rascal.payment.internal.service.PaymentEventPublisherService;
 
 @Component
 public class PaymentApiImpl implements PaymentApi {
@@ -22,16 +23,19 @@ public class PaymentApiImpl implements PaymentApi {
     private final PaymentRepository paymentRepository;
     private final PaymentStatusFlowPolicy paymentStatusFlowPolicy;
     private final PaymentEffect paymentEffect;
+    private final PaymentEventPublisherService paymentEventPublisherService;
     private static final Logger log = LoggerFactory.getLogger(PaymentApiImpl.class);
 
     public PaymentApiImpl(
         PaymentRepository paymentRepository,
         PaymentEffect paymentEffect,
-        PaymentStatusFlowPolicy paymentStatusFlowPolicy
+        PaymentStatusFlowPolicy paymentStatusFlowPolicy,
+        PaymentEventPublisherService paymentEventPublisherService
     ) {
         this.paymentRepository = paymentRepository;
         this.paymentEffect = paymentEffect;
         this.paymentStatusFlowPolicy = paymentStatusFlowPolicy;
+        this.paymentEventPublisherService = paymentEventPublisherService;
     }
 
     @Override
@@ -46,6 +50,7 @@ public class PaymentApiImpl implements PaymentApi {
         }
 
         PaymentStatus paymentStatus = PaymentMapper.toPaymentStatus(payloadRequest.status());
+        if (payment.getStatus() == paymentStatus) return; // idempotent redelivery: ack tanpa efek ganda
         paymentStatusFlowPolicy.validateFlow(payment.getStatus(), paymentStatus);
         payment.setStatus(paymentStatus);
         payment.setAmount(payloadRequest.paidAmount());
@@ -55,7 +60,9 @@ public class PaymentApiImpl implements PaymentApi {
         payment.setPaymentMethodName(payloadRequest.paymentMethod());
         payment.setPaymentChannel(payloadRequest.paymentChannel());
         payment.setUpdatedAt(LocalDateTime.now());
-        paymentRepository.save(payment);
+        Payment saved = paymentRepository.save(payment);
+        if (saved.getStatus() == PaymentStatus.PAID)
+            paymentEventPublisherService.publishSettled(saved, payloadRequest.paidAmount());
     }
 
 }

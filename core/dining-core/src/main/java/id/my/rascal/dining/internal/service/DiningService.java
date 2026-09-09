@@ -78,6 +78,7 @@ public class DiningService {
         table.setUpdatedAt(LocalDateTime.now());
 
         Dining saved = diningRepository.save(dining);
+        diningEventPublisherService.publishOpened(saved, table.getTableNumber());
         return toResponse(saved, table, List.of(), 0);
     }
 
@@ -107,6 +108,7 @@ public class DiningService {
         table.setUpdatedAt(LocalDateTime.now());
 
         Dining saved = diningRepository.save(dining);
+        diningEventPublisherService.publishClosed(saved);
         List<DiningOrderSummary> summaries = toOrderSummaries(orders);
         return toResponse(saved, table, summaries, calculateTotalPrice(orders));
     }
@@ -118,6 +120,8 @@ public class DiningService {
         if (dining.getStatus() != DiningStatus.OPEN)
             throw new BadRequestException("Cannot add order to a closed dining");
 
+        // TODO(customer-module): validasi request.customerId() via customer-api
+        // setelah modulnya tersedia (saat ini opaque Long, tanpa validasi).
         OrderApiCreateRequest apiRequest = toApiCreateRequest(request);
         OrderApiResponse created = orderApi.createOrder(apiRequest);
 
@@ -128,7 +132,14 @@ public class DiningService {
         diningOrderRepository.save(diningOrder);
 
         List<OrderItemSnapshot> items = orderApi.getOrderItems(created.id());
-        diningEventPublisherService.publishOrderAdded(diningId, created.id(), items);
+        diningEventPublisherService.publishOrderAdded(
+            diningId,
+            created.id(),
+            created.orderNumber(),
+            created.totalPrice(),
+            items,
+            created.createdAt()
+        );
 
         return buildDiningResponse(dining);
     }
