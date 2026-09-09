@@ -39,6 +39,12 @@ public class Payment {
     @Column(name = "amount", nullable = false)
     private Integer amount;
 
+    @Column(name = "applied_amount", nullable = false)
+    private Integer appliedAmount = 0;
+
+    @Column(name = "excess_amount", nullable = false)
+    private Integer excessAmount = 0;
+
 
     @Enumerated(EnumType.STRING)
     @Column(name = "payment_provider", nullable = false)

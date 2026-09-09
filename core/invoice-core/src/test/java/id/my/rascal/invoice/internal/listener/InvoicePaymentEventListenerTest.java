@@ -1,5 +1,6 @@
 package id.my.rascal.invoice.internal.listener;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
@@ -12,10 +13,13 @@ import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
+import id.my.rascal.invoice.api.event.InvoicePaymentAppliedEvent;
 import id.my.rascal.invoice.internal.entity.InvoiceStatus;
 import id.my.rascal.invoice.internal.model.response.InvoiceItemResponse;
 import id.my.rascal.invoice.internal.model.response.InvoiceResponse;
+import id.my.rascal.invoice.internal.service.InvoiceEventPublisherService;
 import id.my.rascal.invoice.internal.service.InvoiceQueryService;
 import id.my.rascal.invoice.internal.service.InvoiceService;
 import id.my.rascal.payment.api.event.PaymentSettledEvent;
@@ -24,17 +28,19 @@ class InvoicePaymentEventListenerTest {
 
     private InvoiceService invoiceService;
     private InvoiceQueryService invoiceQueryService;
+    private InvoiceEventPublisherService invoiceEventPublisherService;
     private InvoicePaymentEventListener listener;
 
     @BeforeEach
     void setUp() {
         invoiceService = mock(InvoiceService.class);
         invoiceQueryService = mock(InvoiceQueryService.class);
-        listener = new InvoicePaymentEventListener(invoiceService, invoiceQueryService);
+        invoiceEventPublisherService = mock(InvoiceEventPublisherService.class);
+        listener = new InvoicePaymentEventListener(invoiceService, invoiceQueryService, invoiceEventPublisherService);
     }
 
     @Test
-    void invoiceTarget_appliesPayment() {
+    void invoiceTarget_appliesFullSettlement() {
         when(invoiceQueryService.findActiveInvoiceById(900L)).thenReturn(openInvoice(900L, 58000, 0));
 
         listener.onPaymentSettled(new PaymentSettledEvent(
@@ -42,6 +48,49 @@ class InvoicePaymentEventListenerTest {
         ));
 
         verify(invoiceService).applyPayment(Long.valueOf(900L), Integer.valueOf(58000));
+        verify(invoiceEventPublisherService).publishPaymentApplied(
+            Long.valueOf(5L), Long.valueOf(900L), Integer.valueOf(58000), Integer.valueOf(0)
+        );
+    }
+
+    @Test
+    void overpay_parksExcessAndConfirmsSplit() {
+        when(invoiceQueryService.findActiveInvoiceById(900L)).thenReturn(openInvoice(900L, 58000, 40000));
+
+        listener.onPaymentSettled(new PaymentSettledEvent(
+            5L, "INVOICE", 900L, 58000, "INV-abc", LocalDateTime.now()
+        ));
+
+        verify(invoiceService).applyPayment(Long.valueOf(900L), Integer.valueOf(18000));
+        verify(invoiceEventPublisherService).publishPaymentApplied(
+            org.mockito.ArgumentMatchers.eq(5L),
+            org.mockito.ArgumentMatchers.eq(900L),
+            org.mockito.ArgumentMatchers.eq(18000),
+            org.mockito.ArgumentMatchers.eq(40000)
+        );
+    }
+
+    @Test
+    void voidInvoice_parksEverythingWithoutApplying() {
+        InvoiceResponse voided = new InvoiceResponse(
+            900L, "INV-08092026-AAAAAA", null, InvoiceStatus.VOID,
+            58000, 0, 58000,
+            LocalDateTime.now(), LocalDateTime.now(), LocalDateTime.now(),
+            List.of()
+        );
+        when(invoiceQueryService.findActiveInvoiceById(900L)).thenReturn(voided);
+
+        listener.onPaymentSettled(new PaymentSettledEvent(
+            5L, "INVOICE", 900L, 58000, "INV-abc", LocalDateTime.now()
+        ));
+
+        verify(invoiceService, never()).applyPayment(anyLong(), anyInt());
+        verify(invoiceEventPublisherService).publishPaymentApplied(
+            org.mockito.ArgumentMatchers.eq(5L),
+            org.mockito.ArgumentMatchers.eq(900L),
+            org.mockito.ArgumentMatchers.eq(0),
+            org.mockito.ArgumentMatchers.eq(58000)
+        );
     }
 
     @Test

@@ -992,6 +992,8 @@ Ada 4 field: `targetType` (`INVOICE` untuk membayar tagihan — didukung juga `O
   "paymentChannel": "XENDIT",
   "paymentDetail": "BCA Virtual Account",
   "amount": 54000,
+  "appliedAmount": 54000,
+  "excessAmount": 0,
   "paidAt": null,
   "createdAt": "2026-08-30T10:00:00Z",
   "updatedAt": null
@@ -1160,6 +1162,7 @@ Catatan untuk frontend:
 - `invoiceNumber` (bukan `id`) adalah referensi bisnis untuk ditampilkan ke pelanggan.
 - `diningId: null` = tagihan order standalone; terisi = tagihan gabungan satu sesi dining.
 - Invoice adalah snapshot: perubahan order items setelah invoice terbit tidak mengubah invoice yang sudah ada.
+- Pada `PaymentResponse`: `amount` = uang yang masuk, `appliedAmount` = yang nempel ke tagihan, `excessAmount` = selisih yang diparkir (`amount = applied + excess`). `excess > 0` berarti ada kembalian/kelebihan yang perlu diputuskan kasir.
 
 ---
 

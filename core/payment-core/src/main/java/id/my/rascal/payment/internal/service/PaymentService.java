@@ -206,6 +206,8 @@ public class PaymentService {
             payment.getPaymentChannel(),
             payment.getPaymentDetail(),
             payment.getAmount(),
+            payment.getAppliedAmount(),
+            payment.getExcessAmount(),
             payment.getPaidAt(),
             payment.getCreatedAt(),
             payment.getUpdatedAt()
