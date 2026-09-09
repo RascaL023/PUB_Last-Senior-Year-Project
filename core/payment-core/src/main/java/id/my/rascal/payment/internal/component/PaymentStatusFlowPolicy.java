@@ -10,8 +10,6 @@ public class PaymentStatusFlowPolicy {
 
     public void validateFlow(PaymentStatus oldStatus, PaymentStatus newStatus) {
         if (oldStatus == newStatus) return;
-        if (oldStatus == PaymentStatus.PAID && newStatus == PaymentStatus.REFUNDED) return;
-
         if (isTerminal(oldStatus)) 
             reject("Payment with status " + oldStatus + " cannot be changed");
 

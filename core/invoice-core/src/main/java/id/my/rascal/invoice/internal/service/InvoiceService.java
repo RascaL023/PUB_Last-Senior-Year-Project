@@ -3,6 +3,7 @@ package id.my.rascal.invoice.internal.service;
 import id.my.rascal.common.exception.NotFoundException;
 import id.my.rascal.invoice.internal.entity.Invoice;
 import id.my.rascal.invoice.internal.entity.InvoiceItem;
+import id.my.rascal.invoice.internal.entity.InvoiceStatus;
 import id.my.rascal.invoice.internal.model.mapper.InvoiceMapper;
 import id.my.rascal.invoice.internal.model.request.ApplyPaymentRequest;
 import id.my.rascal.invoice.internal.model.request.CreateInvoiceRequest;
@@ -15,6 +16,8 @@ import id.my.rascal.order.api.event.OrderCancelledEvent;
 import id.my.rascal.order.api.event.StandaloneOrderCreatedEvent;
 import id.my.rascal.order.api.event.dto.OrderItemSnapshot;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,6 +29,8 @@ import java.util.stream.Collectors;
 
 @Service
 public class InvoiceService {
+
+    private static final Logger logger = LoggerFactory.getLogger(InvoiceService.class);
 
     private final InvoiceRepository invoiceRepository;
     private final InvoiceEventPublisherService invoiceEventPublisherService;
@@ -105,14 +110,52 @@ public class InvoiceService {
 
     @Transactional
     public void handleOrderCancelled(OrderCancelledEvent event) {
-        invoiceRepository.findActiveByItemsOrderId(event.orderId()).stream()
-            .filter(i -> i.getDiningId() == null)
-            .filter(i -> i.getPaidAmount() == 0)
-            .forEach(i -> {
-                i.voidInvoice();
-                i.setUpdatedAt(LocalDateTime.now());
-                invoiceRepository.save(i);
+        invoiceRepository.findActiveByItemsOrderId(event.orderId())
+            .forEach(invoice -> {
+                if (invoice.getDiningId() == null)
+                    voidUnpaidStandaloneInvoice(invoice);
+                else
+                    removeCancelledDiningItems(invoice, event.orderId());
             });
+    }
+
+    private void voidUnpaidStandaloneInvoice(Invoice invoice) {
+        if (invoice.getStatus() == InvoiceStatus.VOID) return;
+        if (invoice.getPaidAmount() > 0) {
+            logger.warn("Standalone invoice dibayar tak di-void otomatis saat cancel: invoiceId={} paid={}",
+                invoice.getId(), invoice.getPaidAmount());
+            return;
+        }
+        invoice.voidInvoice();
+        invoice.setUpdatedAt(LocalDateTime.now());
+        invoiceRepository.save(invoice);
+    }
+
+    private void removeCancelledDiningItems(Invoice invoice, Long orderId) {
+        boolean hasItems = invoice.getItems().stream()
+            .anyMatch(item -> orderId.equals(item.getOrderId()));
+        if (!hasItems) return;
+
+        if (invoice.getPaidAmount() > 0) {
+            logger.warn("Item order-batal tak dihapus otomatis (invoice sudah ada uang masuk): invoiceId={} orderId={} paid={} — rekonsiliasi manual",
+                invoice.getId(), orderId, invoice.getPaidAmount());
+            return;
+        }
+
+        invoice.getItems().removeIf(item -> orderId.equals(item.getOrderId()));
+        invoice.setTotalAmount(invoice.getItems().stream().mapToInt(InvoiceItem::getAmount).sum());
+        invoice.setRemainingAmount(invoice.getTotalAmount());
+        invoice.setUpdatedAt(LocalDateTime.now());
+
+        if (invoice.getItems().isEmpty()) {
+            invoice.voidInvoice();
+            logger.info("Invoice dining kosong setelah cancel, di-void: invoiceId={} diningId={}",
+                invoice.getId(), invoice.getDiningId());
+        } else {
+            logger.info("Item order-batal dihapus dari invoice dining: invoiceId={} orderId={} total={}",
+                invoice.getId(), orderId, invoice.getTotalAmount());
+        }
+        invoiceRepository.save(invoice);
     }
 
     @Transactional

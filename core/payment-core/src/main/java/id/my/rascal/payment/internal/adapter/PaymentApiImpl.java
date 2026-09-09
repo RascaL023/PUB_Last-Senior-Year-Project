@@ -54,16 +54,13 @@ public class PaymentApiImpl implements PaymentApi {
         PaymentStatus paymentPayloadStatus = PaymentMapper.toPaymentStatus(payloadRequest.status());
         PaymentStatus paymentStatus = payment.getStatus();
         if (paymentStatus == paymentPayloadStatus) return; // idempotent redelivery: ack tanpa efek ganda
-        if (
-            paymentStatusFlowPolicy.isTerminal(paymentStatus)
-            && !(paymentStatus == PaymentStatus.PAID && paymentPayloadStatus == PaymentStatus.REFUNDED)
-        ) {
-            log.warn("Stale webhook untuk payment terminal: paymentId={} current={} incoming={} externalId={}",
-                payment.getId(), paymentStatus, paymentPayloadStatus, payloadRequest.externalId());
-            return; // ack agar Xendit berhenti; state terminal tak pernah regresi
+        try {
+            paymentStatusFlowPolicy.validateFlow(paymentStatus, paymentPayloadStatus);
+        } catch (BadRequestException e) {
+            log.warn("Stale/inapplicable webhook, acknowledged: paymentId={} current={} incoming={} externalId={} reason={}",
+                payment.getId(), paymentStatus, paymentPayloadStatus, payloadRequest.externalId(), e.getMessage());
+            return; // ack agar Xendit berhenti
         }
-
-        paymentStatusFlowPolicy.validateFlow(paymentStatus, paymentPayloadStatus);
         payment.setStatus(paymentPayloadStatus);
 
         if (payloadRequest.paidAmount() != null) payment.setAmount(payloadRequest.paidAmount());

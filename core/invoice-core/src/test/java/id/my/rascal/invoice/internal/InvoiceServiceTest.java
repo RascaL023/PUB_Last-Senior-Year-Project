@@ -194,6 +194,52 @@ class InvoiceServiceTest {
         assertEquals(InvoiceStatus.VOID, invoice.getStatus());
     }
 
+    @Test
+    void diningOrderCancelled_removesLinesAndRecomputes() {
+        Invoice invoice = persistedDiningInvoice(20L, 101L, 1L, 50000);
+        invoice.getItems().add(itemOf(invoice, 102L, 3L, "Kopi", 2, 15000, 30000));
+        invoice.setTotalAmount(80000);
+        invoice.setRemainingAmount(80000);
+        when(invoiceRepository.findActiveByItemsOrderId(102L)).thenReturn(List.of(invoice));
+
+        invoiceService.handleOrderCancelled(new OrderCancelledEvent(102L));
+
+        verify(invoiceRepository).save(invoice);
+        assertEquals(1, invoice.getItems().size());
+        assertEquals(101L, invoice.getItems().get(0).getOrderId());
+        assertEquals(50000, invoice.getTotalAmount());
+        assertEquals(50000, invoice.getRemainingAmount());
+        assertEquals(InvoiceStatus.OPEN, invoice.getStatus());
+    }
+
+    @Test
+    void diningOrderCancelled_lastOrderVoidsInvoice() {
+        Invoice invoice = persistedDiningInvoice(20L, 101L, 1L, 50000);
+        when(invoiceRepository.findActiveByItemsOrderId(101L)).thenReturn(List.of(invoice));
+
+        invoiceService.handleOrderCancelled(new OrderCancelledEvent(101L));
+
+        verify(invoiceRepository).save(invoice);
+        assertTrue(invoice.getItems().isEmpty());
+        assertEquals(0, invoice.getTotalAmount());
+        assertEquals(InvoiceStatus.VOID, invoice.getStatus());
+    }
+
+    @Test
+    void diningOrderCancelled_paidInvoiceLeftForManual() {
+        Invoice invoice = persistedDiningInvoice(20L, 101L, 1L, 50000);
+        invoice.setPaidAmount(50000);
+        invoice.setRemainingAmount(0);
+        invoice.markPaid();
+        when(invoiceRepository.findActiveByItemsOrderId(101L)).thenReturn(List.of(invoice));
+
+        invoiceService.handleOrderCancelled(new OrderCancelledEvent(101L));
+
+        verify(invoiceRepository, never()).save(any());
+        assertEquals(1, invoice.getItems().size());
+        assertEquals(InvoiceStatus.PAID, invoice.getStatus());
+    }
+
     private void stubFindActive(Long id, int total, int paid) {
         Invoice invoice = new Invoice();
         invoice.setId(id);
@@ -233,6 +279,20 @@ class InvoiceServiceTest {
         item.setCreatedAt(LocalDateTime.now());
         invoice.setItems(new ArrayList<>(List.of(item)));
         return invoice;
+    }
+
+    private InvoiceItem itemOf(Invoice invoice, Long orderId, Long orderItemId,
+                               String description, int quantity, int unitPrice, int amount) {
+        InvoiceItem item = new InvoiceItem();
+        item.setInvoice(invoice);
+        item.setOrderItemId(orderItemId);
+        item.setOrderId(orderId);
+        item.setDescription(description);
+        item.setQuantity(quantity);
+        item.setUnitPrice(unitPrice);
+        item.setAmount(amount);
+        item.setCreatedAt(LocalDateTime.now());
+        return item;
     }
 
     private CreateInvoiceRequest requestOf(Long diningId, Long orderId, int amount) {
