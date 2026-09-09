@@ -957,7 +957,7 @@ Status `PAID` dicapai lewat webhook Xendit atau langsung saat create dengan prov
 | `GET /{id}` | Get by ID | |
 | `POST /{id}/expire` | Mark as EXPIRED | Dari PENDING |
 | `POST /{id}/fail` | Mark as FAILED | Dari PENDING |
-| `POST /{id}/refund` | Mark as REFUNDED | Dari PAID |
+| `POST /{id}/refund` | Mark as REFUNDED | Dari PAID (juga bisa via webhook Xendit berstatus REFUNDED) |
 
 #### Endpoint Nonaktif
 
@@ -1170,7 +1170,7 @@ Catatan untuk frontend:
 
 | Endpoint | Keamanan | Perilaku |
 |---|---|---|
-| `POST /api/v1/payments/webhooks/xendit` | Publik, header `X-Callback-Token` | Xendit memberi tahu pembayaran lunas; backend meng-update payment dan meneruskan nominal ke invoice terkait otomatis. Frontend cukup polling `GET /payments/{id}` atau `GET /invoices/{id}` untuk melihat status `PAID`. Response selalu body kosong (`200` sukses, `401` token salah, `400` payload gagal diproses). |
+| `POST /api/v1/payments/webhooks/xendit` | Publik, header `X-Callback-Token` | Xendit memberi tahu pembayaran lunas; backend meng-update payment dan meneruskan nominal ke invoice terkait otomatis. Frontend cukup polling `GET /payments/{id}` atau `GET /invoices/{id}` untuk melihat status `PAID`. Response: `200` sukses maupun payload deterministik-buruk (malformed, external_id tak dikenal, status basi — dicatat di log, Xendit berhenti retry); `401` token salah; `500` untuk kegagalan transien agar Xendit retry. |
 | `POST /api/v1/images/imagekit/webhooks` | Publik | ImageKit memberi tahu file dibuat, diubah, atau dihapus; backend meng-update registry internal. Tidak ada aksi yang diperlukan dari frontend. Response body kosong (`200` atau `400`). |
 
 ---

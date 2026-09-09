@@ -51,11 +51,25 @@ public class PaymentApiImpl implements PaymentApi {
             return; // acknowledge to stop retries; no side effect
         }
 
-        PaymentStatus paymentStatus = PaymentMapper.toPaymentStatus(payloadRequest.status());
-        if (payment.getStatus() == paymentStatus) return; // idempotent redelivery: ack tanpa efek ganda
-        paymentStatusFlowPolicy.validateFlow(payment.getStatus(), paymentStatus);
-        payment.setStatus(paymentStatus);
-        payment.setAmount(payloadRequest.paidAmount());
+        PaymentStatus paymentPayloadStatus = PaymentMapper.toPaymentStatus(payloadRequest.status());
+        PaymentStatus paymentStatus = payment.getStatus();
+        if (paymentStatus == paymentPayloadStatus) return; // idempotent redelivery: ack tanpa efek ganda
+        if (
+            paymentStatusFlowPolicy.isTerminal(paymentStatus)
+            && !(paymentStatus == PaymentStatus.PAID && paymentPayloadStatus == PaymentStatus.REFUNDED)
+        ) {
+            log.warn("Stale webhook untuk payment terminal: paymentId={} current={} incoming={} externalId={}",
+                payment.getId(), paymentStatus, paymentPayloadStatus, payloadRequest.externalId());
+            return; // ack agar Xendit berhenti; state terminal tak pernah regresi
+        }
+
+        paymentStatusFlowPolicy.validateFlow(paymentStatus, paymentPayloadStatus);
+        payment.setStatus(paymentPayloadStatus);
+
+        if (payloadRequest.paidAmount() != null) payment.setAmount(payloadRequest.paidAmount());
+        else
+            log.warn("Webhook tanpa paid_amount, amount dipertahankan: paymentId={} externalId={}",
+                payment.getId(), payloadRequest.externalId());
         paymentEffect.applyEffectIfPaid(payment);
 
         payment.setRawWebhook(raw);
@@ -64,7 +78,9 @@ public class PaymentApiImpl implements PaymentApi {
         payment.setUpdatedAt(LocalDateTime.now());
         Payment saved = paymentRepository.save(payment);
         if (saved.getStatus() == PaymentStatus.PAID)
-            paymentEventPublisherService.publishSettled(saved, payloadRequest.paidAmount());
+            paymentEventPublisherService.publishSettled(saved, saved.getAmount());
+        else if (saved.getStatus() == PaymentStatus.REFUNDED)
+            paymentEventPublisherService.publishRefunded(saved);
     }
 
 }

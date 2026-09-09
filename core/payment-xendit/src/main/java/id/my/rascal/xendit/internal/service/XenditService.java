@@ -7,7 +7,6 @@ import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import id.my.rascal.common.exception.BadRequestException;
 import id.my.rascal.payment.api.PaymentApi;
 import id.my.rascal.payment.api.PaymentApiWebhookRequest;
 import id.my.rascal.payment.api.PaymentProcessorRequest;
@@ -51,13 +50,14 @@ public class XenditService {
     }
 
     public void handleWebhook(String rawPayload) {
+        XenditWebhookPayloadResponse payload;
         try {
-            XenditWebhookPayloadResponse payload = objectMapper.readValue(rawPayload, XenditWebhookPayloadResponse.class);
-            paymentApi.handleWeebhookRequest(toWebhookRequest(payload), rawPayload);
+            payload = objectMapper.readValue(rawPayload, XenditWebhookPayloadResponse.class);
         } catch (JsonProcessingException ex) {
-            logger.error("Xendit payload process error: {}", ex.getMessage());
-            throw new BadRequestException(null);
+            logger.error("Xendit payload unparseable, acknowledged without effect: {}", ex.getMessage());
+            return; // deterministik-buruk: ack agar Xendit berhenti retry
         }
+        paymentApi.handleWeebhookRequest(toWebhookRequest(payload), rawPayload);
     }
 
     public PaymentProcessorResponse initPayment(PaymentProcessorRequest request) {

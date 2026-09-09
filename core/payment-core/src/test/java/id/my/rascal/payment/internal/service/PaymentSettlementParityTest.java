@@ -13,6 +13,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import id.my.rascal.invoice.api.InvoiceApi;
 import id.my.rascal.invoice.api.InvoiceApiResponse;
@@ -41,6 +44,8 @@ class PaymentSettlementParityTest {
         invoiceApi = mock(InvoiceApi.class);
         eventPublisher = mock(ApplicationEventPublisher.class);
         when(paymentRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        PlatformTransactionManager transactionManager = mock(PlatformTransactionManager.class);
+        when(transactionManager.getTransaction(any())).thenReturn(mock(TransactionStatus.class));
 
         paymentService = new PaymentService(
             paymentRepository,
@@ -50,7 +55,8 @@ class PaymentSettlementParityTest {
             mock(DiningApi.class),
             invoiceApi,
             new PaymentEventPublisherService(eventPublisher),
-            new PaymentEffect()
+            new PaymentEffect(),
+            new TransactionTemplate(transactionManager)
         );
     }
 

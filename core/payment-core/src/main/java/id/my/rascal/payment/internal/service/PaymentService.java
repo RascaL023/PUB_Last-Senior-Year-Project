@@ -10,6 +10,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import id.my.rascal.common.exception.BadRequestException;
 import id.my.rascal.common.exception.NotFoundException;
@@ -46,6 +47,7 @@ public class PaymentService {
     private final DiningApi diningApi;
     private final InvoiceApi invoiceApi;
     private final PaymentEventPublisherService paymentEventPublisherService;
+    private final TransactionTemplate transactionTemplate;
 
     public PaymentService(
         PaymentRepository paymentRepository,
@@ -55,7 +57,8 @@ public class PaymentService {
         DiningApi diningApi,
         InvoiceApi invoiceApi,
         PaymentEventPublisherService paymentEventPublisherService,
-        PaymentEffect paymentEffect
+        PaymentEffect paymentEffect,
+        TransactionTemplate transactionTemplate
     ) {
         this.paymentRepository = paymentRepository;
         this.paymentStatusFlowPolicy = paymentStatusFlowPolicy;
@@ -65,9 +68,9 @@ public class PaymentService {
         this.invoiceApi = invoiceApi;
         this.paymentEventPublisherService = paymentEventPublisherService;
         this.paymentEffect = paymentEffect;
+        this.transactionTemplate = transactionTemplate;
     }
 
-    @Transactional
     public PaymentResponse create(PaymentRequest request) {
         ResolvedTarget target = resolveTarget(request.targetType(), request.targetId());
         String externalId = "INV-" + UUID.randomUUID();
@@ -77,10 +80,10 @@ public class PaymentService {
         try {
              processorResponse = processor.process(
                 new PaymentProcessorRequest(
-                    target.amount(), 
-                    "IDR", 
+                    target.amount(),
+                    "IDR",
                     target.reference(),
-                    externalId, 
+                    externalId,
                     null, null
                 )
             );
@@ -90,7 +93,19 @@ public class PaymentService {
             throw new BadRequestException(e.getMessage());
         }
 
+        return transactionTemplate.execute(status ->
+            persistCreatedPayment(request, target, externalId, processor, processorResponse)
+        );
+    }
 
+    public PaymentResponse persistCreatedPayment(
+        PaymentRequest request,
+        ResolvedTarget target,
+        String externalId,
+        PaymentProcessor processor,
+        PaymentProcessorResponse processorResponse
+    ) {
+        // Berjalan di dalam transaksi dari TransactionTemplate (lihat create).
         Payment payment = new Payment();
         payment.setPaymentProvider(PaymentProvider.valueOf(processor.paymentProvider()));
         payment.setPaymentMethodName(processorResponse.paymentMethodName());
