@@ -50,6 +50,13 @@ public class InvoiceQueryService {
     }
 
     @Transactional(readOnly = true)
+    public InvoiceApiResponse findActiveInvoiceByDiningId(Long diningId) {
+        return invoiceRepository.findActiveByDiningId(diningId)
+            .map(InvoiceMapper::toApiResponse)
+            .orElse(null);
+    }
+
+    @Transactional(readOnly = true)
     public Page<InvoiceResponse> searchActive(
         String keyword,
         InvoiceStatus status,

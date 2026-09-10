@@ -1,8 +1,11 @@
 package id.my.rascal.dining.internal.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -14,6 +17,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.context.ApplicationEventPublisher;
 
+import id.my.rascal.common.exception.BadRequestException;
 import id.my.rascal.dining.api.event.DiningOrderAddedEvent;
 import id.my.rascal.dining.internal.entity.Dining;
 import id.my.rascal.dining.internal.entity.DiningTable;
@@ -22,6 +26,8 @@ import id.my.rascal.dining.internal.model.request.DiningOrderItemRequest;
 import id.my.rascal.dining.internal.repository.DiningOrderRepository;
 import id.my.rascal.dining.internal.repository.DiningRepository;
 import id.my.rascal.dining.internal.repository.DiningTableRepository;
+import id.my.rascal.invoice.api.InvoiceApi;
+import id.my.rascal.invoice.api.InvoiceApiResponse;
 import id.my.rascal.order.api.OrderApi;
 import id.my.rascal.order.api.OrderApiResponse;
 import id.my.rascal.order.api.OrderTypeApiResponse;
@@ -62,7 +68,7 @@ class DiningServiceEventTest {
 
         DiningService diningService = new DiningService(
             diningRepository, diningOrderRepository, mock(DiningTableRepository.class),
-            tableService, orderApi, new DiningEventPublisherService(eventPublisher)
+            tableService, orderApi, mock(InvoiceApi.class), new DiningEventPublisherService(eventPublisher)
         );
 
         diningService.addOrder(20L, new CreateDiningOrderRequest(
@@ -80,6 +86,41 @@ class DiningServiceEventTest {
         assertEquals(orderCreatedAt, event.getValue().createdAt());
         assertEquals(1, event.getValue().items().size());
         assertEquals(1L, event.getValue().items().get(0).orderItemId());
+    }
+
+    @Test
+    void addOrder_toSettledInvoice_failsBeforeOrderCreated() {
+        DiningRepository diningRepository = mock(DiningRepository.class);
+        OrderApi orderApi = mock(OrderApi.class);
+        InvoiceApi invoiceApi = mock(InvoiceApi.class);
+        ApplicationEventPublisher eventPublisher = mock(ApplicationEventPublisher.class);
+
+        Dining dining = new Dining();
+        dining.setId(20L);
+        dining.setTableId(1L);
+        dining.markOpen();
+        when(diningRepository.findById(20L)).thenReturn(Optional.of(dining));
+
+        when(invoiceApi.getDiningInvoice(20L)).thenReturn(new InvoiceApiResponse(
+            900L, "INV-08092026-AAAAAA", 20L, "PAID", 80000, 80000, 0,
+            LocalDateTime.now(), LocalDateTime.now(), List.of()
+        ));
+
+        DiningService diningService = new DiningService(
+            diningRepository, mock(DiningOrderRepository.class), mock(DiningTableRepository.class),
+            mock(TableService.class), orderApi, invoiceApi, new DiningEventPublisherService(eventPublisher)
+        );
+
+        BadRequestException thrown = assertThrows(BadRequestException.class, () ->
+            diningService.addOrder(20L, new CreateDiningOrderRequest(
+                null, "Budi", null,
+                List.of(new DiningOrderItemRequest(1L, 2, List.of()))
+            ))
+        );
+
+        assertTrue(thrown.getMessage().contains("INV-08092026-AAAAAA"));
+        verify(orderApi, never()).createOrder(any());
+        verify(eventPublisher, never()).publishEvent(any());
     }
 
 }

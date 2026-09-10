@@ -87,6 +87,12 @@ public class InvoiceService {
         boolean isNew = existing.isEmpty();
         Invoice invoice = existing.orElseGet(() -> initDiningInvoice(event.diningId()));
 
+        if (!isNew && (invoice.getStatus() == InvoiceStatus.VOID || invoice.getStatus() == InvoiceStatus.PAID)) {
+            logger.error("Append ditolak: invoice dining sudah final (by-pass guard service?): invoiceId={} diningId={} orderId={} status={}",
+                invoice.getId(), event.diningId(), event.orderId(), invoice.getStatus());
+            return InvoiceMapper.toResponse(invoice);
+        }
+
         Set<Long> billedItemIds = invoice.getItems().stream()
             .map(InvoiceItem::getOrderItemId)
             .collect(Collectors.toSet());

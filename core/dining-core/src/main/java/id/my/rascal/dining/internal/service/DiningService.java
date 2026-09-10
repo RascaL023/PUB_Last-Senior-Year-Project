@@ -26,6 +26,8 @@ import id.my.rascal.dining.internal.model.response.DiningResponse;
 import id.my.rascal.dining.internal.repository.DiningOrderRepository;
 import id.my.rascal.dining.internal.repository.DiningRepository;
 import id.my.rascal.dining.internal.repository.DiningTableRepository;
+import id.my.rascal.invoice.api.InvoiceApi;
+import id.my.rascal.invoice.api.InvoiceApiResponse;
 import id.my.rascal.order.api.OrderApi;
 import id.my.rascal.order.api.OrderApiCreateRequest;
 import id.my.rascal.order.api.OrderApiResponse;
@@ -42,6 +44,7 @@ public class DiningService {
     private final DiningTableRepository diningTableRepository;
     private final TableService tableService;
     private final OrderApi orderApi;
+    private final InvoiceApi invoiceApi;
     private final DiningEventPublisherService diningEventPublisherService;
 
     public DiningService(
@@ -50,6 +53,7 @@ public class DiningService {
         DiningTableRepository diningTableRepository,
         TableService tableService,
         OrderApi orderApi,
+        InvoiceApi invoiceApi,
         DiningEventPublisherService diningEventPublisherService
     ) {
         this.diningRepository = diningRepository;
@@ -57,6 +61,7 @@ public class DiningService {
         this.diningTableRepository = diningTableRepository;
         this.tableService = tableService;
         this.orderApi = orderApi;
+        this.invoiceApi = invoiceApi;
         this.diningEventPublisherService = diningEventPublisherService;
     }
 
@@ -119,6 +124,11 @@ public class DiningService {
 
         if (dining.getStatus() != DiningStatus.OPEN)
             throw new BadRequestException("Cannot add order to a closed dining");
+
+        InvoiceApiResponse invoice = invoiceApi.getDiningInvoice(diningId);
+        if (invoice != null && ("PAID".equals(invoice.status()) || "VOID".equals(invoice.status())))
+            throw new BadRequestException(
+                "Sesi ini sudah lunas (" + invoice.invoiceNumber() + "). Tutup sesi atau minta tagihan baru ke kasir");
 
         // TODO(customer-module): validasi request.customerId() via customer-api
         // setelah modulnya tersedia (saat ini opaque Long, tanpa validasi).

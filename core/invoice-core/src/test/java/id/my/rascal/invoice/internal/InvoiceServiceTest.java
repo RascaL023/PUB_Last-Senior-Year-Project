@@ -240,6 +240,25 @@ class InvoiceServiceTest {
         assertEquals(InvoiceStatus.PAID, invoice.getStatus());
     }
 
+    @Test
+    void diningOrderAdded_toFinalInvoice_rejectedWithoutSave() {
+        Invoice invoice = persistedDiningInvoice(20L, 101L, 1L, 50000);
+        invoice.setPaidAmount(50000);
+        invoice.setRemainingAmount(0);
+        invoice.markPaid();
+        when(invoiceRepository.findActiveByDiningId(20L)).thenReturn(Optional.of(invoice));
+
+        invoiceService.handleOrderAddedToDining(new DiningOrderAddedEvent(
+            20L, 102L, "ORD-08092026-BBBBBB", 30000,
+            List.of(new OrderItemSnapshot(3L, 12L, "Kopi", 2, 15000, 30000)),
+            LocalDateTime.now()
+        ));
+
+        verify(invoiceRepository, never()).save(any());
+        assertEquals(1, invoice.getItems().size());
+        assertEquals(50000, invoice.getTotalAmount());
+    }
+
     private void stubFindActive(Long id, int total, int paid) {
         Invoice invoice = new Invoice();
         invoice.setId(id);
