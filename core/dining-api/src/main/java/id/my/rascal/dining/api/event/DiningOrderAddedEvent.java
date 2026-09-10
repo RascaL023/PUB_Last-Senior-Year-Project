@@ -12,6 +12,4 @@ public record DiningOrderAddedEvent(
     Integer totalAmount,
     List<OrderItemSnapshot> items,
     LocalDateTime createdAt
-    // TODO(customer-module): sertakan customerId/customerName snapshot setelah
-    // customer-api tersedia (kontrak antar-modul, bukan validasi di sini).
 ) {}

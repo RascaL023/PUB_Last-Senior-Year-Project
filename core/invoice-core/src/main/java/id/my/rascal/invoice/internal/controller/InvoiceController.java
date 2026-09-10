@@ -85,11 +85,15 @@ public class InvoiceController {
     public ResponseEntity<SuccessPagedTemplate<List<InvoiceResponse>>> getAll(
         @RequestParam(required = false) String keyword,
         @RequestParam(required = false) String status,
+        @RequestParam(required = false) Long diningId,
+        @RequestParam(required = false) Long orderId,
         @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
         Page<InvoiceResponse> page = invoiceQueryService.searchActive(
             keyword,
             InvoiceStatus.fromString(status),
+            diningId,
+            orderId,
             pageable
         );
 

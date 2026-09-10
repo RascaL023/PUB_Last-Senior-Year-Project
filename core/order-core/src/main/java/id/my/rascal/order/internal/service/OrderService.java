@@ -52,9 +52,12 @@ public class OrderService {
 
     @Transactional
     public OrderResponse create(OrderRequest request) {
+        if (request.type() == OrderType.DINE_IN)
+            throw new BadRequestException("Dine-in order hanya via POST /dinings/{id}/orders");
+
         Order order = new Order();
         order.setOrderNumber(generateOrderNumber());
-        // TODO(customer-module): validasi request.customerId() via customer-api
+        // TODO(customer-module): validasi request.customerId() via customer-api setelah modulnya tersedia
         applyCustomer(order, request.customerId(), request.customerName());
         applyNotes(order, request.notes());
 
@@ -62,7 +65,7 @@ public class OrderService {
         order.setOrderItems(items);
         order.setTotalPrice(orderItemService.computeTotalPrice(items));
         order.setCreatedAt(LocalDateTime.now());
-        order.setType(OrderType.TAKEAWAY); // Dine in order create via dine in module 
+        order.setType(request.type());
         order.markCreated();
 
         Order saved = orderRepository.save(order);

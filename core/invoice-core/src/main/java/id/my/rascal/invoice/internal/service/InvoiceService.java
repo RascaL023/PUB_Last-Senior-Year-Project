@@ -69,8 +69,7 @@ public class InvoiceService {
 
     @Transactional
     public InvoiceResponse handleStandaloneOrderCreated(StandaloneOrderCreatedEvent event) {
-        // TODO(customer-module): tempelkan snapshot customer (dari event.customerId
-        // via customer-api) ke invoice setelah modulnya tersedia.
+        // TODO(customer-module): tempelkan snapshot customer (dari event.customerId via customer-api)
         List<InvoiceItemRequest> freshItems = event.items().stream()
             .filter(item -> !invoiceRepository.existsByItemsOrderItemId(item.orderItemId()))
             .map(item -> toItemRequest(event.orderId(), item))

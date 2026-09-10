@@ -60,10 +60,12 @@ public class InvoiceQueryService {
     public Page<InvoiceResponse> searchActive(
         String keyword,
         InvoiceStatus status,
+        Long diningId,
+        Long orderId,
         Pageable pageable
     ) {
         return invoiceRepository
-            .searchActive(StringUtil.normalizeSearch(keyword), status, pageable)
+            .searchActive(StringUtil.normalizeSearch(keyword), status, diningId, orderId, pageable)
             .map(InvoiceMapper::toResponse);
     }
 

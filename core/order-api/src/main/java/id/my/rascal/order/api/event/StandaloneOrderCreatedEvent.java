@@ -15,5 +15,4 @@ public record StandaloneOrderCreatedEvent(
     Integer totalAmount,
     List<OrderItemSnapshot> items,
     LocalDateTime createdAt
-    // TODO(customer-module): validasi customerId + snapshot data customer
 ) {}

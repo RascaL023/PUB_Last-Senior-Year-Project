@@ -37,16 +37,20 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
     Optional<Invoice> findActiveByInvoiceNumber(@Param("invoiceNumber") String invoiceNumber);
 
     @Query("""
-        select i from Invoice i
+        select distinct i from Invoice i left join i.items it
         where i.deletedAt is null
           and (:keyword is null or
                lower(i.invoiceNumber) like lower(concat('%', cast(:keyword as string), '%')))
           and (:status is null or i.status = :status)
+          and (:diningId is null or i.diningId = :diningId)
+          and (:orderId is null or it.orderId = :orderId)
         order by i.createdAt desc
     """)
     Page<Invoice> searchActive(
         @Param("keyword") String keyword,
         @Param("status") InvoiceStatus status,
+        @Param("diningId") Long diningId,
+        @Param("orderId") Long orderId,
         Pageable pageable
     );
 

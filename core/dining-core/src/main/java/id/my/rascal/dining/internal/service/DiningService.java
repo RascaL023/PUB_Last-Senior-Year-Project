@@ -131,7 +131,6 @@ public class DiningService {
                 "Sesi ini sudah lunas (" + invoice.invoiceNumber() + "). Tutup sesi atau minta tagihan baru ke kasir");
 
         // TODO(customer-module): validasi request.customerId() via customer-api
-        // setelah modulnya tersedia (saat ini opaque Long, tanpa validasi).
         OrderApiCreateRequest apiRequest = toApiCreateRequest(request);
         OrderApiResponse created = orderApi.createOrder(apiRequest);
 

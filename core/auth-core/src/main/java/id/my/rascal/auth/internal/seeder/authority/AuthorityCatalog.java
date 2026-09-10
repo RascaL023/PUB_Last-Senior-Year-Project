@@ -27,6 +27,7 @@ public final class AuthorityCatalog {
                 new AuthoritySeed("order.mark.ready", "Can mark order status to ready"),
                 new AuthoritySeed("order.mark.completed", "Can mark order status to completed")
             ),
+            entity("invoice", "invoice"),
             List.of(
                 new AuthoritySeed("payment.create", "Can create payment"),
                 new AuthoritySeed("payment.read", "Can read payment"),

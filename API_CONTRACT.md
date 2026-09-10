@@ -856,7 +856,7 @@ Membutuhkan login.
 }
 ```
 
-Field `type` wajib diisi — enum `DINE_IN` atau `TAKEAWAY` (backend juga menerima alias `TAKE_AWAY`). `customerId`, `customerName`, dan `notes` opsional dengan batasan panjang yang wajar, sedangkan `items` minimal berisi satu item dengan `quantity` minimal 1.
+Field `type` wajib diisi — enum `DINE_IN` atau `TAKEAWAY` (backend juga menerima alias `TAKE_AWAY`). Khusus `POST /orders`, `type: DINE_IN` ditolak (`400`) — order dine-in hanya via `POST /dinings/{id}/orders`. `customerId`, `customerName`, dan `notes` opsional dengan batasan panjang yang wajar, sedangkan `items` minimal berisi satu item dengan `quantity` minimal 1.
 
 #### Update Order (PUT/PATCH) — Reconcile Pattern
 
@@ -1122,7 +1122,7 @@ Invoice umumnya **dibuat otomatis oleh backend via event**, bukan oleh frontend:
 | Method | Path | Authority | Keterangan |
 |---|---|---|---|
 | `POST /` | Create manual | `invoice.create` / `invoice.*` | Response `201`; untuk kebutuhan admin — operational flow memakai event |
-| `GET /` | List invoices | `invoice.read` / `invoice.*` | Filter `keyword` (nomor invoice), `status`; default `sort=createdAt,desc` |
+| `GET /` | List invoices | `invoice.read` / `invoice.*` | Filter `keyword` (nomor invoice), `status`, `diningId` (tagihan 1 sesi), `orderId` (tagihan order standalone); default `sort=createdAt,desc` |
 | `GET /{id}` | Get by ID | `invoice.read` / `invoice.*` | |
 | `POST /{id}/payments` | Catat pembayaran manual | `invoice.update` / `invoice.*` | Body `{ "amount": 60000 }` (`amount` minimal 1, tidak boleh melebihi sisa) |
 | `POST /{id}/void` | Void invoice | `invoice.update` / `invoice.*` | Hanya dari `OPEN`/`PARTIALLY_PAID`; invoice `PAID` tidak bisa di-void |
@@ -1308,7 +1308,7 @@ POST   /api/v1/images/imagekit/webhooks   (public, server-to-server)
 
 INVOICES
 POST   /api/v1/invoices
-GET    /api/v1/invoices?page=&size=&keyword=&status=
+GET    /api/v1/invoices?page=&size=&keyword=&status=&diningId=&orderId=
 GET    /api/v1/invoices/{id}
 POST   /api/v1/invoices/{id}/payments
 POST   /api/v1/invoices/{id}/void
