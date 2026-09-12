@@ -77,4 +77,19 @@ class PaymentSettlementParityTest {
         assertEquals(58000, event.getValue().settledAmount());
     }
 
+    // [FIX-T7a] Payment untuk invoice yang sudah lunas harus ditolak,
+    // bukan menciptakan record PAID Rp0.
+    @Test
+    void paidInvoice_rejectsNewPayment() {
+        when(invoiceApi.getInvoice(900L)).thenReturn(new InvoiceApiResponse(
+            900L, "INV-08092026-AAAAAA", null, "PAID", 58000, 58000, 0,
+            LocalDateTime.now(), LocalDateTime.now(), List.of()
+        ));
+
+        org.junit.jupiter.api.Assertions.assertThrows(
+            id.my.rascal.common.exception.BadRequestException.class,
+            () -> paymentService.create(new PaymentRequest(PaymentTargetType.INVOICE, 900L, PaymentProvider.INTERNAL, null))
+        );
+    }
+
 }

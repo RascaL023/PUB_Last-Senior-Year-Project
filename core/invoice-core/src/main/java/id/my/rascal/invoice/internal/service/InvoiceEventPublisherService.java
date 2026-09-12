@@ -7,7 +7,6 @@ import org.springframework.stereotype.Service;
 
 import id.my.rascal.invoice.api.event.InvoiceCreatedEvent;
 import id.my.rascal.invoice.api.event.InvoicePaidEvent;
-import id.my.rascal.invoice.api.event.InvoicePaymentAppliedEvent;
 import id.my.rascal.invoice.internal.entity.Invoice;
 
 @Service
@@ -44,14 +43,6 @@ public class InvoiceEventPublisherService {
             invoice.getUpdatedAt()
         ));
         logger.info("Published invoice event: paid invoiceId={}", invoice.getId());
-    }
-
-    public void publishPaymentApplied(Long paymentId, Long invoiceId, Integer appliedAmount, Integer excessAmount) {
-        eventPublisher.publishEvent(new InvoicePaymentAppliedEvent(
-            paymentId, invoiceId, appliedAmount, excessAmount
-        ));
-        logger.info("Published invoice event: paymentApplied paymentId={} invoiceId={} applied={} excess={}",
-            paymentId, invoiceId, appliedAmount, excessAmount);
     }
 
 }

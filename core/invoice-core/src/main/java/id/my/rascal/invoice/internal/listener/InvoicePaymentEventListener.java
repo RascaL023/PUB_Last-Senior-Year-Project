@@ -8,9 +8,9 @@ import org.springframework.transaction.event.TransactionalEventListener;
 
 import id.my.rascal.invoice.internal.entity.InvoiceStatus;
 import id.my.rascal.invoice.internal.model.response.InvoiceResponse;
-import id.my.rascal.invoice.internal.service.InvoiceEventPublisherService;
 import id.my.rascal.invoice.internal.service.InvoiceQueryService;
 import id.my.rascal.invoice.internal.service.InvoiceService;
+import id.my.rascal.payment.api.PaymentApi;
 import id.my.rascal.payment.api.event.PaymentSettledEvent;
 
 @Component
@@ -20,16 +20,16 @@ public class InvoicePaymentEventListener {
 
     private final InvoiceService invoiceService;
     private final InvoiceQueryService invoiceQueryService;
-    private final InvoiceEventPublisherService invoiceEventPublisherService;
+    private final PaymentApi paymentApi;
 
     public InvoicePaymentEventListener(
         InvoiceService invoiceService,
         InvoiceQueryService invoiceQueryService,
-        InvoiceEventPublisherService invoiceEventPublisherService
+        PaymentApi paymentApi
     ) {
         this.invoiceService = invoiceService;
         this.invoiceQueryService = invoiceQueryService;
-        this.invoiceEventPublisherService = invoiceEventPublisherService;
+        this.paymentApi = paymentApi;
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
@@ -66,9 +66,7 @@ public class InvoicePaymentEventListener {
                     event.paymentId(), event.targetId(), applied, excess);
         }
 
-        invoiceEventPublisherService.publishPaymentApplied(
-            event.paymentId(), event.targetId(), applied, excess
-        );
+        paymentApi.confirmSplit(event.paymentId(), applied, excess);
     }
 
 }

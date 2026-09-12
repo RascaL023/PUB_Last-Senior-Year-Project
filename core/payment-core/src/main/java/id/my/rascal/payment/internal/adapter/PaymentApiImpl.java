@@ -5,9 +5,11 @@ import java.time.LocalDateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import id.my.rascal.common.exception.BadRequestException;
+import id.my.rascal.common.exception.NotFoundException;
 import id.my.rascal.payment.api.PaymentApi;
 import id.my.rascal.payment.api.PaymentApiWebhookRequest;
 import id.my.rascal.payment.internal.component.PaymentEffect;
@@ -78,6 +80,21 @@ public class PaymentApiImpl implements PaymentApi {
             paymentEventPublisherService.publishSettled(saved, saved.getAmount());
         else if (saved.getStatus() == PaymentStatus.REFUNDED)
             paymentEventPublisherService.publishRefunded(saved);
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void confirmSplit(Long paymentId, Integer appliedAmount, Integer excessAmount) {
+        Payment payment = paymentRepository.findActiveById(paymentId)
+            .orElseThrow(() -> new NotFoundException("Payment not found with id: " + paymentId));
+
+        payment.setAppliedAmount(appliedAmount);
+        payment.setExcessAmount(excessAmount);
+        payment.setUpdatedAt(LocalDateTime.now());
+        paymentRepository.save(payment);
+
+        log.info("Recorded settlement split: paymentId={} applied={} excess={}",
+            paymentId, appliedAmount, excessAmount);
     }
 
 }

@@ -25,5 +25,5 @@ public record MenuPutRequest(
 
     Boolean isAvailable,
 
-    List<Long> ModifierTypeIds
+    List<Long> modifierTypeIds
 ) { }

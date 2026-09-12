@@ -4,4 +4,6 @@ public interface PaymentApi {
 
     void handleWeebhookRequest(PaymentApiWebhookRequest payload, String raw);
 
+    void confirmSplit(Long paymentId, Integer appliedAmount, Integer excessAmount);
+
 }

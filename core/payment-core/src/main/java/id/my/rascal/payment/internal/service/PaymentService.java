@@ -73,6 +73,10 @@ public class PaymentService {
 
     public PaymentResponse create(PaymentRequest request) {
         ResolvedTarget target = resolveTarget(request.targetType(), request.targetId());
+        if (
+            request.targetType() == PaymentTargetType.INVOICE
+            && (target.amount() == null || target.amount() <= 0)
+        ) throw new BadRequestException("Invoice already paid");
         String externalId = "INV-" + UUID.randomUUID();
 
         PaymentProcessor processor = paymentProcessorResolver.resolve(request.paymentProvider().toString());

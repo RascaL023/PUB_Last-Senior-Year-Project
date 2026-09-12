@@ -19,6 +19,7 @@ import id.my.rascal.order.api.event.dto.OrderItemSnapshot;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
@@ -67,7 +68,7 @@ public class InvoiceService {
         return InvoiceMapper.toResponse(saved);
     }
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public InvoiceResponse handleStandaloneOrderCreated(StandaloneOrderCreatedEvent event) {
         // TODO(customer-module): tempelkan snapshot customer (dari event.customerId via customer-api)
         List<InvoiceItemRequest> freshItems = event.items().stream()
@@ -80,7 +81,7 @@ public class InvoiceService {
         return create(new CreateInvoiceRequest(null, freshItems));
     }
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public InvoiceResponse handleOrderAddedToDining(DiningOrderAddedEvent event) {
         Optional<Invoice> existing = invoiceRepository.findActiveByDiningId(event.diningId());
         boolean isNew = existing.isEmpty();
@@ -113,7 +114,7 @@ public class InvoiceService {
         return InvoiceMapper.toResponse(saved);
     }
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handleOrderCancelled(OrderCancelledEvent event) {
         invoiceRepository.findActiveByItemsOrderId(event.orderId())
             .forEach(invoice -> {
@@ -163,7 +164,7 @@ public class InvoiceService {
         invoiceRepository.save(invoice);
     }
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public InvoiceResponse applyPayment(Long id, ApplyPaymentRequest request) {
         Invoice invoice = findActiveInvoice(id);
         invoice.applyPayment(request.amount());
@@ -172,7 +173,7 @@ public class InvoiceService {
         return InvoiceMapper.toResponse(saved);
     }
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public InvoiceResponse applyPayment(Long id, Integer amount) {
         return applyPayment(id, new ApplyPaymentRequest(amount));
     }
