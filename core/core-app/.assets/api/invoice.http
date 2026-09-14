@@ -1,0 +1,121 @@
+###### INVOICES ######
+### Invoice umumnya terbit OTOMATIS via event:
+### - order takeaway baru     → invoice standalone (StandaloneOrderCreatedEvent)
+### - order masuk ke dining   → invoice dining (DiningOrderAddedEvent, satu invoice per sesi)
+### Endpoint di bawah untuk inspeksi & aksi kasir.
+
+### Search active or GetAll
+### filter: keyword (invoiceNumber), status (OPEN|PARTIALLY_PAID|PAID|VOID), diningId, orderId
+GET {{baseUrl}}/invoices?orderId=1
+Authorization: Bearer {{token}}
+
+### Get by ID
+GET {{baseUrl}}/invoices/1
+Authorization: Bearer {{token}}
+
+### Create (manual, jarang dipakai — invoice dining tanpa diningId akan dianggap standalone)
+### items.orderItemId harus unik per invoice; amount = quantity * unitPrice
+POST {{baseUrl}}/invoices
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "diningId": null,
+    "items": [
+        {
+            "orderItemId": 1,
+            "orderId": 1,
+            "description": "Americano",
+            "quantity": 2,
+            "unitPrice": 18000,
+            "amount": 36000
+        }
+    ]
+}
+
+
+### ========================================
+### PAYMENT ON INVOICE (direct apply — kasir manual)
+### ========================================
+
+### Apply payment — amount = uang yang masuk; status invoice → PARTIALLY_PAID / PAID otomatis
+POST {{baseUrl}}/invoices/1/payments
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "amount": 18000
+}
+
+
+### ========================================
+### VOID & DELETE
+### ========================================
+
+### Void — hanya untuk invoice OPEN/PARTIALLY_PAID tanpa... (PAID → 400 "Cannot void a PAID invoice")
+### Invoice dining di-void → sesi masih bisa ditutup (guard close menerima VOID), addOrder ditolak.
+POST {{baseUrl}}/invoices/1/void
+Authorization: Bearer {{token}}
+
+### Delete (soft delete) — invalid jika PAID/PARTIALLY_PAID (400 "Cannot delete an invoice with applied payment")
+### Invalid juga jika invoice dining dan sesinya masih OPEN (400 "Tutup sesi dulu sebelum menghapus tagihan")
+DELETE {{baseUrl}}/invoices/1
+Authorization: Bearer {{token}}
+
+
+### ========================================
+### REFUND PER ITEM (jalur admin/koreksi buku)
+### CATATAN: endpoint ini TIDAK mengubah status payment.
+### Jalur kasir yang benar: POST /payments/{id}/refund (payment-centric, sinkron dua arah).
+### ========================================
+
+### Refund items — baris ditandai refunded, total/paid/remaining invoice menyesuaikan
+POST {{baseUrl}}/invoices/1/refunds
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "paymentId": 1,
+    "orderItemIds": [2],
+    "requestedBy": 1
+}
+
+### List refunds pada invoice
+GET {{baseUrl}}/invoices/1/refunds
+Authorization: Bearer {{token}}
+
+
+### ========================================
+### VALIDATION
+### ========================================
+
+### Not found (404)
+GET {{baseUrl}}/invoices/999
+Authorization: Bearer {{token}}
+
+### Apply payment — invalid: amount melebihi remaining (400)
+POST {{baseUrl}}/invoices/1/payments
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "amount": 99999999
+}
+
+### Apply payment — invalid: invoice VOID (400 "Cannot apply payment to a VOID invoice")
+POST {{baseUrl}}/invoices/1/payments
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "amount": 5000
+}
+
+### Refund items — invalid: item sudah pernah refunded (400 "Some items already refunded")
+POST {{baseUrl}}/invoices/1/refunds
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "orderItemIds": [2]
+}

@@ -1,5 +1,5 @@
 ###### PAYMENTS ######
-### Create (targetType: ORDER | DINING) - XENDIT
+### Create - invalid (targetType hanya INVOICE sekarang; ORDER/DINING/DINE_IN → 400)
 POST {{baseUrl}}/payments
 Authorization: Bearer {{token}}
 Content-Type: application/json
@@ -11,60 +11,110 @@ Content-Type: application/json
     "paymentDetail": "Testing xendit"
 }
 
-### Create (targetType: ORDER) - Manual/Cash
+### Create - invalid (targetId = invoice yang sudah lunas → 400 "Invoice already paid")
 POST {{baseUrl}}/payments
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-    "targetType": "ORDER",
+    "targetType": "INVOICE",
+    "targetId": 1,
+    "paymentProvider": "XENDIT",
+    "paymentDetail": "Testing xendit"
+}
+
+### Create - XENDIT (async: status awal PENDING, tunggu webhook /payments/webhooks/xendit)
+### amount = remainingAmount invoice; invoiceUrl dikembalikan di response
+POST {{baseUrl}}/payments
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "targetType": "INVOICE",
+    "targetId": 1,
+    "paymentProvider": "XENDIT",
+    "paymentDetail": "Testing xendit"
+}
+
+### Create - INTERNAL / Cash (langsung PAID; invoice otomatis ter-update via PaymentSettledEvent)
+POST {{baseUrl}}/payments
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "targetType": "INVOICE",
     "targetId": 1,
     "paymentProvider": "INTERNAL",
     "paymentDetail": "Testing internal payment(cash)"
 }
 
-### Mark as expired
+### Mark as expired (valid: PENDING → EXPIRED)
 POST {{baseUrl}}/payments/1/expire
 Authorization: Bearer {{token}}
 
-### Mark as failed
+### Mark as failed (valid: PENDING → FAILED)
 POST {{baseUrl}}/payments/1/fail
 Authorization: Bearer {{token}}
 
-### Mark as refunded
+### Refund — TANPA body: full refund (semua item invoice yang belum refunded)
+### Invoice menyesuaikan total/paid/remaining via refundItems.
 POST {{baseUrl}}/payments/1/refund
 Authorization: Bearer {{token}}
+
+### Refund — DENGAN body: parsial per item (hanya item yang belum refunded)
+POST {{baseUrl}}/payments/1/refund
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "orderItemIds": [2]
+}
 
 ### Get by ID
 GET {{baseUrl}}/payments/1
 Authorization: Bearer {{token}}
 
 ### Search active or GetAll
+### filter: keyword, targetType (INVOICE), targetId, status (PENDING|PAID|EXPIRED|FAILED|REFUNDED), paymentProvider (INTERNAL|XENDIT)
 GET {{baseUrl}}/payments?status=PENDING
 Authorization: Bearer {{token}}
 
 
-### DEPRECATED(NON AVAILABLE)
-### Mark as paid
+###### XENDIT WEBHOOK (publik, header X-Callback-Token) ######
+### Kontrak: 200 untuk payload valid maupun deterministik-buruk (dicatat, ack agar Xendit berhenti retry);
+### 401 token salah; 500 hanya kegagalan transien.
+### Late payment: webhook PAID atas payment lokal EXPIRED/FAILED diterima sebagai late settlement
+### (bukan 500) — payment jadi PAID, invoice ikut ter-update, log LATE_PAYMENT.
+POST {{baseUrl}}/payments/webhooks/xendit
+Content-Type: application/json
+X-Callback-Token: {{xenditCallbackToken}}
+
+{
+    "external_id": "INV-xxxx-xxxx",
+    "status": "PAID",
+    "paid_amount": 58000,
+    "payment_method": "QRIS",
+    "payment_channel": "QRIS",
+    "currency": "IDR"
+}
+
+
+###### DEPRECATED / NON-ACTIVE (route tidak ada di PaymentController) ######
+### Mark as paid manual — payment status hanya berubah via webhook Xendit
 POST {{baseUrl}}/payments/1/pay
 Authorization: Bearer {{token}}
 
-### Update (full replace)
+### Update (PUT) — PaymentPutRequest & PaymentPatchRequest sudah dihapus
 PUT {{baseUrl}}/payments/1
-Content-Type: application/json
 Authorization: Bearer {{token}}
+Content-Type: application/json
 
 {
-    "targetType": "ORDER",
-    "targetId": 101,
-    "paymentMethodId": 2,
-    "paymentChannel": "QRIS",
-    "paymentDetail": "0000123456789",
-    "externalId": null,
-    "invoiceUrl": null
+    "targetType": "INVOICE",
+    "targetId": 1
 }
 
-### Patch (partial)
+### Update (PATCH)
 PATCH {{baseUrl}}/payments/1
 Authorization: Bearer {{token}}
 Content-Type: application/json
@@ -73,6 +123,6 @@ Content-Type: application/json
     "paymentDetail": "0000987654321"
 }
 
-### Delete (soft delete)
+### Delete (DELETE) — PaymentPutRequest & PaymentPatchRequest sudah dihapus
 DELETE {{baseUrl}}/payments/1
 Authorization: Bearer {{token}}

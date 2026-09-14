@@ -957,7 +957,7 @@ Status `PAID` dicapai lewat webhook Xendit atau langsung saat create dengan prov
 | `GET /{id}` | Get by ID | |
 | `POST /{id}/expire` | Mark as EXPIRED | Dari PENDING |
 | `POST /{id}/fail` | Mark as FAILED | Dari PENDING |
-| `POST /{id}/refund` | Mark as REFUNDED | Dari PAID (juga bisa via webhook Xendit berstatus REFUNDED) |
+| `POST /{id}/refund` | Mark as REFUNDED + sinkron invoice | Dari PAID. Body opsional `{"orderItemIds":[...]}`: kosong/absent = refund semua item invoice; terisi = refund parsial. Ini pintu refund kasir — menyesuaikan invoice via `refundItems`. |
 
 #### Endpoint Nonaktif
 
@@ -1012,7 +1012,7 @@ Membutuhkan login. Tidak ada endpoint delete untuk dining.
 | `GET /` | List sesi | Pagination, default `sort=createdAt,desc` |
 | `GET /{id}` | Detail sesi | |
 | `POST /{id}/orders` | Tambah order ke sesi | Response `201`; item-item order otomatis ditambahkan ke Invoice milik dining |
-| `POST /{id}/close` | Tutup sesi | Meja kembali AVAILABLE; hanya bila semua order sudah `COMPLETED`/`CANCELLED` |
+| `POST /{id}/close` | Tutup sesi | Meja kembali AVAILABLE; semua order harus `COMPLETED`/`CANCELLED`. Invoice aktif harus `PAID` atau `VOID` (atau belum ada invoice). `OPEN`/`PARTIALLY_PAID` → `400`. Dining tanpa order boleh ditutup. Jalur darurat: void invoice dulu, lalu close. |
 
 **Open Dining Request:**
 
@@ -1125,8 +1125,10 @@ Invoice umumnya **dibuat otomatis oleh backend via event**, bukan oleh frontend:
 | `GET /` | List invoices | `invoice.read` / `invoice.*` | Filter `keyword` (nomor invoice), `status`, `diningId` (tagihan 1 sesi), `orderId` (tagihan order standalone); default `sort=createdAt,desc` |
 | `GET /{id}` | Get by ID | `invoice.read` / `invoice.*` | |
 | `POST /{id}/payments` | Catat pembayaran manual | `invoice.update` / `invoice.*` | Body `{ "amount": 60000 }` (`amount` minimal 1, tidak boleh melebihi sisa) |
-| `POST /{id}/void` | Void invoice | `invoice.update` / `invoice.*` | Hanya dari `OPEN`/`PARTIALLY_PAID`; invoice `PAID` tidak bisa di-void |
-| `DELETE /{id}` | Soft delete | `invoice.delete` / `invoice.*` | Response `204 No Content` |
+| `POST /{id}/void` | Void invoice | `invoice.update` / `invoice.*` | Hanya dari `OPEN`/`PARTIALLY_PAID`; invoice `PAID` tidak bisa di-void. Setelah void, dining `addOrder` ditolak; close dining diizinkan. |
+| `DELETE /{id}` | Soft delete | `invoice.delete` / `invoice.*` | Tolak jika `PAID`/`PARTIALLY_PAID`. Invoice dining ditolak jika sesi masih `OPEN` (`400` "Tutup sesi dulu..."). |
+| `POST /{id}/refunds` | Refund item (admin/koreksi buku) | `invoice.update` / `invoice.*` | Body `{"orderItemIds":[...]}`. **Tidak** mengubah status payment — untuk kasir gunakan `POST /payments/{id}/refund`. |
+| `GET /{id}/refunds` | List refund records | `invoice.read` / `invoice.*` | Riwayat refund invoice |
 
 **InvoiceResponse:**
 
@@ -1170,7 +1172,7 @@ Catatan untuk frontend:
 
 | Endpoint | Keamanan | Perilaku |
 |---|---|---|
-| `POST /api/v1/payments/webhooks/xendit` | Publik, header `X-Callback-Token` | Xendit memberi tahu pembayaran lunas; backend meng-update payment dan meneruskan nominal ke invoice terkait otomatis. Frontend cukup polling `GET /payments/{id}` atau `GET /invoices/{id}` untuk melihat status `PAID`. Response: `200` sukses maupun payload deterministik-buruk (malformed, external_id tak dikenal, status basi — dicatat di log, Xendit berhenti retry); `401` token salah; `500` untuk kegagalan transien agar Xendit retry. |
+| `POST /api/v1/payments/webhooks/xendit` | Publik, header `X-Callback-Token` | Xendit memberi tahu pembayaran lunas; backend meng-update payment dan meneruskan nominal ke invoice terkait otomatis. Frontend cukup polling `GET /payments/{id}` atau `GET /invoices/{id}` untuk melihat status `PAID`. Response: `200` sukses maupun payload deterministik-buruk (malformed, external_id tak dikenal, status basi — dicatat di log, Xendit berhenti retry); `401` token salah; `500` untuk kegagalan transien agar Xendit retry. **Late payment:** webhook `PAID` atas payment lokal `EXPIRED`/`FAILED` diterima sebagai late settlement (bukan 500) — payment jadi `PAID`, invoice di-update, log `LATE_PAYMENT`. |
 | `POST /api/v1/images/imagekit/webhooks` | Publik | ImageKit memberi tahu file dibuat, diubah, atau dihapus; backend meng-update registry internal. Tidak ada aksi yang diperlukan dari frontend. Response body kosong (`200` atau `400`). |
 
 ---

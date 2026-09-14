@@ -97,6 +97,21 @@ Content-Type: application/json
     "imageUrls": ["/assets/images/menus/coffee/americano.jpg"],
     "basePrice": 7000,
     "isAvailable": true,
+    "modifierTypeIds": [1]
+}
+
+### Create - legacy field name (masih diterima via @JsonAlias, tapi DEPRECATED — pakai modifierTypeIds)
+POST {{baseUrl}}/menus
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "name": "Latte",
+    "categoryIds": [1],
+    "description": "Espresso with steamed milk",
+    "imageUrls": ["/assets/images/menus/coffee/latte.jpg"],
+    "basePrice": 20000,
+    "isAvailable": true,
     "ModifierTypeIds": [1]
 }
 
@@ -118,7 +133,7 @@ Content-Type: application/json
     "imageUrls": ["/assets/images/menus/hot-drinks/cappuccino.jpg"],
     "basePrice": 22000,
     "isAvailable": true,
-    "ModifierTypeIds": [1]
+    "modifierTypeIds": [1]
 }
 
 ### Restore Deleted
