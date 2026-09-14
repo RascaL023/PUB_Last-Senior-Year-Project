@@ -122,4 +122,24 @@ class PaymentWebhookParityTest {
         assertEquals(5L, event.getValue().paymentId());
     }
 
+    @Test
+    void webhook_paidOnExpiredPayment_settlesViaLatePath() {
+        Payment expired = pendingPayment();
+        expired.setStatus(PaymentStatus.EXPIRED);
+        when(paymentRepository.findByExternalId("INV-abc")).thenReturn(Optional.of(expired));
+
+        handler.handleWebhookRequest(new PaymentApiWebhookRequest(
+            "INV-abc", PaymentProcessorStatus.PAID, 58000, "QR_CODE", "QRIS", "IDR"
+        ), "{}");
+
+        ArgumentCaptor<Payment> saved = ArgumentCaptor.forClass(Payment.class);
+        verify(paymentRepository).save(saved.capture());
+        assertEquals(PaymentStatus.PAID, saved.getValue().getStatus());
+
+        ArgumentCaptor<PaymentSettledEvent> event = ArgumentCaptor.forClass(PaymentSettledEvent.class);
+        verify(eventPublisher).publishEvent(event.capture());
+        assertEquals(5L, event.getValue().paymentId());
+        assertEquals(58000, event.getValue().settledAmount());
+    }
+
 }

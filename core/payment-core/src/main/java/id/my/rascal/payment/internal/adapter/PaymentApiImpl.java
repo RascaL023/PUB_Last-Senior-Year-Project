@@ -56,13 +56,23 @@ public class PaymentApiImpl implements PaymentApi {
         PaymentStatus paymentPayloadStatus = PaymentMapper.toPaymentStatus(payloadRequest.status());
         PaymentStatus paymentStatus = payment.getStatus();
         if (paymentStatus == paymentPayloadStatus) return; // idempotent redelivery: ack tanpa efek ganda
-        try {
-            paymentStatusFlowPolicy.validateFlow(paymentStatus, paymentPayloadStatus);
-        } catch (BadRequestException e) {
-            log.warn("Stale/inapplicable webhook, acknowledged: paymentId={} current={} incoming={} externalId={} reason={}",
-                payment.getId(), paymentStatus, paymentPayloadStatus, payloadRequest.externalId(), e.getMessage());
-            return; // ack agar Xendit berhenti
+
+        boolean lateSettlement = paymentPayloadStatus == PaymentStatus.PAID
+            && (paymentStatus == PaymentStatus.EXPIRED || paymentStatus == PaymentStatus.FAILED);
+
+        if (lateSettlement) {
+            log.info("LATE_PAYMENT settling previously {} payment: paymentId={} externalId={}",
+                paymentStatus, payment.getId(), payloadRequest.externalId());
+        } else {
+            try {
+                paymentStatusFlowPolicy.validateFlow(paymentStatus, paymentPayloadStatus);
+            } catch (BadRequestException e) {
+                log.warn("Stale/inapplicable webhook, acknowledged: paymentId={} current={} incoming={} externalId={} reason={}",
+                    payment.getId(), paymentStatus, paymentPayloadStatus, payloadRequest.externalId(), e.getMessage());
+                return; // ack agar Xendit berhenti
+            }
         }
+
         payment.setStatus(paymentPayloadStatus);
 
         if (payloadRequest.paidAmount() != null) payment.setAmount(payloadRequest.paidAmount());

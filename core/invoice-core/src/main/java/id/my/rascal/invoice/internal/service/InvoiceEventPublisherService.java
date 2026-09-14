@@ -6,7 +6,9 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import id.my.rascal.invoice.api.event.InvoiceCreatedEvent;
+import id.my.rascal.invoice.api.event.InvoiceDeletedEvent;
 import id.my.rascal.invoice.api.event.InvoicePaidEvent;
+import id.my.rascal.invoice.api.event.InvoiceVoidedEvent;
 import id.my.rascal.invoice.internal.entity.Invoice;
 
 @Service
@@ -43,6 +45,26 @@ public class InvoiceEventPublisherService {
             invoice.getUpdatedAt()
         ));
         logger.info("Published invoice event: paid invoiceId={}", invoice.getId());
+    }
+
+    public void publishVoided(Invoice invoice) {
+        eventPublisher.publishEvent(new InvoiceVoidedEvent(
+            invoice.getId(),
+            invoice.getInvoiceNumber(),
+            invoice.getDiningId(),
+            invoice.getUpdatedAt() != null ? invoice.getUpdatedAt() : java.time.LocalDateTime.now()
+        ));
+        logger.info("Published invoice event: voided invoiceId={}", invoice.getId());
+    }
+
+    public void publishDeleted(Invoice invoice) {
+        eventPublisher.publishEvent(new InvoiceDeletedEvent(
+            invoice.getId(),
+            invoice.getInvoiceNumber(),
+            invoice.getDiningId(),
+            invoice.getDeletedAt() != null ? invoice.getDeletedAt() : java.time.LocalDateTime.now()
+        ));
+        logger.info("Published invoice event: deleted invoiceId={}", invoice.getId());
     }
 
 }

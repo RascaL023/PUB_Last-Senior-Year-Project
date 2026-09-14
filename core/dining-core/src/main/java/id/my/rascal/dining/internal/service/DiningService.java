@@ -106,6 +106,14 @@ public class DiningService {
         if (hasIncompleteOrders)
             throw new BadRequestException("Cannot close dining with incomplete orders");
 
+        InvoiceApiResponse invoice = invoiceApi.getDiningInvoice(id);
+        if (invoice != null
+            && !"PAID".equals(invoice.status())
+            && !"VOID".equals(invoice.status())) {
+            throw new BadRequestException(
+                "Tagihan belum lunas (" + invoice.invoiceNumber() + "). Selesaikan pembayaran dulu");
+        }
+
         dining.markClosed();
         dining.setUpdatedAt(LocalDateTime.now());
 
@@ -126,9 +134,12 @@ public class DiningService {
             throw new BadRequestException("Cannot add order to a closed dining");
 
         InvoiceApiResponse invoice = invoiceApi.getDiningInvoice(diningId);
-        if (invoice != null && ("PAID".equals(invoice.status()) || "VOID".equals(invoice.status())))
+        if (invoice != null && "PAID".equals(invoice.status()))
             throw new BadRequestException(
                 "Sesi ini sudah lunas (" + invoice.invoiceNumber() + "). Tutup sesi atau minta tagihan baru ke kasir");
+        if (invoice != null && "VOID".equals(invoice.status()))
+            throw new BadRequestException(
+                "Tagihan sesi ini sudah di-void (" + invoice.invoiceNumber() + "). Tutup sesi atau minta tagihan baru ke kasir");
 
         // TODO(customer-module): validasi request.customerId() via customer-api
         OrderApiCreateRequest apiRequest = toApiCreateRequest(request);

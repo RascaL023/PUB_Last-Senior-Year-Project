@@ -123,4 +123,38 @@ class DiningServiceEventTest {
         verify(eventPublisher, never()).publishEvent(any());
     }
 
+    @Test
+    void addOrder_toVoidInvoice_failsWithDistinctMessage() {
+        DiningRepository diningRepository = mock(DiningRepository.class);
+        OrderApi orderApi = mock(OrderApi.class);
+        InvoiceApi invoiceApi = mock(InvoiceApi.class);
+        ApplicationEventPublisher eventPublisher = mock(ApplicationEventPublisher.class);
+
+        Dining dining = new Dining();
+        dining.setId(20L);
+        dining.setTableId(1L);
+        dining.markOpen();
+        when(diningRepository.findById(20L)).thenReturn(Optional.of(dining));
+
+        when(invoiceApi.getDiningInvoice(20L)).thenReturn(new InvoiceApiResponse(
+            900L, "INV-08092026-AAAAAA", 20L, "VOID", 80000, 0, 0,
+            LocalDateTime.now(), LocalDateTime.now(), List.of()
+        ));
+
+        DiningService diningService = new DiningService(
+            diningRepository, mock(DiningOrderRepository.class), mock(DiningTableRepository.class),
+            mock(TableService.class), orderApi, invoiceApi, new DiningEventPublisherService(eventPublisher)
+        );
+
+        BadRequestException thrown = assertThrows(BadRequestException.class, () ->
+            diningService.addOrder(20L, new CreateDiningOrderRequest(
+                null, "Budi", null,
+                List.of(new DiningOrderItemRequest(1L, 2, List.of()))
+            ))
+        );
+
+        assertTrue(thrown.getMessage().contains("di-void"));
+        verify(orderApi, never()).createOrder(any());
+    }
+
 }

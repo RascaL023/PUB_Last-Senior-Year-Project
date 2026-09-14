@@ -2,6 +2,7 @@ package id.my.rascal.invoice.internal.service;
 
 import id.my.rascal.common.exception.NotFoundException;
 import id.my.rascal.common.exception.BadRequestException;
+import id.my.rascal.dining.api.DiningApi;
 import id.my.rascal.invoice.internal.entity.Invoice;
 import id.my.rascal.invoice.internal.entity.InvoiceItem;
 import id.my.rascal.invoice.internal.entity.InvoiceStatus;
@@ -25,6 +26,7 @@ import id.my.rascal.order.api.event.dto.OrderItemSnapshot;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -44,15 +46,18 @@ public class InvoiceService {
     private final InvoiceRepository invoiceRepository;
     private final RefundRepository refundRepository;
     private final InvoiceEventPublisherService invoiceEventPublisherService;
+    private final DiningApi diningApi;
 
     public InvoiceService(
         InvoiceRepository invoiceRepository,
         RefundRepository refundRepository,
-        InvoiceEventPublisherService invoiceEventPublisherService
+        InvoiceEventPublisherService invoiceEventPublisherService,
+        @Lazy DiningApi diningApi
     ) {
         this.invoiceRepository = invoiceRepository;
         this.refundRepository = refundRepository;
         this.invoiceEventPublisherService = invoiceEventPublisherService;
+        this.diningApi = diningApi;
     }
 
     @Transactional
@@ -250,14 +255,27 @@ public class InvoiceService {
     public InvoiceResponse voidInvoice(Long id) {
         Invoice invoice = findActiveInvoice(id);
         invoice.voidInvoice();
-        return InvoiceMapper.toResponse(invoiceRepository.save(invoice));
+        invoice.setUpdatedAt(LocalDateTime.now());
+        Invoice saved = invoiceRepository.save(invoice);
+        invoiceEventPublisherService.publishVoided(saved);
+        return InvoiceMapper.toResponse(saved);
     }
 
     @Transactional
     public void delete(Long id) {
         Invoice invoice = findActiveInvoice(id);
+        if (invoice.getStatus() == InvoiceStatus.PAID || invoice.getStatus() == InvoiceStatus.PARTIALLY_PAID)
+            throw new BadRequestException("Cannot delete an invoice with applied payment");
+
+        if (invoice.getDiningId() != null) {
+            String diningStatus = diningApi.getDiningStatus(invoice.getDiningId());
+            if ("OPEN".equals(diningStatus))
+                throw new BadRequestException("Tutup sesi dulu sebelum menghapus tagihan");
+        }
+
         invoice.setDeletedAt(LocalDateTime.now());
-        invoiceRepository.save(invoice);
+        Invoice saved = invoiceRepository.save(invoice);
+        invoiceEventPublisherService.publishDeleted(saved);
     }
 
     @Transactional(readOnly = true)

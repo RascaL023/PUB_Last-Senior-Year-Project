@@ -109,6 +109,14 @@ public class DiningApiImpl implements DiningApi {
         return diningOrderRepository.findOrderIdsByDiningId(diningId);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public String getDiningStatus(Long diningId) {
+        return diningRepository.findById(diningId)
+            .map(d -> d.getStatus().name())
+            .orElseThrow(() -> new NotFoundException("Dining not found with id: " + diningId));
+    }
+
     private int calculateTotalPrice(List<OrderApiResponse> orders) {
         return orders.stream()
             .filter(o -> !"CANCELLED".equals(o.status()))

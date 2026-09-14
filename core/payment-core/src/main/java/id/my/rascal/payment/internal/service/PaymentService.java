@@ -1,6 +1,7 @@
 package id.my.rascal.payment.internal.service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 import org.slf4j.Logger;
@@ -16,6 +17,7 @@ import id.my.rascal.common.exception.BadRequestException;
 import id.my.rascal.common.exception.NotFoundException;
 import id.my.rascal.invoice.api.InvoiceApi;
 import id.my.rascal.invoice.api.InvoiceApiResponse;
+import id.my.rascal.invoice.api.InvoiceItemApiResponse;
 import id.my.rascal.payment.api.PaymentProcessor;
 import id.my.rascal.payment.api.PaymentProcessorRequest;
 import id.my.rascal.payment.api.PaymentProcessorResponse;
@@ -169,11 +171,27 @@ public class PaymentService {
         payment.setUpdatedAt(LocalDateTime.now());
         Payment saved = paymentRepository.save(payment);
         paymentEventPublisherService.publishRefunded(saved);
-        if (saved.getTargetType() == PaymentTargetType.INVOICE
-            && request != null && request.orderItemIds() != null && !request.orderItemIds().isEmpty()) {
-            invoiceApi.refundItems(saved.getTargetId(), request.orderItemIds(), saved.getId());
+
+        if (saved.getTargetType() == PaymentTargetType.INVOICE) {
+            List<Long> orderItemIds = resolveRefundOrderItemIds(saved.getTargetId(), request);
+            if (!orderItemIds.isEmpty())
+                invoiceApi.refundItems(saved.getTargetId(), orderItemIds, saved.getId());
         }
         return toResponse(saved);
+    }
+
+    private List<Long> resolveRefundOrderItemIds(
+        Long invoiceId,
+        id.my.rascal.payment.internal.model.request.PaymentRefundRequest request
+    ) {
+        if (request != null && request.orderItemIds() != null && !request.orderItemIds().isEmpty())
+            return request.orderItemIds();
+
+        InvoiceApiResponse invoice = invoiceApi.getInvoice(invoiceId);
+        return invoice.items().stream()
+            .filter(i -> !Boolean.TRUE.equals(i.refunded()))
+            .map(InvoiceItemApiResponse::orderItemId)
+            .toList();
     }
 
 

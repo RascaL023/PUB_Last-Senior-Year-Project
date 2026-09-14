@@ -43,15 +43,17 @@ class InvoiceServiceTest {
 
     private InvoiceRepository invoiceRepository;
     private InvoiceEventPublisherService invoiceEventPublisherService;
+    private id.my.rascal.dining.api.DiningApi diningApi;
     private InvoiceService invoiceService;
 
     @BeforeEach
     void setUp() {
         invoiceRepository = mock(InvoiceRepository.class);
         invoiceEventPublisherService = mock(InvoiceEventPublisherService.class);
+        diningApi = mock(id.my.rascal.dining.api.DiningApi.class);
         when(invoiceRepository.existsByInvoiceNumber(any())).thenReturn(false);
         when(invoiceRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
-        invoiceService = new InvoiceService(invoiceRepository, mock(id.my.rascal.invoice.internal.repository.RefundRepository.class), invoiceEventPublisherService);
+        invoiceService = new InvoiceService(invoiceRepository, mock(id.my.rascal.invoice.internal.repository.RefundRepository.class), invoiceEventPublisherService, diningApi);
     }
 
     @Test
@@ -469,6 +471,29 @@ class InvoiceServiceTest {
 
         assertThrows(BadRequestException.class,
             () -> invoiceService.refundItems(900L, new id.my.rascal.invoice.internal.model.request.RefundRequest(null, List.of(1L), null)));
+    }
+
+    @Test
+    void deletePaidInvoice_rejected() {
+        Invoice invoice = persistedDiningInvoice(null, 1L, 1L, 50000);
+        invoice.setPaidAmount(50000);
+        invoice.setRemainingAmount(0);
+        invoice.markPaid();
+        when(invoiceRepository.findActiveById(900L)).thenReturn(Optional.of(invoice));
+
+        assertThrows(BadRequestException.class, () -> invoiceService.delete(900L));
+        verify(invoiceRepository, never()).save(any());
+    }
+
+    @Test
+    void deleteDiningInvoice_whileSessionOpen_rejected() {
+        Invoice invoice = persistedDiningInvoice(20L, 1L, 1L, 50000);
+        when(invoiceRepository.findActiveById(900L)).thenReturn(Optional.of(invoice));
+        when(diningApi.getDiningStatus(20L)).thenReturn("OPEN");
+
+        BadRequestException thrown = assertThrows(BadRequestException.class, () -> invoiceService.delete(900L));
+        assertTrue(thrown.getMessage().contains("Tutup sesi"));
+        verify(invoiceRepository, never()).save(any());
     }
 
     private Invoice persistedDiningInvoice(Long diningId, Long orderId, Long orderItemId, int amount) {
