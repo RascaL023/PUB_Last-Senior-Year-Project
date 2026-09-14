@@ -61,7 +61,7 @@ class PaymentWebhookParityTest {
     void webhookPaid_publishesSettledEventWithPayloadFacts() {
         when(paymentRepository.findByExternalId("INV-abc")).thenReturn(Optional.of(pendingPayment()));
 
-        handler.handleWeebhookRequest(new PaymentApiWebhookRequest(
+        handler.handleWebhookRequest(new PaymentApiWebhookRequest(
             "INV-abc", PaymentProcessorStatus.PAID, 58000, "CASH", "INTERNAL_CASH", "IDR"
         ), "{}");
 
@@ -78,7 +78,7 @@ class PaymentWebhookParityTest {
     void webhookWithoutPaidAmount_keepsRecordedAmount() {
         when(paymentRepository.findByExternalId("INV-abc")).thenReturn(Optional.of(pendingPayment()));
 
-        handler.handleWeebhookRequest(new PaymentApiWebhookRequest(
+        handler.handleWebhookRequest(new PaymentApiWebhookRequest(
             "INV-abc", PaymentProcessorStatus.EXPIRED, null, null, null, "IDR"
         ), "{}");
 
@@ -95,7 +95,7 @@ class PaymentWebhookParityTest {
         paid.setStatus(PaymentStatus.PAID);
         when(paymentRepository.findByExternalId("INV-abc")).thenReturn(Optional.of(paid));
 
-        handler.handleWeebhookRequest(new PaymentApiWebhookRequest(
+        handler.handleWebhookRequest(new PaymentApiWebhookRequest(
             "INV-abc", PaymentProcessorStatus.EXPIRED, null, null, null, "IDR"
         ), "{}");
 
@@ -109,7 +109,7 @@ class PaymentWebhookParityTest {
         paid.setStatus(PaymentStatus.PAID);
         when(paymentRepository.findByExternalId("INV-abc")).thenReturn(Optional.of(paid));
 
-        handler.handleWeebhookRequest(new PaymentApiWebhookRequest(
+        handler.handleWebhookRequest(new PaymentApiWebhookRequest(
             "INV-abc", PaymentProcessorStatus.REFUNDED, 58000, "CASH", "INTERNAL_CASH", "IDR"
         ), "{}");
 

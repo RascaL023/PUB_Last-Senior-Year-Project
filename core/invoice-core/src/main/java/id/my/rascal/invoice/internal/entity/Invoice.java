@@ -110,4 +110,28 @@ public class Invoice {
         this.updatedAt = LocalDateTime.now();
     }
 
+    public int applyRefund(int scopeAmount, int cashAmount) {
+        if (this.status == InvoiceStatus.VOID)
+            throw new BadRequestException("Cannot refund a VOID invoice");
+        if (scopeAmount <= 0)
+            throw new BadRequestException("Refund scope must be greater than 0");
+        if (cashAmount < 0)
+            throw new BadRequestException("Refund cash cannot be negative");
+        if (cashAmount > this.paidAmount)
+            throw new BadRequestException("Refund cash exceeds paid amount");
+        if (scopeAmount > this.totalAmount)
+            throw new BadRequestException("Refund scope exceeds invoice total");
+
+        this.totalAmount -= scopeAmount;
+        this.paidAmount -= cashAmount;
+        this.remainingAmount = this.totalAmount - this.paidAmount;
+        if (this.remainingAmount < 0)
+            throw new BadRequestException("Refund would make remaining negative");
+        if (this.remainingAmount == 0 && this.totalAmount > 0) markPaid();
+        else if (this.paidAmount > 0) markPartiallyPaid();
+        else markOpen();
+        this.updatedAt = LocalDateTime.now();
+        return cashAmount;
+    }
+
 }

@@ -57,7 +57,7 @@ public class XenditService {
             logger.error("Xendit payload unparseable, acknowledged without effect: {}", ex.getMessage());
             return; // deterministik-buruk: ack agar Xendit berhenti retry
         }
-        paymentApi.handleWeebhookRequest(toWebhookRequest(payload), rawPayload);
+        paymentApi.handleWebhookRequest(toWebhookRequest(payload), rawPayload);
     }
 
     public PaymentProcessorResponse initPayment(PaymentProcessorRequest request) {

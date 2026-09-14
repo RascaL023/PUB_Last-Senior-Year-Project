@@ -1,6 +1,5 @@
 package id.my.rascal.invoice.internal.listener;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
@@ -13,7 +12,6 @@ import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
 
 import id.my.rascal.invoice.internal.entity.InvoiceStatus;
 import id.my.rascal.invoice.internal.model.response.InvoiceItemResponse;
@@ -126,7 +124,7 @@ class InvoicePaymentEventListenerTest {
             id, "INV-08092026-AAAAAA", null, InvoiceStatus.OPEN,
             total, paid, total - paid,
             LocalDateTime.now(), LocalDateTime.now(), null,
-            List.of(new InvoiceItemResponse(1L, 11L, 101L, "Nasi Goreng", 2, 25000, 50000))
+            List.of(new InvoiceItemResponse(1L, 11L, 101L, "Nasi Goreng", 2, 25000, 50000, false))
         );
     }
 
@@ -135,7 +133,7 @@ class InvoicePaymentEventListenerTest {
             id, "INV-08092026-AAAAAA", null, InvoiceStatus.PAID,
             total, total, 0,
             LocalDateTime.now(), LocalDateTime.now(), LocalDateTime.now(),
-            List.of(new InvoiceItemResponse(1L, 11L, 101L, "Nasi Goreng", 2, 25000, 50000))
+            List.of(new InvoiceItemResponse(1L, 11L, 101L, "Nasi Goreng", 2, 25000, 50000, false))
         );
     }
 

@@ -19,8 +19,6 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import id.my.rascal.invoice.api.InvoiceApi;
 import id.my.rascal.invoice.api.InvoiceApiResponse;
-import id.my.rascal.order.api.OrderApi;
-import id.my.rascal.dining.api.DiningApi;
 import id.my.rascal.payment.api.event.PaymentSettledEvent;
 import id.my.rascal.payment.internal.adapter.CashPaymentProcessor;
 import id.my.rascal.payment.internal.component.PaymentEffect;
@@ -51,8 +49,6 @@ class PaymentSettlementParityTest {
             paymentRepository,
             new PaymentStatusFlowPolicy(),
             new PaymentProcessorResolver(List.of(new CashPaymentProcessor())),
-            mock(OrderApi.class),
-            mock(DiningApi.class),
             invoiceApi,
             new PaymentEventPublisherService(eventPublisher),
             new PaymentEffect(),

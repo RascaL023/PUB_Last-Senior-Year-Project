@@ -14,12 +14,8 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import id.my.rascal.common.exception.BadRequestException;
 import id.my.rascal.common.exception.NotFoundException;
-import id.my.rascal.dining.api.DiningApi;
-import id.my.rascal.dining.api.DiningApiResponse;
 import id.my.rascal.invoice.api.InvoiceApi;
 import id.my.rascal.invoice.api.InvoiceApiResponse;
-import id.my.rascal.order.api.OrderApi;
-import id.my.rascal.order.api.OrderApiResponse;
 import id.my.rascal.payment.api.PaymentProcessor;
 import id.my.rascal.payment.api.PaymentProcessorRequest;
 import id.my.rascal.payment.api.PaymentProcessorResponse;
@@ -43,8 +39,6 @@ public class PaymentService {
     private final PaymentStatusFlowPolicy paymentStatusFlowPolicy;
     private final PaymentProcessorResolver paymentProcessorResolver;
     private final PaymentEffect paymentEffect;
-    private final OrderApi orderApi;
-    private final DiningApi diningApi;
     private final InvoiceApi invoiceApi;
     private final PaymentEventPublisherService paymentEventPublisherService;
     private final TransactionTemplate transactionTemplate;
@@ -53,8 +47,6 @@ public class PaymentService {
         PaymentRepository paymentRepository,
         PaymentStatusFlowPolicy paymentStatusFlowPolicy,
         PaymentProcessorResolver paymentProcessorResolver,
-        OrderApi orderApi,
-        DiningApi diningApi,
         InvoiceApi invoiceApi,
         PaymentEventPublisherService paymentEventPublisherService,
         PaymentEffect paymentEffect,
@@ -63,8 +55,6 @@ public class PaymentService {
         this.paymentRepository = paymentRepository;
         this.paymentStatusFlowPolicy = paymentStatusFlowPolicy;
         this.paymentProcessorResolver = paymentProcessorResolver;
-        this.orderApi = orderApi;
-        this.diningApi = diningApi;
         this.invoiceApi = invoiceApi;
         this.paymentEventPublisherService = paymentEventPublisherService;
         this.paymentEffect = paymentEffect;
@@ -165,12 +155,21 @@ public class PaymentService {
 
     @Transactional
     public PaymentResponse markRefunded(Long id) {
+        return markRefunded(id, null);
+    }
+
+    @Transactional
+    public PaymentResponse markRefunded(Long id, id.my.rascal.payment.internal.model.request.PaymentRefundRequest request) {
         Payment payment = findActive(id);
         paymentStatusFlowPolicy.validateFlow(payment.getStatus(), PaymentStatus.REFUNDED);
         payment.setStatus(PaymentStatus.REFUNDED);
         payment.setUpdatedAt(LocalDateTime.now());
         Payment saved = paymentRepository.save(payment);
         paymentEventPublisherService.publishRefunded(saved);
+        if (saved.getTargetType() == PaymentTargetType.INVOICE
+            && request != null && request.orderItemIds() != null && !request.orderItemIds().isEmpty()) {
+            invoiceApi.refundItems(saved.getTargetId(), request.orderItemIds(), saved.getId());
+        }
         return toResponse(saved);
     }
 
@@ -184,21 +183,7 @@ public class PaymentService {
     }
 
     private ResolvedTarget resolveTarget(PaymentTargetType type, Long targetId) {
-        return switch (type) {
-            case ORDER -> resolveOrder(targetId);
-            case DINE_IN -> resolveDining(targetId);
-            case INVOICE -> resolveInvoice(targetId);
-        };
-    }
-
-    private ResolvedTarget resolveOrder(Long targetId) {
-        OrderApiResponse order = orderApi.getOrder(targetId);
-        return new ResolvedTarget(order.totalPrice(), order.orderNumber());
-    }
-
-    private ResolvedTarget resolveDining(Long targetId) {
-        DiningApiResponse dining = diningApi.getDining(targetId);
-        return new ResolvedTarget(dining.totalPrice(), "DINING-" + dining.id());
+        return resolveInvoice(targetId);
     }
 
     private ResolvedTarget resolveInvoice(Long targetId) {

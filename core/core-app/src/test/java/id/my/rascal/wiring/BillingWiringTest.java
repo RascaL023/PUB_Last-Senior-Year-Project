@@ -1,13 +1,11 @@
 package id.my.rascal.wiring;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -41,7 +39,6 @@ import id.my.rascal.order.internal.model.enums.OrderType;
 import id.my.rascal.order.internal.model.request.OrderItemRequest;
 import id.my.rascal.order.internal.model.request.OrderRequest;
 import id.my.rascal.order.internal.model.response.OrderResponse;
-import id.my.rascal.order.internal.service.OrderQueryService;
 import id.my.rascal.order.internal.service.OrderService;
 import id.my.rascal.payment.api.PaymentApi;
 import id.my.rascal.payment.api.PaymentApiWebhookRequest;
@@ -72,8 +69,6 @@ class BillingWiringTest {
     private MenuApi menuApi;
     @Autowired
     private OrderService orderService;
-    @Autowired
-    private OrderQueryService orderQueryService;
     @Autowired
     private DiningService diningService;
     @Autowired
@@ -192,7 +187,7 @@ class BillingWiringTest {
         payment.setCreatedAt(java.time.LocalDateTime.now());
         payment = paymentRepository.save(payment);
 
-        paymentApi.handleWeebhookRequest(new PaymentApiWebhookRequest(
+        paymentApi.handleWebhookRequest(new PaymentApiWebhookRequest(
             "TEST-WEBHOOK-1", PaymentProcessorStatus.PAID, 8000, "QRIS", "XENDIT_QRIS", "IDR"
         ), "{}");
 

@@ -9,12 +9,9 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -27,8 +24,7 @@ import id.my.rascal.common.template.SuccessTemplate;
 import id.my.rascal.payment.internal.model.enums.PaymentProvider;
 import id.my.rascal.payment.internal.model.enums.PaymentStatus;
 import id.my.rascal.payment.internal.model.enums.PaymentTargetType;
-import id.my.rascal.payment.internal.model.request.PaymentPatchRequest;
-import id.my.rascal.payment.internal.model.request.PaymentPutRequest;
+import id.my.rascal.payment.internal.model.request.PaymentRefundRequest;
 import id.my.rascal.payment.internal.model.request.PaymentRequest;
 import id.my.rascal.payment.internal.model.response.PaymentResponse;
 import id.my.rascal.payment.internal.service.PaymentService;
@@ -41,7 +37,6 @@ public class PaymentController {
     private final PaymentService paymentService;
     private final String DEFAULT_GET_SUCCESS_MESSAGE = "Payment successfully retrieved";
     private final String DEFAULT_CREATE_SUCCESS_MESSAGE = "Payment successfully created";
-    private final String DEFAULT_UPDATE_SUCCESS_MESSAGE = "Payment successfully updated";
 
     public PaymentController(PaymentService paymentService) {
         this.paymentService = paymentService;
@@ -79,9 +74,12 @@ public class PaymentController {
 
     @PostMapping("/{id}/refund")
     @PreAuthorize("hasAnyAuthority('payment.update', 'payment.*')")
-    public ResponseEntity<SuccessTemplate<PaymentResponse>> refund(@PathVariable Long id) {
+    public ResponseEntity<SuccessTemplate<PaymentResponse>> refund(
+        @PathVariable Long id,
+        @RequestBody(required = false) PaymentRefundRequest request
+    ) {
         validateId(id);
-        return ApiResponse.success(HttpStatus.OK, "Payment successfully marked as refunded", paymentService.markRefunded(id));
+        return ApiResponse.success(HttpStatus.OK, "Payment successfully marked as refunded", paymentService.markRefunded(id, request));
     }
 
     @GetMapping

@@ -43,7 +43,7 @@ public class PaymentApiImpl implements PaymentApi {
 
     @Override
     @Transactional
-    public void handleWeebhookRequest(PaymentApiWebhookRequest payloadRequest, String raw) {
+    public void handleWebhookRequest(PaymentApiWebhookRequest payloadRequest, String raw) {
         if (payloadRequest == null || payloadRequest.externalId() == null)
             throw new BadRequestException("Invalid Xendit webhook payloadRequest");
 

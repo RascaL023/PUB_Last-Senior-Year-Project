@@ -28,7 +28,6 @@ public class XenditWebhookController {
         @RequestHeader(value = "X-Callback-Token", required = false) String callbackToken,
         @RequestBody String rawPayload
     ) {
-        // System.out.println(rawPayload);
         if (!xenditService.isValidToken(callbackToken))
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 

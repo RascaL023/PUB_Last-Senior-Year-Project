@@ -7,5 +7,6 @@ public record InvoiceItemApiResponse(
     String description,
     Integer quantity,
     Integer unitPrice,
-    Integer amount
+    Integer amount,
+    Boolean refunded
 ) {}
