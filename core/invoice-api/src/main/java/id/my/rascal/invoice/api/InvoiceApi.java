@@ -10,5 +10,6 @@ public interface InvoiceApi {
     InvoiceApiResponse getDiningInvoice(Long diningId);
     InvoiceApiResponse applyPayment(Long invoiceId, Integer amount);
     InvoiceApiResponse refundItems(Long invoiceId, List<Long> orderItemIds, Long paymentId);
+    boolean hasAppliedPayment(Long orderId);
 
 }

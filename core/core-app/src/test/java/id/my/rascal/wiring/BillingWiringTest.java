@@ -1,11 +1,14 @@
 package id.my.rascal.wiring;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -22,6 +25,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 import org.springframework.data.domain.Pageable;
 
+import id.my.rascal.common.exception.BadRequestException;
 import id.my.rascal.dining.internal.model.request.CreateDiningOrderRequest;
 import id.my.rascal.dining.internal.model.request.DiningOrderItemRequest;
 import id.my.rascal.dining.internal.model.request.OpenDiningRequest;
@@ -37,8 +41,12 @@ import id.my.rascal.menu.api.MenuApi;
 import id.my.rascal.menu.api.MenuApiResponse;
 import id.my.rascal.order.internal.model.enums.OrderType;
 import id.my.rascal.order.internal.model.request.OrderItemRequest;
+import id.my.rascal.order.internal.model.request.OrderPatchRequest;
+import id.my.rascal.order.internal.model.request.OrderPutRequest;
 import id.my.rascal.order.internal.model.request.OrderRequest;
+import id.my.rascal.order.internal.model.response.OrderItemResponse;
 import id.my.rascal.order.internal.model.response.OrderResponse;
+import id.my.rascal.order.internal.service.OrderQueryService;
 import id.my.rascal.order.internal.service.OrderService;
 import id.my.rascal.payment.api.PaymentApi;
 import id.my.rascal.payment.api.PaymentApiWebhookRequest;
@@ -70,6 +78,8 @@ class BillingWiringTest {
     @Autowired
     private OrderService orderService;
     @Autowired
+    private OrderQueryService orderQueryService;
+    @Autowired
     private DiningService diningService;
     @Autowired
     private TableService tableService;
@@ -89,12 +99,15 @@ class BillingWiringTest {
 
     @BeforeEach
     void stubMenu() {
-        when(menuApi.getMenuSnapshots(List.of(10L))).thenReturn(List.of(
-            new MenuApiResponse(10L, "Nasi Goreng", 25000, true, List.of())
-        ));
-        when(menuApi.getMenuSnapshots(List.of(11L))).thenReturn(List.of(
-            new MenuApiResponse(11L, "Es Teh", 8000, true, List.of())
-        ));
+        when(menuApi.getMenuSnapshots(any())).thenAnswer(invocation -> {
+            Collection<Long> ids = invocation.getArgument(0);
+            List<MenuApiResponse> result = new ArrayList<>();
+            if (ids != null && ids.contains(10L))
+                result.add(new MenuApiResponse(10L, "Nasi Goreng", 25000, true, List.of()));
+            if (ids != null && ids.contains(11L))
+                result.add(new MenuApiResponse(11L, "Es Teh", 8000, true, List.of()));
+            return result;
+        });
         when(menuApi.getModifierOptionSnapshots(any())).thenReturn(List.of());
     }
 
@@ -148,28 +161,76 @@ class BillingWiringTest {
 
     @Test
     @Order(3)
-    void cancelledDiningOrder_removedFromInvoice() {
-        orderService.cancel(secondDiningOrderId);
+    void updatedOrder_syncsDiningInvoice() {
+        OrderResponse current = orderQueryService.findActiveOrderById(firstDiningOrderId);
+        OrderItemResponse existing = current.items().get(0);
 
-        InvoiceApiResponse invoice = awaitInvoiceWithItemCount(diningInvoiceId, 1);
+        orderService.update(firstDiningOrderId, new OrderPutRequest(
+            null, "Budi", null, OrderType.DINE_IN,
+            List.of(
+                new OrderItemRequest(existing.id(), existing.menuId(), existing.quantity(), List.of()),
+                new OrderItemRequest(null, 11L, 1, List.of())
+            )
+        ));
 
-        assertEquals(50000, invoice.totalAmount());
-        assertEquals(firstDiningOrderId, invoice.items().get(0).orderId());
+        InvoiceApiResponse invoice = awaitInvoiceWithItemCount(diningInvoiceId, 3);
+
+        assertEquals(108000, invoice.totalAmount());
+        assertTrue(invoice.items().stream().anyMatch(i -> "Es Teh".equals(i.description())));
     }
 
     @Test
     @Order(4)
+    void cancelledDiningOrder_removedFromInvoice() {
+        orderService.cancel(secondDiningOrderId);
+
+        InvoiceApiResponse invoice = awaitInvoiceWithItemCount(diningInvoiceId, 2);
+
+        assertEquals(58000, invoice.totalAmount());
+        assertTrue(invoice.items().stream().allMatch(i -> firstDiningOrderId.equals(i.orderId())));
+    }
+
+    @Test
+    @Order(5)
     void cashPayment_settlesInvoiceAndRecordsSplit() {
         paymentService.create(new PaymentRequest(PaymentTargetType.INVOICE, diningInvoiceId, PaymentProvider.INTERNAL, null));
 
         InvoiceApiResponse invoice = awaitInvoiceStatus(diningInvoiceId, "PAID");
 
-        assertEquals(50000, invoice.paidAmount());
+        assertEquals(58000, invoice.paidAmount());
         assertEquals(0, invoice.remainingAmount());
     }
 
     @Test
-    @Order(5)
+    @Order(6)
+    void putOrderWithAppliedPayment_rejected() {
+        OrderResponse current = orderQueryService.findActiveOrderById(firstDiningOrderId);
+        OrderItemResponse existing = current.items().get(0);
+
+        assertThrows(BadRequestException.class, () ->
+            orderService.update(firstDiningOrderId, new OrderPutRequest(
+                null, "Budi", null, OrderType.DINE_IN,
+                List.of(new OrderItemRequest(existing.id(), existing.menuId(), existing.quantity() + 1, List.of()))
+            ))
+        );
+
+        InvoiceResponse invoice = invoiceQueryService.findActiveInvoiceById(diningInvoiceId);
+        assertEquals(58000, invoice.totalAmount());
+        assertEquals(2, invoice.items().size());
+    }
+
+    @Test
+    @Order(7)
+    void patchNotes_onPaidInvoice_stillAllowed() {
+        OrderResponse patched = orderService.patch(firstDiningOrderId, new OrderPatchRequest(
+            null, "catatan setelah bayar", null, null
+        ));
+
+        assertEquals("catatan setelah bayar", patched.notes());
+    }
+
+    @Test
+    @Order(8)
     void webhookPaid_settlesStandaloneInvoice() {
         OrderResponse order = orderService.create(new OrderRequest(
             null, null, null, OrderType.TAKEAWAY,

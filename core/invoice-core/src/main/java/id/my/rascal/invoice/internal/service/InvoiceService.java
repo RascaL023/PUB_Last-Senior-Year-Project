@@ -18,6 +18,7 @@ import id.my.rascal.invoice.internal.repository.RefundRepository;
 import id.my.rascal.invoice.internal.util.InvoiceNumberGenerator;
 import id.my.rascal.dining.api.event.DiningOrderAddedEvent;
 import id.my.rascal.order.api.event.OrderCancelledEvent;
+import id.my.rascal.order.api.event.OrderItemsChangedEvent;
 import id.my.rascal.order.api.event.StandaloneOrderCreatedEvent;
 import id.my.rascal.order.api.event.dto.OrderItemSnapshot;
 
@@ -131,6 +132,57 @@ public class InvoiceService {
                 else
                     removeCancelledDiningItems(invoice, event.orderId());
             });
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void handleOrderItemsChanged(OrderItemsChangedEvent event) {
+        for (Invoice invoice : invoiceRepository.findActiveByItemsOrderId(event.orderId())) {
+            if (invoice.getPaidAmount() != null && invoice.getPaidAmount() > 0) {
+                logger.error("itemsChanged ignored: invoice has applied payment (should have been blocked upstream) invoiceId={} orderId={}",
+                    invoice.getId(), event.orderId());
+                continue;
+            }
+            reconcileOrderLines(invoice, event);
+            invoice.setUpdatedAt(LocalDateTime.now());
+            invoiceRepository.save(invoice);
+        }
+    }
+
+    private void reconcileOrderLines(Invoice invoice, OrderItemsChangedEvent event) {
+        Set<Long> freshItemIds = event.items().stream()
+            .map(OrderItemSnapshot::orderItemId)
+            .collect(Collectors.toSet());
+        invoice.getItems().removeIf(item ->
+            event.orderId().equals(item.getOrderId()) && !freshItemIds.contains(item.getOrderItemId()));
+
+        for (OrderItemSnapshot snap : event.items()) {
+            InvoiceItem line = invoice.getItems().stream()
+                .filter(i -> snap.orderItemId().equals(i.getOrderItemId()))
+                .findFirst()
+                .orElseGet(() -> {
+                    InvoiceItem created = new InvoiceItem();
+                    created.setInvoice(invoice);
+                    created.setOrderItemId(snap.orderItemId());
+                    created.setOrderId(event.orderId());
+                    created.setCreatedAt(LocalDateTime.now());
+                    invoice.getItems().add(created);
+                    return created;
+                });
+            line.setDescription(snap.itemName());
+            line.setQuantity(snap.quantity());
+            line.setUnitPrice(snap.unitPrice());
+            line.setAmount(snap.subtotal());
+            line.setUpdatedAt(LocalDateTime.now());
+        }
+
+        invoice.setTotalAmount(invoice.getItems().stream().mapToInt(InvoiceItem::getAmount).sum());
+        invoice.setRemainingAmount(invoice.getTotalAmount() - invoice.getPaidAmount());
+
+        if (invoice.getItems().isEmpty()) {
+            invoice.voidInvoice();
+            logger.info("Invoice voided after order emptied it: invoiceId={} orderId={}",
+                invoice.getId(), event.orderId());
+        }
     }
 
     private void voidUnpaidStandaloneInvoice(Invoice invoice) {

@@ -29,6 +29,12 @@
             <artifactId>order-api</artifactId>
         </dependency>
 
+        <!-- Invoice API (guard: reject item edits when payment already applied) -->
+        <dependency>
+            <groupId>id.my.rascal</groupId>
+            <artifactId>invoice-api</artifactId>
+        </dependency>
+
         <!-- Starter Web -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

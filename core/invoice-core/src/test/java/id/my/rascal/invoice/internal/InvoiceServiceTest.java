@@ -34,6 +34,7 @@ import id.my.rascal.invoice.internal.service.InvoiceEventPublisherService;
 import id.my.rascal.invoice.internal.service.InvoiceService;
 import id.my.rascal.order.api.OrderTypeApiResponse;
 import id.my.rascal.order.api.event.OrderCancelledEvent;
+import id.my.rascal.order.api.event.OrderItemsChangedEvent;
 import id.my.rascal.order.api.event.StandaloneOrderCreatedEvent;
 import id.my.rascal.order.api.event.dto.OrderItemSnapshot;
 
@@ -238,6 +239,108 @@ class InvoiceServiceTest {
         verify(invoiceRepository, never()).save(any());
         assertEquals(1, invoice.getItems().size());
         assertEquals(InvoiceStatus.PAID, invoice.getStatus());
+    }
+
+    @Test
+    void itemsChanged_standaloneOpenInvoice_reconcilesLines() {
+        Invoice invoice = persistedDiningInvoice(null, 101L, 1L, 50000);
+        invoice.getItems().add(itemOf(invoice, 101L, 2L, "Es Teh", 1, 8000, 8000));
+        invoice.setTotalAmount(58000);
+        invoice.setRemainingAmount(58000);
+        when(invoiceRepository.findActiveByItemsOrderId(101L)).thenReturn(List.of(invoice));
+
+        invoiceService.handleOrderItemsChanged(new OrderItemsChangedEvent(
+            101L, "ORD-1",
+            List.of(
+                new OrderItemSnapshot(1L, 10L, "Nasi Goreng", 3, 25000, 75000),
+                new OrderItemSnapshot(3L, 12L, "Kopi", 1, 15000, 15000)
+            ),
+            LocalDateTime.now()
+        ));
+
+        verify(invoiceRepository).save(invoice);
+        assertEquals(2, invoice.getItems().size());
+        assertEquals(3, invoice.getItems().stream().filter(i -> i.getOrderItemId().equals(1L)).findFirst().get().getQuantity());
+        assertTrue(invoice.getItems().stream().anyMatch(i -> i.getOrderItemId().equals(3L)));
+        assertTrue(invoice.getItems().stream().noneMatch(i -> i.getOrderItemId().equals(2L)));
+        assertEquals(90000, invoice.getTotalAmount());
+        assertEquals(90000, invoice.getRemainingAmount());
+    }
+
+    @Test
+    void itemsChanged_diningInvoice_onlyTouchesOwnOrderLines() {
+        Invoice invoice = persistedDiningInvoice(20L, 101L, 1L, 50000);
+        invoice.getItems().add(itemOf(invoice, 102L, 3L, "Kopi", 2, 15000, 30000));
+        invoice.setTotalAmount(80000);
+        invoice.setRemainingAmount(80000);
+        when(invoiceRepository.findActiveByItemsOrderId(101L)).thenReturn(List.of(invoice));
+
+        invoiceService.handleOrderItemsChanged(new OrderItemsChangedEvent(
+            101L, "ORD-1",
+            List.of(new OrderItemSnapshot(1L, 10L, "Nasi Goreng", 1, 25000, 25000)),
+            LocalDateTime.now()
+        ));
+
+        assertEquals(2, invoice.getItems().size());
+        assertEquals(25000, invoice.getItems().stream()
+            .filter(i -> i.getOrderId().equals(101L)).findFirst().get().getAmount());
+        assertEquals(30000, invoice.getItems().stream()
+            .filter(i -> i.getOrderId().equals(102L)).findFirst().get().getAmount());
+        assertEquals(55000, invoice.getTotalAmount());
+    }
+
+    @Test
+    void itemsChanged_paidInvoice_skippedWithErrorLog() {
+        Invoice invoice = persistedDiningInvoice(null, 101L, 1L, 50000);
+        invoice.setPaidAmount(10000);
+        invoice.setRemainingAmount(40000);
+        invoice.markPartiallyPaid();
+        when(invoiceRepository.findActiveByItemsOrderId(101L)).thenReturn(List.of(invoice));
+
+        invoiceService.handleOrderItemsChanged(new OrderItemsChangedEvent(
+            101L, "ORD-1",
+            List.of(new OrderItemSnapshot(1L, 10L, "Nasi Goreng", 5, 25000, 125000)),
+            LocalDateTime.now()
+        ));
+
+        verify(invoiceRepository, never()).save(any());
+        assertEquals(1, invoice.getItems().size());
+        assertEquals(50000, invoice.getTotalAmount());
+    }
+
+    @Test
+    void itemsChanged_emptiedDiningInvoice_voided() {
+        Invoice invoice = persistedDiningInvoice(20L, 101L, 1L, 50000);
+        when(invoiceRepository.findActiveByItemsOrderId(101L)).thenReturn(List.of(invoice));
+
+        invoiceService.handleOrderItemsChanged(new OrderItemsChangedEvent(
+            101L, "ORD-1", List.of(), LocalDateTime.now()
+        ));
+
+        verify(invoiceRepository).save(invoice);
+        assertTrue(invoice.getItems().isEmpty());
+        assertEquals(InvoiceStatus.VOID, invoice.getStatus());
+    }
+
+    @Test
+    void itemsChanged_replay_isIdempotent() {
+        Invoice invoice = persistedDiningInvoice(null, 101L, 1L, 50000);
+        when(invoiceRepository.findActiveByItemsOrderId(101L)).thenReturn(List.of(invoice));
+        OrderItemsChangedEvent event = new OrderItemsChangedEvent(
+            101L, "ORD-1",
+            List.of(
+                new OrderItemSnapshot(1L, 10L, "Nasi Goreng", 2, 25000, 50000),
+                new OrderItemSnapshot(2L, 11L, "Es Teh", 1, 8000, 8000)
+            ),
+            LocalDateTime.now()
+        );
+
+        invoiceService.handleOrderItemsChanged(event);
+        invoiceService.handleOrderItemsChanged(event);
+
+        assertEquals(2, invoice.getItems().size());
+        assertEquals(58000, invoice.getTotalAmount());
+        assertEquals(58000, invoice.getRemainingAmount());
     }
 
     @Test

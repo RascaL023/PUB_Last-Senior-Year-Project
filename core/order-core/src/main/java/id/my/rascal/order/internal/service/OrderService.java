@@ -3,6 +3,7 @@ package id.my.rascal.order.internal.service;
 import id.my.rascal.common.exception.BadRequestException;
 import id.my.rascal.common.exception.NotFoundException;
 import id.my.rascal.common.util.StringUtil;
+import id.my.rascal.invoice.api.InvoiceApi;
 import id.my.rascal.order.internal.entity.Order;
 import id.my.rascal.order.internal.entity.OrderItem;
 import id.my.rascal.order.internal.model.enums.OrderStatus;
@@ -37,17 +38,20 @@ public class OrderService {
     private final OrderItemService orderItemService;
     private final OrderStatusFlowPolicy orderStatusFlowPolicy;
     private final OrderEventPublisherService orderEventPublisherService;
+    private final InvoiceApi invoiceApi;
 
     public OrderService(
         OrderRepository orderRepository,
         OrderItemService orderItemService,
         OrderStatusFlowPolicy orderStatusFlowPolicy,
-        OrderEventPublisherService orderEventPublisherService
+        OrderEventPublisherService orderEventPublisherService,
+        InvoiceApi invoiceApi
     ) {
         this.orderRepository = orderRepository;
         this.orderItemService = orderItemService;
         this.orderStatusFlowPolicy = orderStatusFlowPolicy;
         this.orderEventPublisherService = orderEventPublisherService;
+        this.invoiceApi = invoiceApi;
     }
 
     @Transactional
@@ -77,6 +81,8 @@ public class OrderService {
     public OrderResponse update(Long id, OrderPutRequest request) {
         Order order = findActiveOrder(id);
         ensureEditable(order);
+        ensureDineInTypeImmutable(order, request.type());
+        ensureNoAppliedPayment(order);
 
         applyCustomer(order, request.customerId(), request.customerName());
         applyNotes(order, request.notes());
@@ -106,11 +112,13 @@ public class OrderService {
 
         if (request.items().isPresent()) {
             ensureEditable(order);
+            ensureNoAppliedPayment(order);
             orderItemService.replaceItems(order, request.items().get());
         }
 
         if (request.type().isPresent()) {
             ensureEditable(order);
+            ensureDineInTypeImmutable(order, request.type().get());
             order.setType(request.type().get());
         }
 
@@ -228,6 +236,16 @@ public class OrderService {
     private void ensureEditable(Order order) {
         if (order.getStatus() == OrderStatus.COMPLETED || order.getStatus() == OrderStatus.CANCELLED)
             throw new BadRequestException("Cannot modify a " + order.getStatus() + " order");
+    }
+
+    private void ensureDineInTypeImmutable(Order order, OrderType newType) {
+        if (order.getType() == OrderType.DINE_IN && newType != OrderType.DINE_IN)
+            throw new BadRequestException("Cannot change type of a dine-in order");
+    }
+
+    private void ensureNoAppliedPayment(Order order) {
+        if (invoiceApi.hasAppliedPayment(order.getId()))
+            throw new BadRequestException("Order already has an applied payment — use refund first");
     }
 
     private void applyCustomer(Order order, Long customerId, String customerName) {

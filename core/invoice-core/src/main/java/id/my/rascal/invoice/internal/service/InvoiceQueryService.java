@@ -57,6 +57,12 @@ public class InvoiceQueryService {
     }
 
     @Transactional(readOnly = true)
+    public boolean hasAppliedPayment(Long orderId) {
+        return invoiceRepository.findActiveByItemsOrderId(orderId).stream()
+            .anyMatch(inv -> inv.getPaidAmount() != null && inv.getPaidAmount() > 0);
+    }
+
+    @Transactional(readOnly = true)
     public Page<InvoiceResponse> searchActive(
         String keyword,
         InvoiceStatus status,

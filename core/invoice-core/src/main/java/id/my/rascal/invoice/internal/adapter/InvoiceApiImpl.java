@@ -51,4 +51,9 @@ public class InvoiceApiImpl implements InvoiceApi {
         return InvoiceMapper.toApiResponse(invoiceService.refundItems(invoiceId, new RefundRequest(paymentId, orderItemIds, null)));
     }
 
+    @Override
+    public boolean hasAppliedPayment(Long orderId) {
+        return invoiceQueryService.hasAppliedPayment(orderId);
+    }
+
 }
