@@ -18,6 +18,7 @@ import id.my.rascal.invoice.internal.repository.RefundRepository;
 import id.my.rascal.invoice.internal.util.InvoiceNumberGenerator;
 import id.my.rascal.dining.api.event.DiningOrderAddedEvent;
 import id.my.rascal.order.api.event.OrderCancelledEvent;
+import id.my.rascal.order.api.event.OrderDeletedEvent;
 import id.my.rascal.order.api.event.OrderItemsChangedEvent;
 import id.my.rascal.order.api.event.StandaloneOrderCreatedEvent;
 import id.my.rascal.order.api.event.dto.OrderItemSnapshot;
@@ -125,12 +126,19 @@ public class InvoiceService {
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handleOrderCancelled(OrderCancelledEvent event) {
-        invoiceRepository.findActiveByItemsOrderId(event.orderId())
+        handleOrderRemoved(event.orderId());
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void handleOrderDeleted(OrderDeletedEvent event) {
+        handleOrderRemoved(event.orderId());
+    }
+
+    private void handleOrderRemoved(Long orderId) {
+        invoiceRepository.findActiveByItemsOrderId(orderId)
             .forEach(invoice -> {
-                if (invoice.getDiningId() == null)
-                    voidUnpaidStandaloneInvoice(invoice);
-                else
-                    removeCancelledDiningItems(invoice, event.orderId());
+                if (invoice.getDiningId() == null) voidUnpaidStandaloneInvoice(invoice);
+                else removeCancelledDiningItems(invoice, orderId);
             });
     }
 

@@ -133,9 +133,11 @@ public class OrderService {
     public void delete(Long id) {
         Order order = findActiveOrder(id);
         // TODO: restore stock if exists
+        ensureNoAppliedPayment(order);
 
         order.setDeletedAt(LocalDateTime.now());
         orderRepository.save(order);
+        orderEventPublisherService.publish(order, "delete");
     }
 
     @Transactional

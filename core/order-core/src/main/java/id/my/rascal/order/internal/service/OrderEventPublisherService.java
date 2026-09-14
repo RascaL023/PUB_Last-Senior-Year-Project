@@ -9,6 +9,7 @@ import java.util.List;
 
 import id.my.rascal.order.api.OrderTypeApiResponse;
 import id.my.rascal.order.api.event.OrderCancelledEvent;
+import id.my.rascal.order.api.event.OrderDeletedEvent;
 import id.my.rascal.order.api.event.OrderItemsChangedEvent;
 import id.my.rascal.order.api.event.StandaloneOrderCreatedEvent;
 import id.my.rascal.order.api.event.dto.OrderItemSnapshot;
@@ -31,6 +32,7 @@ public class OrderEventPublisherService {
         switch (eventType.toLowerCase()) {
             case "create" -> publishCreated(order);
             case "cancel" -> publishCancelled(order);
+            case "delete" -> publishDeleted(order);
             default -> logger.error("Unknown eventType: {}", eventType);
         }
         logger.info("Published order event: {}", eventType);
@@ -62,6 +64,10 @@ public class OrderEventPublisherService {
 
     private void publishCancelled(Order order) { 
         eventPublisher.publishEvent(new OrderCancelledEvent(order.getId())); 
+    }
+
+    private void publishDeleted(Order order) {
+        eventPublisher.publishEvent(new OrderDeletedEvent(order.getId()));
     }
 
     private List<OrderItemSnapshot> toSnapshots(Order order) {

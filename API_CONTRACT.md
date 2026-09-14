@@ -819,9 +819,9 @@ Membutuhkan login.
 | `POST /` | Create order | Response `201`. Order standalone otomatis membuat Invoice sendiri via event (lihat bagian Invoice) |
 | `GET /` | List orders | Filter `keyword` (orderNumber/customerName), `status`; default `sort=createdAt,desc` |
 | `GET /{id}` | Get by ID | |
-| `PUT /{id}` | Full update (reconcile items) | Hanya saat status `CREATED`/`CONFIRMED`/`PREPARING`/`READY`; invoice yang sudah terbit tidak ikut diperbarui (snapshot) |
-| `PATCH /{id}` | Partial update (reconcile items), minimal satu field terisi | Batasan status sama seperti `PUT` |
-| `DELETE /{id}` | Soft delete | Response `204 No Content` |
+| `PUT /{id}` | Full update (reconcile items) | Hanya saat status `CREATED`/`CONFIRMED`/`PREPARING`/`READY`. Invoice `OPEN` tanpa pembayaran ikut tersinkron (baris & total mengikuti order). Invoice yang sudah ada uang masuk (`PARTIALLY_PAID`/`PAID`) → `400` pada perubahan items — gunakan refund dulu. Tipe order `DINE_IN` tidak boleh diubah. |
+| `PATCH /{id}` | Partial update (reconcile items), minimal satu field terisi | Batasan status sama seperti `PUT`. Guard pembayaran hanya berlaku jika `items` dikirim; `notes`/`customerName` tetap boleh diubah meski invoice sudah dibayar. |
+| `DELETE /{id}` | Soft delete | Response `204`. Invoice standalone unpaid ikut di-void; baris order di invoice dining dihapus. Jika invoice sudah ada pembayaran → `400` ("Order already has an applied payment — use refund first"). |
 
 #### Status Transition Endpoints
 
@@ -920,7 +920,7 @@ Pada contoh di atas, baris `id: 1` di-update, baris baru (`menuId: 2`) ditambahk
 | `status` | `CREATED`, `CONFIRMED`, `PREPARING`, `READY`, `COMPLETED`, `CANCELLED` (query juga menerima alias `CREATE`, `PREPARE`, `COMPLETE`, `CANCEL`) |
 | `type` | `DINE_IN`, `TAKEAWAY` |
 
-> `paidStatus` (`UNPAID`/`PAID`) sudah dihapus dari Order. Settlement finansial dimiliki Invoice (`OPEN`/`PARTIALLY_PAID`/`PAID`/`VOID`); payment menarget `INVOICE` (`ORDER`/`DINE_IN` masih didukung, deprecated).
+> `paidStatus` (`UNPAID`/`PAID`) sudah dihapus dari Order. Settlement finansial dimiliki Invoice (`OPEN`/`PARTIALLY_PAID`/`PAID`/`VOID`); payment hanya menarget `INVOICE` — jalur legacy langsung ke `ORDER`/`DINE_IN` sudah dihapus dan ditolak backend (`400 Unsupported payment target`).
 
 ---
 
@@ -974,16 +974,16 @@ Endpoint berikut di-comment di source code dan tidak boleh dipakai: `POST /{id}/
 }
 ```
 
-Ada 4 field: `targetType` (`INVOICE` untuk membayar tagihan — didukung juga `ORDER` atau `DINE_IN` yang sudah deprecated), `targetId` (minimal 1; untuk `INVOICE` nominal yang ditagihkan = sisa belum bayar / `remainingAmount`), `paymentProvider` (`INTERNAL` yang berarti tunai/CASH, atau `XENDIT`), dan `paymentDetail` opsional (maksimal 255 karakter). Field seperti `externalId` dan `invoiceUrl` diisi oleh backend, bukan oleh frontend.
+Ada 4 field: `targetType` (hanya `INVOICE` — satu-satunya nilai yang didukung; nilai lain ditolak `400`), `targetId` (minimal 1; nominal yang ditagihkan = sisa belum bayar / `remainingAmount`), `paymentProvider` (`INTERNAL` yang berarti tunai/CASH, atau `XENDIT`), dan `paymentDetail` opsional (maksimal 255 karakter). Field seperti `externalId` dan `invoiceUrl` diisi oleh backend, bukan oleh frontend.
 
 #### PaymentResponse
 
 ```json
 {
   "id": 1,
-  "targetType": "ORDER",
+  "targetType": "INVOICE",
   "targetId": 1,
-  "targetReference": "ORD-20260823-0001",
+  "targetReference": "INV-20260823-0001",
   "paymentProvider": "XENDIT",
   "paymentMethodName": "BCA Virtual Account",
   "externalId": "INV-20260830-001",
@@ -1161,7 +1161,7 @@ Invoice umumnya **dibuat otomatis oleh backend via event**, bukan oleh frontend:
 Catatan untuk frontend:
 - `invoiceNumber` (bukan `id`) adalah referensi bisnis untuk ditampilkan ke pelanggan.
 - `diningId: null` = tagihan order standalone; terisi = tagihan gabungan satu sesi dining.
-- Invoice adalah snapshot: perubahan order items setelah invoice terbit tidak mengubah invoice yang sudah ada.
+- Harga per baris adalah snapshot dari menu saat order item dibuat/diubah — perubahan harga menu kemudian **tidak** mereprice invoice. Perubahan struktur item order (tambah/ubah qty/hapus) pada invoice `OPEN` tanpa pembayaran **ikut tersinkron** ke invoice; setelah ada pembayaran, perubahan items ditolak (`400`).
 - Pada `PaymentResponse`: `amount` = uang yang masuk, `appliedAmount` = yang nempel ke tagihan, `excessAmount` = selisih yang diparkir (`amount = applied + excess`). `excess > 0` berarti ada kembalian/kelebihan yang perlu diputuskan kasir.
 
 ---

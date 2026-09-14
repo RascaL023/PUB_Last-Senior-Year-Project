@@ -75,6 +75,16 @@ class OrderServiceUpdateTest {
         verify(orderRepository, never()).save(any());
     }
 
+    @Test
+    void deleteOrder_withAppliedPayment_rejected() {
+        Order order = takeawayOrder(10L);
+        when(orderRepository.findActiveById(10L)).thenReturn(Optional.of(order));
+        when(invoiceApi.hasAppliedPayment(10L)).thenReturn(true);
+
+        assertThrows(BadRequestException.class, () -> orderService.delete(10L));
+        verify(orderRepository, never()).save(any());
+    }
+
     private Order dineInOrder(Long id) {
         Order order = new Order();
         order.setId(id);

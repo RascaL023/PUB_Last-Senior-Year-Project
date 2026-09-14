@@ -34,6 +34,7 @@ import id.my.rascal.invoice.internal.service.InvoiceEventPublisherService;
 import id.my.rascal.invoice.internal.service.InvoiceService;
 import id.my.rascal.order.api.OrderTypeApiResponse;
 import id.my.rascal.order.api.event.OrderCancelledEvent;
+import id.my.rascal.order.api.event.OrderDeletedEvent;
 import id.my.rascal.order.api.event.OrderItemsChangedEvent;
 import id.my.rascal.order.api.event.StandaloneOrderCreatedEvent;
 import id.my.rascal.order.api.event.dto.OrderItemSnapshot;
@@ -196,6 +197,17 @@ class InvoiceServiceTest {
     }
 
     @Test
+    void orderDeleted_voidsUnpaidStandaloneInvoice() {
+        Invoice invoice = persistedDiningInvoice(null, 101L, 1L, 50000);
+        when(invoiceRepository.findActiveByItemsOrderId(101L)).thenReturn(List.of(invoice));
+
+        invoiceService.handleOrderDeleted(new OrderDeletedEvent(101L));
+
+        verify(invoiceRepository).save(invoice);
+        assertEquals(InvoiceStatus.VOID, invoice.getStatus());
+    }
+
+    @Test
     void diningOrderCancelled_removesLinesAndRecomputes() {
         Invoice invoice = persistedDiningInvoice(20L, 101L, 1L, 50000);
         invoice.getItems().add(itemOf(invoice, 102L, 3L, "Kopi", 2, 15000, 30000));
@@ -204,6 +216,24 @@ class InvoiceServiceTest {
         when(invoiceRepository.findActiveByItemsOrderId(102L)).thenReturn(List.of(invoice));
 
         invoiceService.handleOrderCancelled(new OrderCancelledEvent(102L));
+
+        verify(invoiceRepository).save(invoice);
+        assertEquals(1, invoice.getItems().size());
+        assertEquals(101L, invoice.getItems().get(0).getOrderId());
+        assertEquals(50000, invoice.getTotalAmount());
+        assertEquals(50000, invoice.getRemainingAmount());
+        assertEquals(InvoiceStatus.OPEN, invoice.getStatus());
+    }
+
+    @Test
+    void diningOrderDeleted_removesLinesAndRecomputes() {
+        Invoice invoice = persistedDiningInvoice(20L, 101L, 1L, 50000);
+        invoice.getItems().add(itemOf(invoice, 102L, 3L, "Kopi", 2, 15000, 30000));
+        invoice.setTotalAmount(80000);
+        invoice.setRemainingAmount(80000);
+        when(invoiceRepository.findActiveByItemsOrderId(102L)).thenReturn(List.of(invoice));
+
+        invoiceService.handleOrderDeleted(new OrderDeletedEvent(102L));
 
         verify(invoiceRepository).save(invoice);
         assertEquals(1, invoice.getItems().size());

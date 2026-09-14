@@ -181,8 +181,8 @@ class BillingWiringTest {
 
     @Test
     @Order(4)
-    void cancelledDiningOrder_removedFromInvoice() {
-        orderService.cancel(secondDiningOrderId);
+    void deletedDiningOrder_removedFromInvoice() {
+        orderService.delete(secondDiningOrderId);
 
         InvoiceApiResponse invoice = awaitInvoiceWithItemCount(diningInvoiceId, 2);
 
