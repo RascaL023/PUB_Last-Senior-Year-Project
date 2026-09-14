@@ -52,12 +52,6 @@ public class PaymentController {
         );
     }
 
-    // @PostMapping("/{id}/pay")
-    // public ResponseEntity<SuccessTemplate<PaymentResponse>> pay(@PathVariable Long id) {
-    //     validateId(id);
-    //     return ApiResponse.success(HttpStatus.OK, "Payment successfully marked as paid", paymentService.markPaid(id));
-    // }
-
     @PostMapping("/{id}/expire")
     @PreAuthorize("hasAnyAuthority('payment.update', 'payment.*')")
     public ResponseEntity<SuccessTemplate<PaymentResponse>> expire(@PathVariable Long id) {
@@ -122,39 +116,6 @@ public class PaymentController {
             paymentService.getById(id)
         );
     }
-
-    // @PutMapping("/{id}")
-    // public ResponseEntity<SuccessTemplate<PaymentResponse>> update(
-    //     @PathVariable("id") Long id,
-    //     @Valid @RequestBody PaymentPutRequest request
-    // ) {
-    //     return ApiResponse.success(
-    //         HttpStatus.OK,
-    //         DEFAULT_UPDATE_SUCCESS_MESSAGE,
-    //         paymentService.update(id, request)
-    //     );
-    // }
-
-    // @PatchMapping("/{id}")
-    // public ResponseEntity<SuccessTemplate<PaymentResponse>> patch(
-    //     @PathVariable("id") Long id,
-    //     @RequestBody PaymentPatchRequest request
-    // ) {
-    //     if (request.isEmptyPatch())
-    //         throw new BadRequestException("PATCH can't be empty");
-    //
-    //     return ApiResponse.success(
-    //         HttpStatus.OK,
-    //         DEFAULT_UPDATE_SUCCESS_MESSAGE,
-    //         paymentService.patch(id, request)
-    //     );
-    // }
-
-    // @DeleteMapping("/{id}")
-    // public ResponseEntity<Void> delete(@PathVariable("id") Long id) {
-    //     paymentService.delete(id);
-    //     return ResponseEntity.noContent().build();
-    // }
 
     private void validateId(Long id) {
         if (id < 0) throw new BadRequestException("Invalid payment ID");

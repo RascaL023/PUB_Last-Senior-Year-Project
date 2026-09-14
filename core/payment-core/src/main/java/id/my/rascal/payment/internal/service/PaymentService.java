@@ -62,11 +62,14 @@ public class PaymentService {
     }
 
     public PaymentResponse create(PaymentRequest request) {
-        ResolvedTarget target = resolveTarget(request.targetType(), request.targetId());
-        if (
-            request.targetType() == PaymentTargetType.INVOICE
-            && (target.amount() == null || target.amount() <= 0)
-        ) throw new BadRequestException("Invoice already paid");
+        if (request.targetType() != PaymentTargetType.INVOICE)
+            throw new BadRequestException(
+                "Unsupported payment target: " + request.targetType() + 
+                ". Payment hanya dapat menarget INVOICE"
+            );
+
+        ResolvedTarget target = resolveInvoice(request.targetId());
+        if (target.amount() == null || target.amount() <= 0) throw new BadRequestException("Invoice already paid");
         String externalId = "INV-" + UUID.randomUUID();
 
         PaymentProcessor processor = paymentProcessorResolver.resolve(request.paymentProvider().toString());
@@ -182,10 +185,6 @@ public class PaymentService {
         return toResponse(paymentRepository.save(payment));
     }
 
-    private ResolvedTarget resolveTarget(PaymentTargetType type, Long targetId) {
-        return resolveInvoice(targetId);
-    }
-
     private ResolvedTarget resolveInvoice(Long targetId) {
         InvoiceApiResponse invoice = invoiceApi.getInvoice(targetId);
         return new ResolvedTarget(invoice.remainingAmount(), invoice.invoiceNumber());
@@ -216,70 +215,6 @@ public class PaymentService {
             payment.getCreatedAt(),
             payment.getUpdatedAt()
         );
-    }
-
-    private record ResolvedTarget(Integer amount, String reference) {}
-
-    // @Transactional
-    // public PaymentResponse update(Long id, PaymentPutRequest request) {
-    //     Payment payment = findActive(id);
-    //     ensureMutable(payment);
-    //
-    //     ResolvedTarget target = resolveTarget(request.targetType(), request.targetId());
-    //     PaymentMethod method = paymentMethodService.findActive(request.paymentMethodId());
-    //
-    //     payment.setTargetType(request.targetType());
-    //     payment.setTargetId(request.targetId());
-    //     payment.setTargetReference(target.reference());
-    //     payment.setPaymentMethodId(method.getId());
-    //     payment.setPaymentMethodName(method.getName());
-    //     payment.setAmount(target.amount());
-    //     payment.setPaymentChannel(request.paymentChannel());
-    //     payment.setPaymentDetail(request.paymentDetail());
-    //     payment.setExternalId(request.externalId());
-    //     payment.setInvoiceUrl(request.invoiceUrl());
-    //     payment.setUpdatedAt(LocalDateTime.now());
-    //
-    //     return toResponse(paymentRepository.save(payment));
-    // }
-    //
-    // @Transactional
-    // public PaymentResponse patch(Long id, PaymentPatchRequest request) {
-    //     Payment payment = findActive(id);
-    //     if (request.isEmptyPatch()) throw new BadRequestException("PATCH can't be empty");
-    //     ensureMutable(payment);
-    //
-    //     if (request.targetType().isPresent() || request.targetId().isPresent()) {
-    //         if (request.targetType().isEmpty() || request.targetId().isEmpty()) {
-    //             throw new BadRequestException("targetType and targetId must be provided together");
-    //         }
-    //         ResolvedTarget target = resolveTarget(request.targetType().get(), request.targetId().get());
-    //         payment.setTargetType(request.targetType().get());
-    //         payment.setTargetId(request.targetId().get());
-    //         payment.setTargetReference(target.reference());
-    //         payment.setAmount(target.amount());
-    //     }
-    //
-    //     if (request.paymentMethodId().isPresent()) {
-    //         PaymentMethod method = paymentMethodService.findActive(request.paymentMethodId().get());
-    //         payment.setPaymentMethodId(method.getId());
-    //         payment.setPaymentMethodName(method.getName());
-    //     }
-    //
-    //     request.paymentChannel().ifPresent(payment::setPaymentChannel);
-    //     request.paymentDetail().ifPresent(payment::setPaymentDetail);
-    //     request.externalId().ifPresent(payment::setExternalId);
-    //     request.invoiceUrl().ifPresent(payment::setInvoiceUrl);
-    //
-    //     payment.setUpdatedAt(LocalDateTime.now());
-    //     return toResponse(paymentRepository.save(payment));
-    // }
-    //
-    // @Transactional
-    // public void delete(Long id) {
-    //     Payment payment = findActive(id);
-    //     payment.setDeletedAt(LocalDateTime.now());
-    //     paymentRepository.save(payment);
-    // }
+    }    private record ResolvedTarget(Integer amount, String reference) {}
 
 }
