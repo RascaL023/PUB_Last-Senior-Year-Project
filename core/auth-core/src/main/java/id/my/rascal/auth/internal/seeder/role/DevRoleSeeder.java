@@ -32,6 +32,7 @@ public class DevRoleSeeder implements Seeder {
             List.of(
                 "order.create", "order.read", "order.update",
                 "payment.create", "payment.read", "payment.update",
+                "invoice.read", "invoice.update",
                 "customer.create", "customer.read", "customer.update",
                 "menu.read",
                 "menu-category.read",

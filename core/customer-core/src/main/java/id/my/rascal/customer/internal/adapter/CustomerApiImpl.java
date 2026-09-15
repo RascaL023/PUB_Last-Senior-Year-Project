@@ -16,11 +16,9 @@ import id.my.rascal.customer.internal.service.CustomerQueryService;
 public class CustomerApiImpl implements CustomerApi {
 
     private final CustomerQueryService customerQueryService;
-    private final CustomerMapper customerMapper;
 
-    public CustomerApiImpl(CustomerQueryService customerQueryService, CustomerMapper customerMapper) {
+    public CustomerApiImpl(CustomerQueryService customerQueryService) {
         this.customerQueryService = customerQueryService;
-        this.customerMapper = customerMapper;
     }
 
     @Override
@@ -33,7 +31,7 @@ public class CustomerApiImpl implements CustomerApi {
     @Transactional(readOnly = true)
     public Optional<CustomerApiResponse> getById(Long id) {
         try {
-            return Optional.of(customerMapper.toApiResponse(customerQueryService.findById(id)));
+            return Optional.of(CustomerMapper.toApiResponse(customerQueryService.findById(id)));
         } catch (BadRequestException | NotFoundException e) {
             return Optional.empty();
         }
@@ -43,7 +41,7 @@ public class CustomerApiImpl implements CustomerApi {
     @Transactional(readOnly = true)
     public Optional<CustomerApiResponse> getByUserAuthId(Long userAuthId) {
         try {
-            return Optional.of(customerMapper.toApiResponse(customerQueryService.findByUserAuthId(userAuthId)));
+            return Optional.of(CustomerMapper.toApiResponse(customerQueryService.findByUserAuthId(userAuthId)));
         } catch (BadRequestException | NotFoundException e) {
             return Optional.empty();
         }

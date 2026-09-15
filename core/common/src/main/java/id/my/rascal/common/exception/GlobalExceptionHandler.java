@@ -5,6 +5,7 @@ import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
@@ -73,6 +74,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<?> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
         return ApiResponse.error(HttpStatus.CONFLICT, 409, "DUPLICATE_ENTRY", ex.getMessage());
+    }
+
+    @ExceptionHandler(InvalidDataAccessApiUsageException.class)
+    public ResponseEntity<?> handleInvalidDataAccessApiUsage(InvalidDataAccessApiUsageException ex) {
+        return ApiResponse.error(HttpStatus.BAD_REQUEST, 400, "INVALID_DATA_ACCESS", ex.getMessage());
     }
 
     @ExceptionHandler(Exception.class)

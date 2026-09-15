@@ -1,11 +1,12 @@
 package id.my.rascal.xendit.internal.service;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import id.my.rascal.common.exception.BadRequestException;
 import id.my.rascal.payment.api.PaymentApi;
 import id.my.rascal.payment.api.PaymentApiWebhookRequest;
 import id.my.rascal.payment.api.PaymentProcessorRequest;
@@ -25,6 +26,7 @@ public class XenditService {
     private final XenditClient xenditClient;
     private final ObjectMapper objectMapper;
     private final PaymentApi paymentApi;
+    private static final Logger logger = LoggerFactory.getLogger(XenditService.class);
 
     public XenditService(
         XenditProperties xenditProperties,
@@ -40,7 +42,7 @@ public class XenditService {
 
     public boolean isValidToken(String rawCallbackToken) {
         if (rawCallbackToken == null || !rawCallbackToken.equals(xenditProperties.callbackToken())) {
-            System.out.println("Invalid callback token!");
+            logger.warn("Invalid callback token: {}", rawCallbackToken);
             return false;
         }
 
@@ -48,13 +50,14 @@ public class XenditService {
     }
 
     public void handleWebhook(String rawPayload) {
+        XenditWebhookPayloadResponse payload;
         try {
-            XenditWebhookPayloadResponse payload = objectMapper.readValue(rawPayload, XenditWebhookPayloadResponse.class);
-            paymentApi.handleWeebhookRequest(toWebhookRequest(payload), rawPayload);
+            payload = objectMapper.readValue(rawPayload, XenditWebhookPayloadResponse.class);
         } catch (JsonProcessingException ex) {
-            System.out.println("Xendit payload error: " + ex.getMessage());
-            throw new BadRequestException(null);
+            logger.error("Xendit payload unparseable, acknowledged without effect: {}", ex.getMessage());
+            return; // deterministik-buruk: ack agar Xendit berhenti retry
         }
+        paymentApi.handleWebhookRequest(toWebhookRequest(payload), rawPayload);
     }
 
     public PaymentProcessorResponse initPayment(PaymentProcessorRequest request) {
@@ -88,10 +91,11 @@ public class XenditService {
     }
 
     private PaymentApiWebhookRequest toWebhookRequest(XenditWebhookPayloadResponse payload) {
+        Integer settledAmount = payload.paidAmount() != null ? payload.paidAmount() : payload.amount();
         return new PaymentApiWebhookRequest(
             payload.externalId(),
             resolveStatus(payload.status().trim()),
-            payload.amount(),
+            settledAmount,
             payload.paymentMethod(),
             payload.paymentChannel(),
             payload.currency()

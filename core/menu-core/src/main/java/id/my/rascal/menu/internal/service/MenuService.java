@@ -49,8 +49,8 @@ public class MenuService {
 
     @Transactional
     public Menu create(MenuRequest request) {
-        List<ModifierType> modifierTypes = modifierHelper.getByIds(request.ModifierTypeIds());
-        validateModifierTypes(modifierTypes, request.ModifierTypeIds());
+        List<ModifierType> modifierTypes = modifierHelper.getByIds(request.modifierTypeIds());
+        validateModifierTypes(modifierTypes, request.modifierTypeIds());
 
         List<MenuCategory> categories = menuCategoryHelper.getActiveByIds(request.categoryIds());
         validateCategories(categories, request.categoryIds());
@@ -144,8 +144,8 @@ public class MenuService {
         Menu menu = menuRepository.findWithRelationsById(id, false)
             .orElseThrow(() -> new NotFoundException("Menu with id " + id + " not found"));
 
-        List<ModifierType> modifierTypes = modifierHelper.getByIds(request.ModifierTypeIds());
-        validateModifierTypes(modifierTypes, request.ModifierTypeIds());
+        List<ModifierType> modifierTypes = modifierHelper.getByIds(request.modifierTypeIds());
+        validateModifierTypes(modifierTypes, request.modifierTypeIds());
 
         List<MenuCategory> categories = menuCategoryHelper.getActiveByIds(request.categoryIds());
         validateCategories(categories, request.categoryIds());
