@@ -53,6 +53,8 @@
         <module>customer-core</module>
         <module>search-api</module>
         <module>search-meilisearch</module>
+        <module>employee-api</module>
+        <module>employee-core</module>
         <module>core-app</module>
     </modules>
 
@@ -159,6 +161,17 @@
             <dependency>
                 <groupId>id.my.rascal</groupId>
                 <artifactId>search-meilisearch</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>id.my.rascal</groupId>
+                <artifactId>employee-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>id.my.rascal</groupId>
+                <artifactId>employee-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
