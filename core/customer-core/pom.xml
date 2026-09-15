@@ -22,12 +22,7 @@
             <artifactId>customer-api</artifactId>
         </dependency>
 
-        <dependency>
-            <groupId>id.my.rascal</groupId>
-            <artifactId>auth-api</artifactId>
-        </dependency>
-
-        <dependency>
+                <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>

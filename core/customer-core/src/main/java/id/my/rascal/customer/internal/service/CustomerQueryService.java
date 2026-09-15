@@ -16,8 +16,6 @@ import id.my.rascal.common.exception.BadRequestException;
 import id.my.rascal.common.exception.NotFoundException;
 import id.my.rascal.common.util.StringUtil;
 import id.my.rascal.customer.internal.entity.Customer;
-import id.my.rascal.customer.internal.model.mapper.CustomerMapper;
-import id.my.rascal.customer.internal.model.response.CustomerResponse;
 import id.my.rascal.customer.internal.repository.CustomerRepository;
 
 @Service
@@ -30,12 +28,30 @@ public class CustomerQueryService {
     }
 
     @Transactional(readOnly = true)
-    public CustomerResponse getById(Long id) {
-        return CustomerMapper.toResponse(findActive(id));
+    public Customer findById(Long id) {
+        if (id == null || id <= 0)
+            throw new BadRequestException("Invalid customer ID");
+        return customerRepository.findActiveById(id)
+            .orElseThrow(() -> new NotFoundException("Customer not found with id: " + id));
     }
 
     @Transactional(readOnly = true)
-    public Page<CustomerResponse> search(String keyword, Pageable pageable) {
+    public Customer findByUserAuthId(Long userAuthId) {
+        if (userAuthId == null || userAuthId <= 0)
+            throw new BadRequestException("Invalid userAuthId");
+        return customerRepository.findActiveByUserAuthId(userAuthId)
+            .orElseThrow(() -> new NotFoundException("Customer not found with userAuthId: " + userAuthId));
+    }
+
+    @Transactional(readOnly = true)
+    public boolean existsById(Long id) {
+        if (id == null || id <= 0)
+            return false;
+        return customerRepository.existsActiveById(id);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Customer> search(String keyword, Pageable pageable) {
         Page<Long> idPage = customerRepository.findSearchIds(normalize(keyword), pageable);
         if (idPage.getContent().isEmpty()) return Page.empty(pageable);
 
@@ -43,19 +59,13 @@ public class CustomerQueryService {
         Map<Long, Customer> byId = customers.stream()
             .collect(Collectors.toMap(Customer::getId, Function.identity()));
 
-        List<CustomerResponse> responses = new ArrayList<>();
+        List<Customer> responses = new ArrayList<>();
         for (Long id : idPage.getContent()) {
             Customer customer = byId.get(id);
-            if (customer != null) responses.add(CustomerMapper.toResponse(customer));
+            if (customer != null) responses.add(customer);
         }
 
         return new PageImpl<>(responses, pageable, idPage.getTotalElements());
-    }
-
-    private Customer findActive(Long id) {
-        if (id == null || id <= 0) throw new BadRequestException("Invalid customer ID");
-        return customerRepository.findActiveById(id)
-            .orElseThrow(() -> new NotFoundException("Customer not found with id: " + id));
     }
 
     private String normalize(String keyword) {
@@ -63,5 +73,4 @@ public class CustomerQueryService {
             return "";
         return StringUtil.normalizeSearch(keyword);
     }
-
 }

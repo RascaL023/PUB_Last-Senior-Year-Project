@@ -2,36 +2,31 @@ package id.my.rascal.customer.internal.service;
 
 import java.time.LocalDateTime;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import id.my.rascal.auth.api.AuthApi;
-import id.my.rascal.auth.api.CreateAccountRequest;
-import id.my.rascal.auth.api.UserAuthApiResponse;
 import id.my.rascal.common.exception.BadRequestException;
-import id.my.rascal.common.exception.ConflictException;
-import id.my.rascal.common.exception.NotFoundException;
 import id.my.rascal.common.util.StringUtil;
 import id.my.rascal.customer.internal.entity.Customer;
 import id.my.rascal.customer.internal.model.mapper.CustomerMapper;
-import id.my.rascal.customer.internal.model.request.CustomerClaimRequest;
 import id.my.rascal.customer.internal.model.request.CustomerPatchRequest;
 import id.my.rascal.customer.internal.model.request.CustomerPutRequest;
-import id.my.rascal.customer.internal.model.request.CustomerRegisterRequest;
 import id.my.rascal.customer.internal.model.request.CustomerRequest;
 import id.my.rascal.customer.internal.model.response.CustomerResponse;
 import id.my.rascal.customer.internal.repository.CustomerRepository;
+import id.my.rascal.customer.internal.service.CustomerQueryService;
 
 @Service
 public class CustomerService {
 
-    private static final String CUSTOMER_ROLE = "CUSTOMER_BASE";
     private final CustomerRepository customerRepository;
-    private final AuthApi authApi;
+    private final CustomerQueryService customerQueryService;
 
-    public CustomerService(CustomerRepository customerRepository, AuthApi authApi) {
+    public CustomerService(CustomerRepository customerRepository, CustomerQueryService customerQueryService) {
         this.customerRepository = customerRepository;
-        this.authApi = authApi;
+        this.customerQueryService = customerQueryService;
     }
 
     @Transactional
@@ -47,42 +42,8 @@ public class CustomerService {
     }
 
     @Transactional
-    public CustomerResponse register(CustomerRegisterRequest request) {
-        UserAuthApiResponse account = authApi.createAccount(
-            new CreateAccountRequest(request.email(), request.password(), CUSTOMER_ROLE)
-        );
-
-        Customer customer = new Customer();
-        customer.setUserAuthId(account.id());
-        customer.setName(requireName(request.name()));
-        customer.setEmail(normalizeNullable(request.email()));
-        customer.setPhone(normalizePhone(request.phone()));
-        customer.setCreatedAt(LocalDateTime.now());
-
-        return CustomerMapper.toResponse(customerRepository.save(customer));
-    }
-
-    @Transactional
-    public CustomerResponse claim(Long id, CustomerClaimRequest request) {
-        Customer customer = findActive(id);
-        if (customer.getUserAuthId() != null)
-            throw new ConflictException("Customer already linked to an account");
-
-        UserAuthApiResponse account = authApi.createAccount(
-            new CreateAccountRequest(request.email(), request.password(), CUSTOMER_ROLE)
-        );
-
-        customer.setUserAuthId(account.id());
-        if (StringUtil.safeIsBlank(customer.getEmail()))
-            customer.setEmail(normalizeNullable(request.email()));
-        customer.setUpdatedAt(LocalDateTime.now());
-
-        return CustomerMapper.toResponse(customerRepository.save(customer));
-    }
-
-    @Transactional
     public CustomerResponse update(Long id, CustomerPutRequest request) {
-        Customer customer = findActive(id);
+        Customer customer = customerQueryService.findById(id);
 
         customer.setName(requireName(request.name()));
         customer.setEmail(normalizeNullable(request.email()));
@@ -95,7 +56,7 @@ public class CustomerService {
 
     @Transactional
     public CustomerResponse patch(Long id, CustomerPatchRequest request) {
-        Customer customer = findActive(id);
+        Customer customer = customerQueryService.findById(id);
 
         request.nameOpt().ifPresent(name -> customer.setName(requireName(name)));
         request.emailOpt().ifPresent(email -> customer.setEmail(normalizeNullable(email)));
@@ -108,16 +69,19 @@ public class CustomerService {
 
     @Transactional
     public void delete(Long id) {
-        Customer customer = findActive(id);
+        Customer customer = customerQueryService.findById(id);
         customer.setDeletedAt(LocalDateTime.now());
         customerRepository.save(customer);
     }
 
+    @Transactional(readOnly = true)
+    public CustomerResponse getById(Long id) {
+        return CustomerMapper.toResponse(customerQueryService.findById(id));
+    }
 
-    private Customer findActive(Long id) {
-        if (id == null || id <= 0) throw new BadRequestException("Invalid customer ID");
-        return customerRepository.findActiveById(id)
-            .orElseThrow(() -> new NotFoundException("Customer not found with id: " + id));
+    @Transactional(readOnly = true)
+    public Page<CustomerResponse> search(String keyword, Pageable pageable) {
+        return customerQueryService.search(keyword, pageable).map(CustomerMapper::toResponse);
     }
 
     private String requireName(String name) {
@@ -135,5 +99,4 @@ public class CustomerService {
         if (StringUtil.safeIsBlank(phone)) return null;
         return StringUtil.normalizeSpaces(phone);
     }
-
 }

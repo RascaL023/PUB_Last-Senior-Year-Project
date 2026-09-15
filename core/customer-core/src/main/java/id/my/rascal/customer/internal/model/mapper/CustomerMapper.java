@@ -1,5 +1,6 @@
 package id.my.rascal.customer.internal.model.mapper;
 
+import id.my.rascal.customer.api.CustomerApiResponse;
 import id.my.rascal.customer.internal.entity.Customer;
 import id.my.rascal.customer.internal.model.response.CustomerResponse;
 
@@ -17,6 +18,16 @@ public final class CustomerMapper {
             customer.getNotes(),
             customer.getCreatedAt(),
             customer.getUpdatedAt()
+        );
+    }
+
+    public static CustomerApiResponse toApiResponse(Customer customer) {
+        return CustomerApiResponse.of(
+            customer.getId(),
+            customer.getUserAuthId(),
+            customer.getName(),
+            customer.getEmail(),
+            customer.getPhone()
         );
     }
 
