@@ -38,7 +38,32 @@ Content-Type: application/json
     ]
 }
 
-### Create
+### Create - invalid (DINE_IN hanya boleh via POST /dinings/{id}/orders)
+POST {{baseUrl}}/orders
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "customerId": 1,
+    "type": "DINE_IN",
+    "items": [
+        { "menuId": 2, "quantity": 1, "modifiers": [] }
+    ]
+}
+
+### Create - invalid (type wajib diisi)
+POST {{baseUrl}}/orders
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "customerId": 1,
+    "items": [
+        { "menuId": 2, "quantity": 1, "modifiers": [] }
+    ]
+}
+
+### Create (TAKEAWAY) — invoice standalone otomatis terbit via event
 POST {{baseUrl}}/orders
 Authorization: Bearer {{token}}
 Content-Type: application/json
@@ -46,7 +71,7 @@ Content-Type: application/json
 {
     "customerId": 1,
     "customerName": "Asep",
-    "type": "takeaway",
+    "type": "TAKEAWAY",
     "notes": "Less sugar please",
     "items": [
         {
@@ -62,6 +87,10 @@ Content-Type: application/json
     ]
 }
 
+### Mark confirm (validasi status flow via OrderStatusFlowPolicy)
+POST {{baseUrl}}/orders/2/confirm
+Authorization: Bearer {{token}}
+
 ### Mark preparing
 POST {{baseUrl}}/orders/2/prepare
 Authorization: Bearer {{token}}
@@ -74,7 +103,7 @@ Authorization: Bearer {{token}}
 POST {{baseUrl}}/orders/2/complete
 Authorization: Bearer {{token}}
 
-### Mark cancel
+### Mark cancel — invoice standalone unpaid ikut di-void via OrderCancelledEvent
 POST {{baseUrl}}/orders/2/cancel
 Authorization: Bearer {{token}}
 
@@ -88,9 +117,9 @@ GET {{baseUrl}}/orders?keyword=BUDI&status=PENDING
 Authorization: Bearer {{token}}
 
 
-### Update (PUT) - item & modifier IDs are preserved
-### Echo the id from the GET response so existing rows are updated in place
-### (adjust ids to match the created order)
+### Update (PUT) — `type` WAJIB dikirim (@NotNull).
+### Invoice OPEN unpaid ikut tersinkron (OrderItemsChangedEvent → rekonsiliasi baris invoice).
+### Item & modifier IDs dipertahankan: echo id dari response GET agar row lama di-update in place.
 PUT {{baseUrl}}/orders/1
 Authorization: Bearer {{token}}
 Content-Type: application/json
@@ -98,6 +127,7 @@ Content-Type: application/json
 {
     "customerId": 1,
     "customerName": "Budi Santoso",
+    "type": "TAKEAWAY",
     "notes": "No ice",
     "items": [
         {
@@ -120,6 +150,7 @@ Content-Type: application/json
 {
     "customerId": 1,
     "customerName": "Siapa ajaa...",
+    "type": "TAKEAWAY",
     "notes": "No ice",
     "items": [
         {
@@ -140,13 +171,49 @@ Content-Type: application/json
     ]
 }
 
-### Patch - notes and items (preserve item/modifier ids)
+### Update (PUT) - invalid: mengubah type order DINE_IN (400)
+### Order dine-in dibuat via POST /dinings/{id}/orders; type-nya immutable.
+PUT {{baseUrl}}/orders/2
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "customerId": 1,
+    "type": "TAKEAWAY",
+    "items": [
+        { "menuId": 1, "quantity": 1, "modifiers": [] }
+    ]
+}
+
+### Update (PUT) - invalid: order sudah punya pembayaran (400)
+### Invoice dengan paidAmount > 0 = frozen. Pakai POST /payments/{id}/refund dulu.
+PUT {{baseUrl}}/orders/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "customerId": 1,
+    "type": "TAKEAWAY",
+    "items": [
+        { "menuId": 1, "quantity": 1, "modifiers": [] }
+    ]
+}
+
+### Patch - notes only (tanpa items/type) — masih diizinkan walau invoice sudah dibayar
 PATCH {{baseUrl}}/orders/1
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-    "notes": "Take away",
+    "notes": "Take away"
+}
+
+### Patch - items (preserve item/modifier ids) — sync invoice, ditolak 400 jika ada applied payment
+PATCH {{baseUrl}}/orders/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
     "items": [
         {
             "id": 1,
@@ -160,7 +227,20 @@ Content-Type: application/json
     ]
 }
 
+### Patch - type saja (TAKEAWAY → DINE_IN tidak boleh via endpoint ini; DINE_IN hanya via dining)
+PATCH {{baseUrl}}/orders/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
 
-### Delete
+{
+    "type": "TAKEAWAY"
+}
+
+
+### Delete — soft delete; invoice standalone unpaid ikut di-void via OrderDeletedEvent
+DELETE {{baseUrl}}/orders/1
+Authorization: Bearer {{token}}
+
+### Delete - invalid: order sudah punya pembayaran (400, "use refund first")
 DELETE {{baseUrl}}/orders/1
 Authorization: Bearer {{token}}

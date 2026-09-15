@@ -10,7 +10,6 @@ public class PaymentStatusFlowPolicy {
 
     public void validateFlow(PaymentStatus oldStatus, PaymentStatus newStatus) {
         if (oldStatus == newStatus) return;
-
         if (isTerminal(oldStatus)) 
             reject("Payment with status " + oldStatus + " cannot be changed");
 
@@ -31,9 +30,8 @@ public class PaymentStatusFlowPolicy {
         }
     }
 
-    private boolean isTerminal(PaymentStatus status) {
-        return status == PaymentStatus.PAID
-            || status == PaymentStatus.EXPIRED
+    public boolean isTerminal(PaymentStatus status) {
+        return status == PaymentStatus.EXPIRED
             || status == PaymentStatus.FAILED
             || status == PaymentStatus.REFUNDED;
     }
@@ -41,4 +39,5 @@ public class PaymentStatusFlowPolicy {
     private void reject(String message) {
         throw new BadRequestException(message);
     }
+
 }

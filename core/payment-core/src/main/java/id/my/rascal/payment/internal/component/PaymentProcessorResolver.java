@@ -27,18 +27,10 @@ public class PaymentProcessorResolver {
 
     public PaymentProcessor resolve(String paymentProvider) {
         PaymentProcessor processor = processors.get(paymentProvider);
-        if (processor == null) {
-            test();
+        if (processor == null)
             throw new BadRequestException("Unsupported payment method: " + paymentProvider);
-        }
 
         return processor;
-    }
-
-    private void test() {
-        for (String provider : this.processors.keySet()) {
-            System.out.println(provider);
-        }
     }
 
 }

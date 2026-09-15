@@ -1,0 +1,30 @@
+###### REPORTS (authority: report.read — ADMIN & CASHIER) ######
+### Dashboard summary - default (today, Asia/Jakarta)
+### Report membaca langsung dari fakta domain (tanpa tabel projection):
+###   sales.cash.*    ← payment: applied_amount (uang masuk ke tagihan) & amount (refund)
+###   sales.billing.* ← invoice: settled_amount saat lunas, refund scope, piutang berjalan
+###   topMenus        ← baris invoice dari invoice yang lunas (bruto, sejalan dengan settledAmount)
+###   operations      ← dining & order
+###   recentActivity  ← order terbaru + billingStatus dari invoice aktif
+### Pelunasan manual (POST /invoices/{id}/payments) hanya menambah basis billing, bukan kas.
+GET {{baseUrl}}/reports/dashboard/summary
+Authorization: Bearer {{token}}
+
+### Dashboard summary - explicit range
+GET {{baseUrl}}/reports/dashboard/summary?from=2026-09-01&to=2026-09-07
+Authorization: Bearer {{token}}
+
+### Dashboard summary - single day
+GET {{baseUrl}}/reports/dashboard/summary?from=2026-09-07&to=2026-09-07
+Authorization: Bearer {{token}}
+
+### Dashboard summary - month to date
+GET {{baseUrl}}/reports/dashboard/summary?from=2026-09-01
+Authorization: Bearer {{token}}
+
+### Dashboard summary - invalid ('to' before 'from') (400)
+GET {{baseUrl}}/reports/dashboard/summary?from=2026-09-07&to=2026-09-01
+Authorization: Bearer {{token}}
+
+### Dashboard summary - no auth (401)
+GET {{baseUrl}}/reports/dashboard/summary

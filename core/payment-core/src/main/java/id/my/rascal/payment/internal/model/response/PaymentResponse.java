@@ -19,6 +19,8 @@ public record PaymentResponse(
     String paymentChannel,
     String paymentDetail,
     Integer amount,
+    Integer appliedAmount,
+    Integer excessAmount,
     LocalDateTime paidAt,
     LocalDateTime createdAt,
     LocalDateTime updatedAt

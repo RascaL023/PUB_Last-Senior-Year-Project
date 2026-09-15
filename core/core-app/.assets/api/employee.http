@@ -1,0 +1,80 @@
+###### EMPLOYEES — modul employee (EmployeeController) ######
+### Base: {{baseUrl}}/employees
+### Data karyawan operasional (name 3-100 char, email format valid).
+### GET list & GET by ID cukup login (tanpa authority khusus);
+### write butuh employee.create / employee.update / employee.delete.
+
+### Create — authority employee.create
+POST {{baseUrl}}/employees
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "name": "Andi Kasir",
+    "email": "andi@rascal.id",
+    "phone": "081234567890",
+    "position": "Cashier",
+    "department": "Front of House",
+    "status": "ACTIVE"
+}
+
+### Search active or GetAll (cukup login)
+### filter: keyword; pagination standar page=&size=
+GET {{baseUrl}}/employees?keyword=andi
+Authorization: Bearer {{token}}
+
+### Search - pagination
+GET {{baseUrl}}/employees?page=0&size=5
+Authorization: Bearer {{token}}
+
+### Get by ID (cukup login)
+GET {{baseUrl}}/employees/1
+Authorization: Bearer {{token}}
+
+### Full update (PUT) — authority employee.update, semua field wajib seperti create
+PUT {{baseUrl}}/employees/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "name": "Andi Kasir",
+    "email": "andi@rascal.id",
+    "phone": "081234567890",
+    "position": "Senior Cashier",
+    "department": "Front of House",
+    "status": "ACTIVE"
+}
+
+### Partial update (PATCH) — authority employee.update
+PATCH {{baseUrl}}/employees/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "position": "Senior Cashier"
+}
+
+### Restore soft-deleted — authority employee.update
+PATCH {{baseUrl}}/employees/1/restore
+Authorization: Bearer {{token}}
+
+### Delete (soft delete) — authority employee.delete, response 204
+DELETE {{baseUrl}}/employees/1
+Authorization: Bearer {{token}}
+
+### Activate — authority employee.update
+POST {{baseUrl}}/employees/1/activate
+Authorization: Bearer {{token}}
+
+### Suspend — authority employee.update
+POST {{baseUrl}}/employees/1/suspend
+Authorization: Bearer {{token}}
+
+
+### ========================================
+### VALIDATION
+### ========================================
+
+### Get by ID - not found (404)
+GET {{baseUrl}}/employees/999
+Authorization: Bearer {{token}}

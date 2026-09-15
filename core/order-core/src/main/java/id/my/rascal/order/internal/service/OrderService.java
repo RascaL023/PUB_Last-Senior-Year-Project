@@ -1,12 +1,11 @@
 package id.my.rascal.order.internal.service;
 
 import id.my.rascal.common.exception.BadRequestException;
-import id.my.rascal.common.exception.ConflictException;
 import id.my.rascal.common.exception.NotFoundException;
 import id.my.rascal.common.util.StringUtil;
+import id.my.rascal.invoice.api.InvoiceApi;
 import id.my.rascal.order.internal.entity.Order;
 import id.my.rascal.order.internal.entity.OrderItem;
-import id.my.rascal.order.internal.model.enums.OrderPaidStatus;
 import id.my.rascal.order.internal.model.enums.OrderStatus;
 import id.my.rascal.order.internal.model.enums.OrderType;
 import id.my.rascal.order.internal.model.mapper.OrderMapper;
@@ -24,7 +23,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Collection;
 import java.util.List;
 import java.util.Random;
 
@@ -39,21 +37,31 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final OrderItemService orderItemService;
     private final OrderStatusFlowPolicy orderStatusFlowPolicy;
+    private final OrderEventPublisherService orderEventPublisherService;
+    private final InvoiceApi invoiceApi;
 
     public OrderService(
         OrderRepository orderRepository,
         OrderItemService orderItemService,
-        OrderStatusFlowPolicy orderStatusFlowPolicy
+        OrderStatusFlowPolicy orderStatusFlowPolicy,
+        OrderEventPublisherService orderEventPublisherService,
+        InvoiceApi invoiceApi
     ) {
         this.orderRepository = orderRepository;
         this.orderItemService = orderItemService;
         this.orderStatusFlowPolicy = orderStatusFlowPolicy;
+        this.orderEventPublisherService = orderEventPublisherService;
+        this.invoiceApi = invoiceApi;
     }
 
     @Transactional
     public OrderResponse create(OrderRequest request) {
+        if (request.type() == OrderType.DINE_IN)
+            throw new BadRequestException("Dine-in order hanya via POST /dinings/{id}/orders");
+
         Order order = new Order();
         order.setOrderNumber(generateOrderNumber());
+        // TODO(customer-module): validasi request.customerId() via customer-api setelah modulnya tersedia
         applyCustomer(order, request.customerId(), request.customerName());
         applyNotes(order, request.notes());
 
@@ -62,16 +70,19 @@ public class OrderService {
         order.setTotalPrice(orderItemService.computeTotalPrice(items));
         order.setCreatedAt(LocalDateTime.now());
         order.setType(request.type());
-        order.markUnpaid();
         order.markCreated();
 
-        return OrderMapper.toResponse(orderRepository.save(order));
+        Order saved = orderRepository.save(order);
+        orderEventPublisherService.publish(saved, "create");
+        return OrderMapper.toResponse(saved);
     }
 
     @Transactional
     public OrderResponse update(Long id, OrderPutRequest request) {
         Order order = findActiveOrder(id);
         ensureEditable(order);
+        ensureDineInTypeImmutable(order, request.type());
+        ensureNoAppliedPayment(order);
 
         applyCustomer(order, request.customerId(), request.customerName());
         applyNotes(order, request.notes());
@@ -80,7 +91,9 @@ public class OrderService {
 
         order.setType(request.type());
         order.setUpdatedAt(LocalDateTime.now());
-        return OrderMapper.toResponse(orderRepository.save(order));
+        Order saved = orderRepository.save(order);
+        orderEventPublisherService.publishItemsChanged(saved);
+        return OrderMapper.toResponse(saved);
     }
 
     @Transactional
@@ -99,25 +112,32 @@ public class OrderService {
 
         if (request.items().isPresent()) {
             ensureEditable(order);
+            ensureNoAppliedPayment(order);
             orderItemService.replaceItems(order, request.items().get());
         }
 
         if (request.type().isPresent()) {
             ensureEditable(order);
+            ensureDineInTypeImmutable(order, request.type().get());
             order.setType(request.type().get());
         }
 
         order.setUpdatedAt(LocalDateTime.now());
-        return OrderMapper.toResponse(orderRepository.save(order));
+        Order saved = orderRepository.save(order);
+        if (request.items().isPresent())
+            orderEventPublisherService.publishItemsChanged(saved);
+        return OrderMapper.toResponse(saved);
     }
 
     @Transactional
     public void delete(Long id) {
         Order order = findActiveOrder(id);
         // TODO: restore stock if exists
+        ensureNoAppliedPayment(order);
 
         order.setDeletedAt(LocalDateTime.now());
         orderRepository.save(order);
+        orderEventPublisherService.publish(order, "delete");
     }
 
     @Transactional
@@ -146,7 +166,6 @@ public class OrderService {
         order.setTotalPrice(orderItemService.computeTotalPrice(items));
         order.setCreatedAt(LocalDateTime.now());
         order.setType(OrderType.valueOf(request.type().name()));
-        order.markUnpaid();
         order.markCreated();
 
         return OrderMapper.toResponse(orderRepository.save(order));
@@ -160,28 +179,6 @@ public class OrderService {
         order.markConfirmed();
         order.setUpdatedAt(LocalDateTime.now());
         return OrderMapper.toResponse(orderRepository.save(order));
-    }
-
-    @Transactional
-    public void markPaid(Long id) {
-        Order order = findActiveOrder(id);
-        if (order.getPaidStatus().equals(OrderPaidStatus.PAID))
-            throw new ConflictException("Order already paid");
-        order.markPaid();
-
-        if (order.getType().equals(OrderType.TAKEAWAY)) {
-            orderStatusFlowPolicy.validateTransition(order, OrderStatus.CONFIRMED);
-            order.markConfirmed();
-        }
-
-        order.setUpdatedAt(LocalDateTime.now());
-        orderRepository.save(order);
-    }
-
-    @Transactional
-    public void markPaid(Collection<Long> orderIds) {
-        if (orderIds == null || orderIds.isEmpty()) return;
-        orderRepository.markPaidByIds(orderIds, OrderPaidStatus.PAID, LocalDateTime.now());
     }
 
     @Transactional
@@ -226,7 +223,10 @@ public class OrderService {
 
         order.markCancelled();
         order.setUpdatedAt(LocalDateTime.now());
-        return OrderMapper.toResponse(orderRepository.save(order));
+
+        Order saved = orderRepository.save(order);
+        orderEventPublisherService.publish(order, "cancel");
+        return OrderMapper.toResponse(saved);
     }
 
 
@@ -238,6 +238,16 @@ public class OrderService {
     private void ensureEditable(Order order) {
         if (order.getStatus() == OrderStatus.COMPLETED || order.getStatus() == OrderStatus.CANCELLED)
             throw new BadRequestException("Cannot modify a " + order.getStatus() + " order");
+    }
+
+    private void ensureDineInTypeImmutable(Order order, OrderType newType) {
+        if (order.getType() == OrderType.DINE_IN && newType != OrderType.DINE_IN)
+            throw new BadRequestException("Cannot change type of a dine-in order");
+    }
+
+    private void ensureNoAppliedPayment(Order order) {
+        if (invoiceApi.hasAppliedPayment(order.getId()))
+            throw new BadRequestException("Order already has an applied payment — use refund first");
     }
 
     private void applyCustomer(Order order, Long customerId, String customerName) {

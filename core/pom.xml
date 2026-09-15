@@ -44,6 +44,8 @@
         <module>menu-core</module>
         <module>order-api</module>
         <module>order-core</module>
+        <module>invoice-api</module>
+        <module>invoice-core</module>
         <module>payment-core</module>
         <module>payment-api</module>
         <module>payment-xendit</module>
@@ -53,6 +55,8 @@
         <module>customer-core</module>
         <module>search-api</module>
         <module>search-meilisearch</module>
+        <module>report-api</module>
+        <module>report-core</module>
         <module>employee-api</module>
         <module>employee-core</module>
         <module>core-app</module>
@@ -117,6 +121,17 @@
 
             <dependency>
                 <groupId>id.my.rascal</groupId>
+                <artifactId>invoice-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>id.my.rascal</groupId>
+                <artifactId>invoice-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>id.my.rascal</groupId>
                 <artifactId>payment-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -172,6 +187,17 @@
             <dependency>
                 <groupId>id.my.rascal</groupId>
                 <artifactId>employee-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>id.my.rascal</groupId>
+                <artifactId>report-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>id.my.rascal</groupId>
+                <artifactId>report-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
 

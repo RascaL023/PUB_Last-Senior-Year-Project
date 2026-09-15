@@ -1,0 +1,74 @@
+###### CUSTOMERS — modul customer (CustomerController) ######
+### Base: {{baseUrl}}/customers
+### Member loyalty + snapshot nama di order (orders.customerId → customers.id).
+### Guest tetap bisa order dengan customerId=null.
+### CATATAN: DTO CustomerRegisterRequest / CustomerClaimRequest ada di kode
+### tapi route POST /register dan POST /{id}/claim BELUM ADA di controller
+### saat ini — jangan coba sebelum diimplementasikan.
+
+### Create member (tanpa login-akun) — authority customer.create
+POST {{baseUrl}}/customers
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "name": "Budi Santoso",
+    "email": "budi@example.com",
+    "phone": "081234567890",
+    "notes": "Langganan kopi tubruk"
+}
+
+### Search active or GetAll — authority customer.read
+### filter: keyword (name/email/phone); default sort createdAt,desc
+GET {{baseUrl}}/customers?keyword=budi
+Authorization: Bearer {{token}}
+
+### Search - pagination
+GET {{baseUrl}}/customers?page=0&size=5&sort=createdAt,desc
+Authorization: Bearer {{token}}
+
+### Get by ID — authority customer.read
+GET {{baseUrl}}/customers/1
+Authorization: Bearer {{token}}
+
+### Full update (PUT) — authority customer.update, profil saja (tidak mengubah akun)
+PUT {{baseUrl}}/customers/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "name": "Budi Santoso",
+    "email": "budi@example.com",
+    "phone": "081234567890",
+    "notes": "Langganan kopi tubruk"
+}
+
+### Partial update (PATCH) — authority customer.update, minimal satu field terisi
+PATCH {{baseUrl}}/customers/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "phone": "081999888777"
+}
+
+### Delete (soft delete) — authority customer.delete, response 204; akun auth_users tidak ikut terhapus
+DELETE {{baseUrl}}/customers/1
+Authorization: Bearer {{token}}
+
+
+### ========================================
+### VALIDATION
+### ========================================
+
+### Get by ID - not found (404)
+GET {{baseUrl}}/customers/999
+Authorization: Bearer {{token}}
+
+### Patch kosong (400 "PATCH can't be empty")
+PATCH {{baseUrl}}/customers/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+}

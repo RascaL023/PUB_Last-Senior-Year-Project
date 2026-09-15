@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>id.my.rascal</groupId>
+        <artifactId>root-backend</artifactId>
+        <version>0.0.1-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+    <artifactId>report-core</artifactId>
+    <packaging>jar</packaging>
+
+    <dependencies>
+        <dependency>
+            <groupId>id.my.rascal</groupId>
+            <artifactId>common</artifactId>
+        </dependency>
+
+        <!-- Report API (contract summary untuk FE) -->
+        <dependency>
+            <groupId>id.my.rascal</groupId>
+            <artifactId>report-api</artifactId>
+        </dependency>
+
+        <!-- Domain contracts: report hanya membaca lewat contract, tidak pernah akses tabel domain lain -->
+        <dependency>
+            <groupId>id.my.rascal</groupId>
+            <artifactId>invoice-api</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>id.my.rascal</groupId>
+            <artifactId>payment-api</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>id.my.rascal</groupId>
+            <artifactId>order-api</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>id.my.rascal</groupId>
+            <artifactId>dining-api</artifactId>
+        </dependency>
+
+        <!-- Untuk resolusi label menu pada top menu (bukan data penjualan) -->
+        <dependency>
+            <groupId>id.my.rascal</groupId>
+            <artifactId>menu-api</artifactId>
+        </dependency>
+
+        <!-- Starter Web -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <!-- Security (@PreAuthorize) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+
+        <!-- Test -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+</project>

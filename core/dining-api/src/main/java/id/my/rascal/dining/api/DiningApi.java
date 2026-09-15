@@ -10,4 +10,8 @@ public interface DiningApi {
     List<DiningApiResponse> getDinings(Collection<Long> ids);
 
     List<Long> getOrderIds(Long diningId);
+
+    /** Temporary [cycle spring wiring depencency on it's implementation] */
+    String getDiningStatus(Long diningId);
+
 }

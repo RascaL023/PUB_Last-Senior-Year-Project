@@ -35,6 +35,12 @@
             <artifactId>payment-api</artifactId>
         </dependency>
 
+        <!-- Invoice API (settlement target) -->
+        <dependency>
+            <groupId>id.my.rascal</groupId>
+            <artifactId>invoice-api</artifactId>
+        </dependency>
+
 
 
         <!-- Starter Web -->

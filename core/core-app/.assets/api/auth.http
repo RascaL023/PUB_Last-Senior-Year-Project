@@ -44,6 +44,25 @@ Authorization: Bearer {{token}}
     "authorityIds": [1]
 }
 
+### Update role (PUT)
+PUT {{baseUrl}}/auths/roles/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "name": "ADMIN",
+    "authorityIds": [1]
+}
+
+### Patch role (partial)
+PATCH {{baseUrl}}/auths/roles/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "name": "ADMIN"
+}
+
 ### Get By ID
 GET {{baseUrl}}/auths/roles/1
 Authorization: Bearer {{token}}
@@ -72,6 +91,26 @@ Authorization: Bearer {{token}}
 ### Search active or GetAll
 GET {{baseUrl}}/auths/users?email=admin
 Authorization: Bearer {{token}}
+
+### Update user (PUT) — email, password, dan roleIds wajib
+PUT {{baseUrl}}/auths/users/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "email": "faiqemilzzz@gmail.com",
+    "password": "newPassword123",
+    "roleIds": [1]
+}
+
+### Update user (PATCH)
+PATCH {{baseUrl}}/auths/users/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "roleIds": [1]
+}
 
 ### Delete
 DELETE {{baseUrl}}/auths/users/1

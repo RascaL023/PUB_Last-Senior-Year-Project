@@ -51,10 +51,10 @@ Authorization: Bearer {{token}}
 
 
 ### ========================================
-### Dinings
+### Dinings — E2E Happy Path (dibayar via invoice)
 ### ========================================
 
-### Step 1: Open dining on table 2
+### Step 1: Open dining on table 1
 POST {{baseUrl}}/dinings
 Authorization: Bearer {{token}}
 Content-Type: application/json
@@ -63,7 +63,7 @@ Content-Type: application/json
     "tableId": 1
 }
 
-### Step 2: Add order to dining 1
+### Step 2: Add order to dining 1 (order DINE_IN dibuat via dining — satu-satunya jalur sah)
 POST {{baseUrl}}/dinings/1/orders
 Authorization: Bearer {{token}}
 Content-Type: application/json
@@ -77,57 +77,52 @@ Content-Type: application/json
             "menuId": 2,
             "quantity": 1,
             "modifiers": [
-                {  "modifierOptionId": 6 },
-                {  "modifierOptionId": 2 },
-                {  "modifierOptionId": 13 },
-                {  "modifierOptionId": 12 }
+                {  "modifierOptionId": 20 },
+                {  "modifierOptionId": 13 }
             ]
         }
     ]
 }
 
-### Step 3: Confirm order 1 (DINE_IN — no payment needed)
-POST {{baseUrl}}/orders/2/confirm
+### Step 3: Confirm → (DINE_IN tidak butuh pembayaran untuk confirm)
+POST {{baseUrl}}/orders/1/confirm
 Authorization: Bearer {{token}}
 
-### Step 4: Mark preparing
-POST {{baseUrl}}/orders/2/prepare
+### Step 4: Prepare 
+POST {{baseUrl}}/orders/1/prepare
 Authorization: Bearer {{token}}
 
-### Step 5: Mark ready
-POST {{baseUrl}}/orders/2/ready
+### Step 5: Ready 
+POST {{baseUrl}}/orders/1/ready
 Authorization: Bearer {{token}}
 
-### Step 6: Create payment for the dining
+### Step 6: Inspect invoice dining (invoice dining terbit otomatis saat order pertama masuk)
+GET {{baseUrl}}/invoices?diningId=1
+Authorization: Bearer {{token}}
+
+### Step 7: Bayar invoice — cash (langsung PAID; applied/excess tercatat otomatis)
 POST {{baseUrl}}/payments
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-    "targetType": "DINE_IN",
+    "targetType": "INVOICE",
     "targetId": 1,
-    "paymentMethodId": 1,
-    "paymentChannel": null,
-    "paymentDetail": "CASH-001",
-    "externalId": null,
-    "invoiceUrl": null
+    "paymentProvider": "INTERNAL",
+    "paymentDetail": "Testing cash"
 }
 
-### Step 7: Mark payment as paid
-POST {{baseUrl}}/payments/1/pay
-Authorization: Bearer {{token}}
-
-### Step 8: Complete order 1
+### Step 8: Complete order
 POST {{baseUrl}}/orders/2/complete
 Authorization: Bearer {{token}}
 
-### Step 9: Close dining
+### Step 9: Close dining — guard: semua order COMPLETED/CANCELLED dan invoice PAID/VOID
 POST {{baseUrl}}/dinings/1/close
 Authorization: Bearer {{token}}
 
 
 ### ========================================
-### E2E FLOW — Happy Path Multiple Orders
+### E2E FLOW — Happy Path Multiple Orders (satu invoice, dua order)
 ### ========================================
 
 ### Open dining on table 3
@@ -175,7 +170,7 @@ Authorization: Bearer {{token}}
 POST {{baseUrl}}/orders/2/complete
 Authorization: Bearer {{token}}
 
-### Add order #2 (additional) to dining 2
+### Add order #2 (additional) to dining 2 — invoice dining yang sama otomatis nambah baris
 POST {{baseUrl}}/dinings/2/orders
 Authorization: Bearer {{token}}
 Content-Type: application/json
@@ -218,24 +213,44 @@ Authorization: Bearer {{token}}
 POST {{baseUrl}}/orders/3/complete
 Authorization: Bearer {{token}}
 
-### Create payment for dining 2
+### Update order 3 (tambah item sebelum dibayar) — invoice dining ikut tersinkron
+PATCH {{baseUrl}}/orders/3
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "items": [
+        {
+            "id": 3,
+            "menuId": 1,
+            "quantity": 3,
+            "modifiers": [
+                { "id": 5, "modifierOptionId": 2 }
+            ]
+        },
+        {
+            "menuId": 2,
+            "quantity": 1,
+            "modifiers": []
+        }
+    ]
+}
+
+### Bayar invoice dining 2 (lihat invoiceId dari GET /invoices?diningId=2)
+GET {{baseUrl}}/invoices?diningId=2
+Authorization: Bearer {{token}}
+
+### Bayar invoice
 POST {{baseUrl}}/payments
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-    "targetType": "DINE_IN",
+    "targetType": "INVOICE",
     "targetId": 2,
-    "paymentMethodId": 1,
-    "paymentChannel": null,
-    "paymentDetail": "CASH-002",
-    "externalId": null,
-    "invoiceUrl": null
+    "paymentProvider": "INTERNAL",
+    "paymentDetail": "CASH-002"
 }
-
-### Mark payment paid
-POST {{baseUrl}}/payments/2/pay
-Authorization: Bearer {{token}}
 
 ### Close dining 2
 POST {{baseUrl}}/dinings/2/close
@@ -275,10 +290,18 @@ Content-Type: application/json
     ]
 }
 
-### Confirm order 4 — succeeds without payment (DINE_IN)
+### Confirm order — succeeds without payment (DINE_IN)
 POST {{baseUrl}}/orders/4/confirm
 Authorization: Bearer {{token}}
 
+### Close dining — invalid: invoice dining masih OPEN (400 "Tagihan belum lunas")
+POST {{baseUrl}}/dinings/3/close
+Authorization: Bearer {{token}}
+
+### Jalur darurat: void invoice → baru close bisa jalan
+### (void hanya boleh untuk invoice OPEN tanpa pembayaran)
+POST {{baseUrl}}/invoices/3/void
+Authorization: Bearer {{token}}
 
 ### ========================================
 ### VALIDATION — Table
@@ -299,7 +322,7 @@ Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-    "tableId": 2
+    "tableId": 1
 }
 
 ### tableId missing (400)
@@ -334,12 +357,47 @@ Content-Type: application/json
     ]
 }
 
+### Add order — invalid: invoice sesi sudah lunas (400, pesan PAID)
+### "Sesi ini sudah lunas (INV-...). Tutup sesi atau minta tagihan baru ke kasir"
+POST {{baseUrl}}/dinings/2/orders
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "customerId": 1,
+    "customerName": "Test",
+    "notes": "Should fail",
+    "items": [
+        { "menuId": 1, "quantity": 1, "modifiers": [] }
+    ]
+}
+
+### Add order — invalid: tagihan sesi sudah di-void (400, pesan VOID — beda dengan PAID)
+### "Tagihan sesi ini sudah di-void (INV-...). Tutup sesi atau minta tagihan baru ke kasir"
+POST {{baseUrl}}/dinings/3/orders
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "customerId": 1,
+    "customerName": "Test",
+    "notes": "Should fail",
+    "items": [
+        { "menuId": 1, "quantity": 1, "modifiers": [] }
+    ]
+}
+
 ### Close dining already closed (409)
 POST {{baseUrl}}/dinings/1/close
 Authorization: Bearer {{token}}
 
 ### Close dining not found (404)
 POST {{baseUrl}}/dinings/999/close
+Authorization: Bearer {{token}}
+
+### Close dining — invalid: invoice belum lunas (400 "Tagihan belum lunas (...). Selesaikan pembayaran dulu")
+### (contoh: dining 3 masih punya invoice OPEN — lihat flow "Confirm Without Payment")
+POST {{baseUrl}}/dinings/3/close
 Authorization: Bearer {{token}}
 
 ### Get dining not found (404)

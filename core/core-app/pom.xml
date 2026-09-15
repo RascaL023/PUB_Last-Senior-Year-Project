@@ -37,6 +37,15 @@
 
         <dependency>
             <groupId>id.my.rascal</groupId>
+            <artifactId>invoice-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>id.my.rascal</groupId>
+            <artifactId>invoice-api</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>id.my.rascal</groupId>
             <artifactId>payment-core</artifactId>
         </dependency>
         <dependency>
@@ -79,6 +88,15 @@
         </dependency>
 
         <dependency>
+            <groupId>id.my.rascal</groupId>
+            <artifactId>report-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>id.my.rascal</groupId>
+            <artifactId>report-api</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
@@ -88,6 +106,12 @@
             <groupId>org.mariadb.jdbc</groupId>
             <artifactId>mariadb-java-client</artifactId>
             <scope>runtime</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
         </dependency>
 
         <dependency>

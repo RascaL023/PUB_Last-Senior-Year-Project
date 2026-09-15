@@ -26,12 +26,15 @@ import id.my.rascal.dining.internal.model.response.DiningResponse;
 import id.my.rascal.dining.internal.repository.DiningOrderRepository;
 import id.my.rascal.dining.internal.repository.DiningRepository;
 import id.my.rascal.dining.internal.repository.DiningTableRepository;
+import id.my.rascal.invoice.api.InvoiceApi;
+import id.my.rascal.invoice.api.InvoiceApiResponse;
 import id.my.rascal.order.api.OrderApi;
 import id.my.rascal.order.api.OrderApiCreateRequest;
 import id.my.rascal.order.api.OrderApiResponse;
 import id.my.rascal.order.api.OrderItemApiRequest;
 import id.my.rascal.order.api.OrderItemModifierApiRequest;
 import id.my.rascal.order.api.OrderTypeApiResponse;
+import id.my.rascal.order.api.event.dto.OrderItemSnapshot;
 
 @Service
 public class DiningService {
@@ -41,19 +44,25 @@ public class DiningService {
     private final DiningTableRepository diningTableRepository;
     private final TableService tableService;
     private final OrderApi orderApi;
+    private final InvoiceApi invoiceApi;
+    private final DiningEventPublisherService diningEventPublisherService;
 
     public DiningService(
         DiningRepository diningRepository,
         DiningOrderRepository diningOrderRepository,
         DiningTableRepository diningTableRepository,
         TableService tableService,
-        OrderApi orderApi
+        OrderApi orderApi,
+        InvoiceApi invoiceApi,
+        DiningEventPublisherService diningEventPublisherService
     ) {
         this.diningRepository = diningRepository;
         this.diningOrderRepository = diningOrderRepository;
         this.diningTableRepository = diningTableRepository;
         this.tableService = tableService;
         this.orderApi = orderApi;
+        this.invoiceApi = invoiceApi;
+        this.diningEventPublisherService = diningEventPublisherService;
     }
 
     @Transactional
@@ -74,6 +83,7 @@ public class DiningService {
         table.setUpdatedAt(LocalDateTime.now());
 
         Dining saved = diningRepository.save(dining);
+        diningEventPublisherService.publishOpened(saved, table.getTableNumber());
         return toResponse(saved, table, List.of(), 0);
     }
 
@@ -96,12 +106,13 @@ public class DiningService {
         if (hasIncompleteOrders)
             throw new BadRequestException("Cannot close dining with incomplete orders");
 
-        boolean allPaid = orders.stream()
-            .filter(o -> !"CANCELLED".equals(o.status()))
-            .allMatch(o -> "PAID".equals(o.paidStatus()));
-
-        if (!allPaid)
-            throw new BadRequestException("Cannot close dining until all orders are paid");
+        InvoiceApiResponse invoice = invoiceApi.getDiningInvoice(id);
+        if (invoice != null
+            && !"PAID".equals(invoice.status())
+            && !"VOID".equals(invoice.status())) {
+            throw new BadRequestException(
+                "Tagihan belum lunas (" + invoice.invoiceNumber() + "). Selesaikan pembayaran dulu");
+        }
 
         dining.markClosed();
         dining.setUpdatedAt(LocalDateTime.now());
@@ -110,6 +121,7 @@ public class DiningService {
         table.setUpdatedAt(LocalDateTime.now());
 
         Dining saved = diningRepository.save(dining);
+        diningEventPublisherService.publishClosed(saved);
         List<DiningOrderSummary> summaries = toOrderSummaries(orders);
         return toResponse(saved, table, summaries, calculateTotalPrice(orders));
     }
@@ -121,6 +133,15 @@ public class DiningService {
         if (dining.getStatus() != DiningStatus.OPEN)
             throw new BadRequestException("Cannot add order to a closed dining");
 
+        InvoiceApiResponse invoice = invoiceApi.getDiningInvoice(diningId);
+        if (invoice != null && "PAID".equals(invoice.status()))
+            throw new BadRequestException(
+                "Sesi ini sudah lunas (" + invoice.invoiceNumber() + "). Tutup sesi atau minta tagihan baru ke kasir");
+        if (invoice != null && "VOID".equals(invoice.status()))
+            throw new BadRequestException(
+                "Tagihan sesi ini sudah di-void (" + invoice.invoiceNumber() + "). Tutup sesi atau minta tagihan baru ke kasir");
+
+        // TODO(customer-module): validasi request.customerId() via customer-api
         OrderApiCreateRequest apiRequest = toApiCreateRequest(request);
         OrderApiResponse created = orderApi.createOrder(apiRequest);
 
@@ -129,6 +150,16 @@ public class DiningService {
         diningOrder.setOrderId(created.id());
         diningOrder.setCreatedAt(LocalDateTime.now());
         diningOrderRepository.save(diningOrder);
+
+        List<OrderItemSnapshot> items = orderApi.getOrderItems(created.id());
+        diningEventPublisherService.publishOrderAdded(
+            diningId,
+            created.id(),
+            created.orderNumber(),
+            created.totalPrice(),
+            items,
+            created.createdAt()
+        );
 
         return buildDiningResponse(dining);
     }

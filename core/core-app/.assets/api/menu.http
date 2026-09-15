@@ -97,6 +97,21 @@ Content-Type: application/json
     "imageUrls": ["/assets/images/menus/coffee/americano.jpg"],
     "basePrice": 7000,
     "isAvailable": true,
+    "modifierTypeIds": [1]
+}
+
+### Create - legacy field name (masih diterima via @JsonAlias, tapi DEPRECATED — pakai modifierTypeIds)
+POST {{baseUrl}}/menus
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "name": "Latte",
+    "categoryIds": [1],
+    "description": "Espresso with steamed milk",
+    "imageUrls": ["/assets/images/menus/coffee/latte.jpg"],
+    "basePrice": 20000,
+    "isAvailable": true,
     "ModifierTypeIds": [1]
 }
 
@@ -118,7 +133,7 @@ Content-Type: application/json
     "imageUrls": ["/assets/images/menus/hot-drinks/cappuccino.jpg"],
     "basePrice": 22000,
     "isAvailable": true,
-    "ModifierTypeIds": [1]
+    "modifierTypeIds": [1]
 }
 
 ### Restore Deleted
@@ -128,6 +143,29 @@ Authorization: Bearer {{token}}
 ### Delete
 DELETE {{baseUrl}}/menus/1
 Authorization: Bearer {{token}}
+
+
+###### MENUS V2 (CACHED) ######
+### Get by ID (PUBLIC - no auth needed)
+GET {{baseUrlV2}}/menus/1
+
+### Search active or GetAll (PUBLIC - no auth needed)
+GET {{baseUrlV2}}/menus?categoryId=1
+
+### Create
+POST {{baseUrlV2}}/menus
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "name": "Americano",
+    "categoryIds": [1],
+    "description": "Strong coffee shot",
+    "imageUrls": ["/assets/images/menus/coffee/americano.jpg"],
+    "basePrice": 7000,
+    "isAvailable": true,
+    "modifierTypeIds": [1]
+}
 
 
 ###### UPLOADS ######

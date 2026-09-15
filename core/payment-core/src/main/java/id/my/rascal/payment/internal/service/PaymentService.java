@@ -1,6 +1,7 @@
 package id.my.rascal.payment.internal.service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 import org.slf4j.Logger;
@@ -10,13 +11,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import id.my.rascal.common.exception.BadRequestException;
 import id.my.rascal.common.exception.NotFoundException;
-import id.my.rascal.dining.api.DiningApi;
-import id.my.rascal.dining.api.DiningApiResponse;
-import id.my.rascal.order.api.OrderApi;
-import id.my.rascal.order.api.OrderApiResponse;
+import id.my.rascal.invoice.api.InvoiceApi;
+import id.my.rascal.invoice.api.InvoiceApiResponse;
+import id.my.rascal.invoice.api.InvoiceItemApiResponse;
 import id.my.rascal.payment.api.PaymentProcessor;
 import id.my.rascal.payment.api.PaymentProcessorRequest;
 import id.my.rascal.payment.api.PaymentProcessorResponse;
@@ -28,6 +29,7 @@ import id.my.rascal.payment.internal.model.enums.PaymentProvider;
 import id.my.rascal.payment.internal.model.enums.PaymentStatus;
 import id.my.rascal.payment.internal.model.enums.PaymentTargetType;
 import id.my.rascal.payment.internal.model.mapper.PaymentMapper;
+import id.my.rascal.payment.internal.model.request.PaymentRefundRequest;
 import id.my.rascal.payment.internal.model.request.PaymentRequest;
 import id.my.rascal.payment.internal.model.response.PaymentResponse;
 import id.my.rascal.payment.internal.repository.PaymentRepository;
@@ -40,27 +42,37 @@ public class PaymentService {
     private final PaymentStatusFlowPolicy paymentStatusFlowPolicy;
     private final PaymentProcessorResolver paymentProcessorResolver;
     private final PaymentEffect paymentEffect;
-    private final OrderApi orderApi;
-    private final DiningApi diningApi;
+    private final InvoiceApi invoiceApi;
+    private final PaymentEventPublisherService paymentEventPublisherService;
+    private final TransactionTemplate transactionTemplate;
 
     public PaymentService(
         PaymentRepository paymentRepository,
         PaymentStatusFlowPolicy paymentStatusFlowPolicy,
         PaymentProcessorResolver paymentProcessorResolver,
-        OrderApi orderApi,
-        DiningApi diningApi,
-        PaymentEffect paymentEffect
+        InvoiceApi invoiceApi,
+        PaymentEventPublisherService paymentEventPublisherService,
+        PaymentEffect paymentEffect,
+        TransactionTemplate transactionTemplate
     ) {
         this.paymentRepository = paymentRepository;
         this.paymentStatusFlowPolicy = paymentStatusFlowPolicy;
         this.paymentProcessorResolver = paymentProcessorResolver;
-        this.orderApi = orderApi;
-        this.diningApi = diningApi;
+        this.invoiceApi = invoiceApi;
+        this.paymentEventPublisherService = paymentEventPublisherService;
         this.paymentEffect = paymentEffect;
+        this.transactionTemplate = transactionTemplate;
     }
 
     public PaymentResponse create(PaymentRequest request) {
-        ResolvedTarget target = resolveTarget(request.targetType(), request.targetId());
+        if (request.targetType() != PaymentTargetType.INVOICE)
+            throw new BadRequestException(
+                "Unsupported payment target: " + request.targetType() + 
+                ". Payment hanya dapat menarget INVOICE"
+            );
+
+        ResolvedTarget target = resolveInvoice(request.targetId());
+        if (target.amount() == null || target.amount() <= 0) throw new BadRequestException("Invoice already paid");
         String externalId = "INV-" + UUID.randomUUID();
 
         PaymentProcessor processor = paymentProcessorResolver.resolve(request.paymentProvider().toString());
@@ -68,10 +80,10 @@ public class PaymentService {
         try {
              processorResponse = processor.process(
                 new PaymentProcessorRequest(
-                    target.amount(), 
-                    "IDR", 
+                    target.amount(),
+                    "IDR",
                     target.reference(),
-                    externalId, 
+                    externalId,
                     null, null
                 )
             );
@@ -81,7 +93,19 @@ public class PaymentService {
             throw new BadRequestException(e.getMessage());
         }
 
+        return transactionTemplate.execute(status ->
+            persistCreatedPayment(request, target, externalId, processor, processorResponse)
+        );
+    }
 
+    public PaymentResponse persistCreatedPayment(
+        PaymentRequest request,
+        ResolvedTarget target,
+        String externalId,
+        PaymentProcessor processor,
+        PaymentProcessorResponse processorResponse
+    ) {
+        // Berjalan di dalam transaksi dari TransactionTemplate.
         Payment payment = new Payment();
         payment.setPaymentProvider(PaymentProvider.valueOf(processor.paymentProvider()));
         payment.setPaymentMethodName(processorResponse.paymentMethodName());
@@ -99,7 +123,11 @@ public class PaymentService {
         payment.setInvoiceUrl(processorResponse.invoiceUrl());
         payment.setCreatedAt(LocalDateTime.now());
 
-        return toResponse(paymentRepository.save(payment));
+        Payment saved = paymentRepository.save(payment);
+        if (saved.getStatus() == PaymentStatus.PAID)
+            paymentEventPublisherService.publishSettled(saved, saved.getAmount());
+
+        return toResponse(saved);
     }
 
     @Transactional(readOnly = true)
@@ -133,11 +161,42 @@ public class PaymentService {
 
     @Transactional
     public PaymentResponse markRefunded(Long id) {
+        return markRefunded(id, null);
+    }
+
+    @Transactional
+    public PaymentResponse markRefunded(Long id, PaymentRefundRequest request) {
         Payment payment = findActive(id);
-        paymentStatusFlowPolicy.validateFlow(payment.getStatus(), PaymentStatus.REFUNDED);
-        payment.setStatus(PaymentStatus.REFUNDED);
-        payment.setUpdatedAt(LocalDateTime.now());
-        return toResponse(paymentRepository.save(payment));
+        PaymentStatus target = PaymentStatus.REFUNDED;
+
+        paymentStatusFlowPolicy.validateFlow(payment.getStatus(), target);
+        LocalDateTime now = LocalDateTime.now();
+        payment.setStatus(target);
+        payment.setRefundedAt(now);
+        payment.setUpdatedAt(now);
+        Payment saved = paymentRepository.save(payment);
+        paymentEventPublisherService.publishRefunded(saved);
+
+        if (saved.getTargetType() == PaymentTargetType.INVOICE) {
+            List<Long> orderItemIds = resolveRefundOrderItemIds(saved.getTargetId(), request);
+            if (!orderItemIds.isEmpty())
+                invoiceApi.refundItems(saved.getTargetId(), orderItemIds, saved.getId());
+        }
+        return toResponse(saved);
+    }
+
+    private List<Long> resolveRefundOrderItemIds(
+        Long invoiceId,
+        PaymentRefundRequest request
+    ) {
+        if (request != null && request.orderItemIds() != null && !request.orderItemIds().isEmpty())
+            return request.orderItemIds();
+
+        InvoiceApiResponse invoice = invoiceApi.getInvoice(invoiceId);
+        return invoice.items().stream()
+            .filter(i -> !Boolean.TRUE.equals(i.refunded()))
+            .map(InvoiceItemApiResponse::orderItemId)
+            .toList();
     }
 
 
@@ -149,21 +208,9 @@ public class PaymentService {
         return toResponse(paymentRepository.save(payment));
     }
 
-    private ResolvedTarget resolveTarget(PaymentTargetType type, Long targetId) {
-        return switch (type) {
-            case ORDER -> resolveOrder(targetId);
-            case DINE_IN -> resolveDining(targetId);
-        };
-    }
-
-    private ResolvedTarget resolveOrder(Long targetId) {
-        OrderApiResponse order = orderApi.getOrder(targetId);
-        return new ResolvedTarget(order.totalPrice(), order.orderNumber());
-    }
-
-    private ResolvedTarget resolveDining(Long targetId) {
-        DiningApiResponse dining = diningApi.getDining(targetId);
-        return new ResolvedTarget(dining.totalPrice(), "DINING-" + dining.id());
+    private ResolvedTarget resolveInvoice(Long targetId) {
+        InvoiceApiResponse invoice = invoiceApi.getInvoice(targetId);
+        return new ResolvedTarget(invoice.remainingAmount(), invoice.invoiceNumber());
     }
 
     private Payment findActive(Long id) {
@@ -185,74 +232,12 @@ public class PaymentService {
             payment.getPaymentChannel(),
             payment.getPaymentDetail(),
             payment.getAmount(),
+            payment.getAppliedAmount(),
+            payment.getExcessAmount(),
             payment.getPaidAt(),
             payment.getCreatedAt(),
             payment.getUpdatedAt()
         );
-    }
-
-    private record ResolvedTarget(Integer amount, String reference) {}
-
-    // @Transactional
-    // public PaymentResponse update(Long id, PaymentPutRequest request) {
-    //     Payment payment = findActive(id);
-    //     ensureMutable(payment);
-    //
-    //     ResolvedTarget target = resolveTarget(request.targetType(), request.targetId());
-    //     PaymentMethod method = paymentMethodService.findActive(request.paymentMethodId());
-    //
-    //     payment.setTargetType(request.targetType());
-    //     payment.setTargetId(request.targetId());
-    //     payment.setTargetReference(target.reference());
-    //     payment.setPaymentMethodId(method.getId());
-    //     payment.setPaymentMethodName(method.getName());
-    //     payment.setAmount(target.amount());
-    //     payment.setPaymentChannel(request.paymentChannel());
-    //     payment.setPaymentDetail(request.paymentDetail());
-    //     payment.setExternalId(request.externalId());
-    //     payment.setInvoiceUrl(request.invoiceUrl());
-    //     payment.setUpdatedAt(LocalDateTime.now());
-    //
-    //     return toResponse(paymentRepository.save(payment));
-    // }
-    //
-    // @Transactional
-    // public PaymentResponse patch(Long id, PaymentPatchRequest request) {
-    //     Payment payment = findActive(id);
-    //     if (request.isEmptyPatch()) throw new BadRequestException("PATCH can't be empty");
-    //     ensureMutable(payment);
-    //
-    //     if (request.targetType().isPresent() || request.targetId().isPresent()) {
-    //         if (request.targetType().isEmpty() || request.targetId().isEmpty()) {
-    //             throw new BadRequestException("targetType and targetId must be provided together");
-    //         }
-    //         ResolvedTarget target = resolveTarget(request.targetType().get(), request.targetId().get());
-    //         payment.setTargetType(request.targetType().get());
-    //         payment.setTargetId(request.targetId().get());
-    //         payment.setTargetReference(target.reference());
-    //         payment.setAmount(target.amount());
-    //     }
-    //
-    //     if (request.paymentMethodId().isPresent()) {
-    //         PaymentMethod method = paymentMethodService.findActive(request.paymentMethodId().get());
-    //         payment.setPaymentMethodId(method.getId());
-    //         payment.setPaymentMethodName(method.getName());
-    //     }
-    //
-    //     request.paymentChannel().ifPresent(payment::setPaymentChannel);
-    //     request.paymentDetail().ifPresent(payment::setPaymentDetail);
-    //     request.externalId().ifPresent(payment::setExternalId);
-    //     request.invoiceUrl().ifPresent(payment::setInvoiceUrl);
-    //
-    //     payment.setUpdatedAt(LocalDateTime.now());
-    //     return toResponse(paymentRepository.save(payment));
-    // }
-    //
-    // @Transactional
-    // public void delete(Long id) {
-    //     Payment payment = findActive(id);
-    //     payment.setDeletedAt(LocalDateTime.now());
-    //     paymentRepository.save(payment);
-    // }
+    }    private record ResolvedTarget(Integer amount, String reference) {}
 
 }

@@ -39,6 +39,12 @@ public class Payment {
     @Column(name = "amount", nullable = false)
     private Integer amount;
 
+    @Column(name = "applied_amount", nullable = false)
+    private Integer appliedAmount = 0;
+
+    @Column(name = "excess_amount", nullable = false)
+    private Integer excessAmount = 0;
+
 
     @Enumerated(EnumType.STRING)
     @Column(name = "payment_provider", nullable = false)
@@ -68,6 +74,11 @@ public class Payment {
 
     @Column(name = "paid_at")
     private LocalDateTime paidAt;
+
+    // Waktu refund (fakta jurnal). Report membucket refund dari kolom ini,
+    // bukan dari updated_at yang bisa berubah karena perubahan lain.
+    @Column(name = "refunded_at")
+    private LocalDateTime refundedAt;
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;

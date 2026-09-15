@@ -1,5 +1,42 @@
-###### PAYMENTS ######
-### Create (targetType: ORDER | DINING) - XENDIT
+###### PAYMENTS — modul payment saat ini (PaymentController) ######
+### Base: {{baseUrl}}/payments — auth: Bearer {{token}}
+### Hanya 6 route aktif di bawah. Webhook Xendit ada di xendit.http.
+### Alur: PENDING ──(INTERNAL langsung PAID / webhook Xendit)──> PAID ──refund──> REFUNDED
+###         PENDING ──expire──> EXPIRED | PENDING ──fail──> FAILED
+### Payment PAID menarget INVOICE → nominal diteruskan ke invoice via PaymentSettledEvent.
+### Field response penting: amount (uang masuk), appliedAmount (nempel ke tagihan),
+### excessAmount (parkir/kembalian), paidAt, refundedAt.
+
+### ========================================
+### CREATE — jalur kasir yang benar (masuk sales.cash dashboard)
+### ========================================
+
+### Create - INTERNAL / Cash (langsung PAID; invoice otomatis ter-update via PaymentSettledEvent)
+POST {{baseUrl}}/payments
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "targetType": "INVOICE",
+    "targetId": 1,
+    "paymentProvider": "INTERNAL",
+    "paymentDetail": "CASH-001"
+}
+
+### Create - XENDIT (async: status awal PENDING, tunggu webhook /payments/webhooks/xendit)
+### amount = remainingAmount invoice; invoiceUrl dikembalikan di response
+POST {{baseUrl}}/payments
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "targetType": "INVOICE",
+    "targetId": 1,
+    "paymentProvider": "XENDIT",
+    "paymentDetail": "QRIS meja 3"
+}
+
+### Create - invalid: targetType selain INVOICE ditolak (400 "Unsupported payment target")
 POST {{baseUrl}}/payments
 Authorization: Bearer {{token}}
 Content-Type: application/json
@@ -8,71 +45,84 @@ Content-Type: application/json
     "targetType": "ORDER",
     "targetId": 1,
     "paymentProvider": "XENDIT",
-    "paymentDetail": "Testing xendit"
+    "paymentDetail": "jalur legacy, sudah dihapus"
 }
 
-### Create (targetType: ORDER) - Manual/Cash
+### Create - invalid: invoice sudah lunas (400 "Invoice already paid")
 POST {{baseUrl}}/payments
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-    "targetType": "ORDER",
+    "targetType": "INVOICE",
     "targetId": 1,
     "paymentProvider": "INTERNAL",
-    "paymentDetail": "Testing internal payment(cash)"
+    "paymentDetail": "double pay"
 }
 
-### Mark as expired
-POST {{baseUrl}}/payments/1/expire
-Authorization: Bearer {{token}}
 
-### Mark as failed
-POST {{baseUrl}}/payments/1/fail
-Authorization: Bearer {{token}}
-
-### Mark as refunded
-POST {{baseUrl}}/payments/1/refund
-Authorization: Bearer {{token}}
+### ========================================
+### READ
+### ========================================
 
 ### Get by ID
 GET {{baseUrl}}/payments/1
 Authorization: Bearer {{token}}
 
 ### Search active or GetAll
+### filter: keyword, targetType (INVOICE), targetId, status (PENDING|PAID|EXPIRED|FAILED|REFUNDED),
+### paymentProvider (INTERNAL|XENDIT); default sort createdAt,desc
 GET {{baseUrl}}/payments?status=PENDING
 Authorization: Bearer {{token}}
 
-
-### DEPRECATED(NON AVAILABLE)
-### Mark as paid
-POST {{baseUrl}}/payments/1/pay
+### Search - by invoice (cek semua payment satu tagihan)
+GET {{baseUrl}}/payments?targetType=INVOICE&targetId=1
 Authorization: Bearer {{token}}
 
-### Update (full replace)
-PUT {{baseUrl}}/payments/1
+### Search - pagination
+GET {{baseUrl}}/payments?page=0&size=5&sort=createdAt,desc
+Authorization: Bearer {{token}}
+
+
+### ========================================
+### TRANSISI STATUS MANUAL (hanya expire / fail / refund)
+### ========================================
+
+### Mark as expired (valid: PENDING → EXPIRED)
+POST {{baseUrl}}/payments/1/expire
+Authorization: Bearer {{token}}
+
+### Mark as failed (valid: PENDING → FAILED)
+POST {{baseUrl}}/payments/1/fail
+Authorization: Bearer {{token}}
+
+### Refund — TANPA body: full refund (semua item invoice yang belum refunded)
+### Pintu refund kasir: invoice menyesuaikan total/paid/remaining via refundItems.
+POST {{baseUrl}}/payments/1/refund
+Authorization: Bearer {{token}}
+
+### Refund — DENGAN body: parsial per item (hanya item yang belum refunded)
+POST {{baseUrl}}/payments/1/refund
+Authorization: Bearer {{token}}
 Content-Type: application/json
-Authorization: Bearer {{token}}
 
 {
-    "targetType": "ORDER",
-    "targetId": 101,
-    "paymentMethodId": 2,
-    "paymentChannel": "QRIS",
-    "paymentDetail": "0000123456789",
-    "externalId": null,
-    "invoiceUrl": null
+    "orderItemIds": [2]
 }
 
-### Patch (partial)
-PATCH {{baseUrl}}/payments/1
+
+### ========================================
+### VALIDATION
+### ========================================
+
+### Get by ID - not found (404)
+GET {{baseUrl}}/payments/999
 Authorization: Bearer {{token}}
-Content-Type: application/json
 
-{
-    "paymentDetail": "0000987654321"
-}
+### Expire - invalid: bukan PENDING lagi (400)
+POST {{baseUrl}}/payments/1/expire
+Authorization: Bearer {{token}}
 
-### Delete (soft delete)
-DELETE {{baseUrl}}/payments/1
+### Refund - invalid: belum PAID (400)
+POST {{baseUrl}}/payments/1/refund
 Authorization: Bearer {{token}}

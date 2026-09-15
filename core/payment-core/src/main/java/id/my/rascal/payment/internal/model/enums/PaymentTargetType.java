@@ -11,8 +11,7 @@ import java.util.stream.Collectors;
 import com.fasterxml.jackson.annotation.JsonCreator;
 
 public enum PaymentTargetType {
-    ORDER("ORDER"),
-    DINE_IN("DINE_IN");
+    INVOICE("INVOICE");
 
     private final String targetType;
 
@@ -32,10 +31,8 @@ public enum PaymentTargetType {
         String normalized = StringUtil.toUnderscoredEnum(value).toUpperCase();
 
         return switch (normalized) {
-            case "ORDER" -> ORDER;
-            case "DINEIN" -> DINE_IN;
-            case "DINE_IN" -> DINE_IN;
-            default -> throw new BadRequestException( 
+            case "INVOICE" -> INVOICE;
+            default -> throw new BadRequestException(
                 "Invalid payment target: '" + value + "'. Allowed: " + allowedValues()
             );
         };

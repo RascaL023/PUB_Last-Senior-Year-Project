@@ -10,4 +10,12 @@
     </parent>
     <artifactId>dining-api</artifactId>
     <packaging>jar</packaging>
+
+    <dependencies>
+        <!-- Order API (item snapshot contract untuk dining event) -->
+        <dependency>
+            <groupId>id.my.rascal</groupId>
+            <artifactId>order-api</artifactId>
+        </dependency>
+    </dependencies>
 </project>

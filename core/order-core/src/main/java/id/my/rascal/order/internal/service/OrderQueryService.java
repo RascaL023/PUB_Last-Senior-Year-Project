@@ -3,8 +3,8 @@ package id.my.rascal.order.internal.service;
 import id.my.rascal.common.exception.NotFoundException;
 import id.my.rascal.common.util.StringUtil;
 import id.my.rascal.order.api.OrderApiResponse;
+import id.my.rascal.order.api.event.dto.OrderItemSnapshot;
 import id.my.rascal.order.internal.entity.Order;
-import id.my.rascal.order.internal.model.enums.OrderPaidStatus;
 import id.my.rascal.order.internal.model.enums.OrderStatus;
 import id.my.rascal.order.internal.model.mapper.OrderMapper;
 import id.my.rascal.order.internal.model.response.OrderResponse;
@@ -52,14 +52,27 @@ public class OrderQueryService {
     }
 
     @Transactional(readOnly = true)
+    public List<OrderItemSnapshot> findActiveOrderItems(Long orderId) {
+        return findActiveOrder(orderId).getOrderItems().stream()
+            .map(item -> new OrderItemSnapshot(
+                item.getId(),
+                item.getMenuId(),
+                item.getItemName(),
+                item.getQuantity(),
+                item.getUnitPrice(),
+                item.getSubtotal()
+            ))
+            .toList();
+    }
+
+    @Transactional(readOnly = true)
     public Page<OrderResponse> searchActive(
         String keyword,
         OrderStatus status,
-        OrderPaidStatus paidStatus,
         Pageable pageable
     ) {
         return orderRepository
-            .searchActive(StringUtil.normalizeSearch(keyword), status, paidStatus, pageable)
+            .searchActive(StringUtil.normalizeSearch(keyword), status, pageable)
             .map(OrderMapper::toResponse);
     }
 
