@@ -22,6 +22,12 @@
             <artifactId>spring-boot</artifactId>
         </dependency>
 
+        <!-- Logging API untuk exception handler (versi dikelola parent Boot) -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-context</artifactId>

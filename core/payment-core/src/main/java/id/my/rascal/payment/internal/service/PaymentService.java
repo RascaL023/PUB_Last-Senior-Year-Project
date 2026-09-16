@@ -3,9 +3,6 @@ package id.my.rascal.payment.internal.service;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -32,8 +29,6 @@ import id.my.rascal.payment.internal.repository.PaymentRepository;
 
 @Service
 public class PaymentService {
-
-    private static final Logger log = LoggerFactory.getLogger(PaymentService.class);
     private final PaymentRepository paymentRepository;
     private final PaymentStatusFlowPolicy paymentStatusFlowPolicy;
     private final PaymentProcessorResolver paymentProcessorResolver;
@@ -72,22 +67,15 @@ public class PaymentService {
         String externalId = "INV-" + UUID.randomUUID();
 
         PaymentProcessor processor = paymentProcessorResolver.resolve(request.paymentProvider().toString());
-        PaymentProcessorResponse processorResponse;
-        try {
-             processorResponse = processor.process(
-                new PaymentProcessorRequest(
-                    billedAmount,
-                    "IDR",
-                    target.reference(),
-                    externalId,
-                    null, null
-                )
-            );
-        } catch (Exception e) {
-            // Mark failed?
-            log.error(e.getMessage());
-            throw new BadRequestException(e.getMessage());
-        }
+        PaymentProcessorResponse processorResponse = processor.process(
+            new PaymentProcessorRequest(
+                billedAmount,
+                "IDR",
+                target.reference(),
+                externalId,
+                null, null
+            )
+        );
 
         return transactionTemplate.execute(status ->
             persistCreatedPayment(request, target, externalId, processor, processorResponse)

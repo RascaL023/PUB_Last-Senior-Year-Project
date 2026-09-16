@@ -28,7 +28,7 @@ public class XenditPaymentProcessor implements PaymentProcessor {
         try {
             return xenditService.initPayment(request);
         } catch (XenditClientException e) {
-            throw new BadRequestException(e.getMessage());
+            throw new BadRequestException("Payment provider initialization failed");
         }
     }
 

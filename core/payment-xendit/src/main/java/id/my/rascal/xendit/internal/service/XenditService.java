@@ -86,7 +86,7 @@ public class XenditService {
                 invoiceResponse.amount()
             );
         } catch (XenditClientException ex) {
-            throw new XenditClientException("Failed to initialize Xendit payment: " + ex.getMessage());
+            throw new XenditClientException("Failed to initialize Xendit payment", ex);
         }
     }
 

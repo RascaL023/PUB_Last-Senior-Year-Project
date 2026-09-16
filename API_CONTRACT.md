@@ -1,6 +1,6 @@
 # API Contract — Backend Modular Monolith
 
-> Spesifikasi API lengkap untuk integrasi frontend, diverifikasi langsung dari source code per **8 September 2026**.
+> Spesifikasi API lengkap untuk integrasi frontend, diverifikasi langsung dari source code per **16 September 2026** — menyertakan: payment menarget invoice (tanpa refund), masking error, dan matriks otorisasi fine-grained per endpoint.
 
 ---
 
@@ -104,6 +104,17 @@ Default sort per modul: orders, payments, dan dinings memakai `createdAt,desc`; 
 ```
 
 > Nilai `message` berbeda-beda di tiap endpoint (misalnya `"Menu successfully created"`), jadi jadikan `isSuccess` dan HTTP status sebagai acuan utama, bukan teks message.
+
+> **Kebijakan masking error (berlaku sejak 2026-09-16):** pesan error hanya dijamin untuk kondisi yang *ditulis sadar* oleh kode (guard bisnis, validasi, enum tidak valid — mis. `"Payment amount exceeds remaining amount"`, `"Tagihan belum lunas (INV-...)"`). Kegagalan infrastruktur **tidak bocor ke response** — klien menerima pesan generik; detail penuh + stacktrace hanya di log server.
+>
+> | Kondisi | HTTP / `errorCode` | `message` yang diterima klien |
+> |---|---|---|
+> | Guard bisnis & validasi (authored) | sesuai kondisi | pesan apa adanya |
+> | Body JSON tidak terbaca | 400 / `MALFORMED_JSON` | generik: *"Request body is malformed or not readable JSON."* |
+> | Pelanggaran constraint DB (duplikat/FK/not-null) | 409 / `DUPLICATE_ENTRY` | generik: *"The request conflicts with existing data."* |
+> | Kegagalan tak terduga (catch-all) | 500 / `INTERNAL_SERVER_ERROR` | generik: *"An unexpected error occurred. Please try again later."* |
+>
+> Konsekuensi untuk FE: branch on `isSuccess` + status + `errorCode` — **jangan** match teks `message` untuk baris generik di atas. Saat melapor bug, sertakan `meta.timestamp` supaya bisa dicocokkan dengan log server.
 
 ---
 
@@ -425,23 +436,69 @@ Login ────────────────────────�
 
 ## 5. Matriks Otorisasi
 
-| Endpoint | Auth Required | Authority |
+> Diverifikasi dari anotasi `@PreAuthorize` di tiap controller (September 2026).
+> **Tidak ada lagi endpoint domain yang "cukup login"** — seluruh controller domain
+> (order, payment, invoice, dining, table, menu, report) memakai fine-grained authority.
+> Pola: `x.action` atau wildcard `x.*`. Kecocokan diambil dari claims `authorities` di access token.
+
+### 5.1 Publik (tanpa token)
+
+| Endpoint | Catatan |
+|---|---|
+| `POST /auths/login` | |
+| `POST /auths/refresh` | Hanya cookie |
+| `POST /customers/register` | Registrasi member + akun |
+| `GET /menus`, `GET /menus/{id}`, `GET /v2/menus`, `GET /v2/menus/{id}` | Katalog publik (permitAll di SecurityConfig) |
+| `POST /payments/webhooks/xendit` | Server-to-server |
+| `POST /images/imagekit/webhooks` | Server-to-server |
+| `POST /auths/logout` | Cookie opsional — boleh tanpa token |
+
+### 5.2 Endpoint terautentikasi (Bearer)
+
+| Endpoint | Authority |
+|---|---|
+| `POST /auths/logout-all` | Cukup login |
+| `CRUD /auths/users` | Cukup login |
+| `CRUD /auths/roles` | `role.create` / `role.read` / `role.update` / `role.delete` / `role.*` |
+| `GET/DELETE /auths/authorities` | `authority.read` / `authority.delete` / `authority.*` |
+| `GET /auths/authorities/{id}` | `authority.create` / `authority.*` (quirk, memang begitu di kode) |
+
+### 5.3 Domain
+
+| Modul | Operasi | Authority |
 |---|---|---|
-| `POST /auths/login` | Tidak | — |
-| `POST /customers/register` | Tidak | — |
-| `POST /auths/refresh` | Tidak (hanya cookie) | — |
-| `POST /auths/logout` | Cookie (boleh kosong) | — |
-| `POST /auths/logout-all` | Ya (Bearer) | — |
-| `POST /payments/webhooks/xendit` | Tidak (server-to-server) | — |
-| `POST /images/imagekit/webhooks` | Tidak (server-to-server) | — |
-| `CRUD /auths/users` | Ya | Cukup login |
-| `GET/DELETE /auths/authorities` | Ya | `authority.read` / `authority.delete` / `authority.*` |
-| `GET /auths/authorities/{id}` | Ya | `authority.create` / `authority.*` (quirk, lihat bawah) |
-| `CRUD /auths/roles` | Ya | `role.create` / `role.read` / `role.update` / `role.delete` / `role.*` |
-| Menu V1/V2 — `GET /`, `GET /{id}` | Tidak | Public (permitAll di SecurityConfig, tanpa token) |
-| Menu (V1, V2, admin, categories, modifiers), Order, Payment, Dining, Table, Images — operasi lainnya | Ya | Cukup login |
-| `GET/POST /invoices` dkk | Ya | `invoice.create` / `invoice.read` / `invoice.update` / `invoice.delete` / `invoice.*` |
-| `GET /reports/dashboard/summary` | Ya | `report.read` (tanpa wildcard — hanya ADMIN & CASHIER) |
+| **Orders** | `POST /` (create), `PUT/PATCH/{id}`, `confirm`, `cancel` | `order.create` / `order.update` / `order.*` |
+| | `GET /`, `GET /{id}` | `order.read` / `order.*` |
+| | `prepare` | `order.mark.preparing` / `order.*` |
+| | `ready` | `order.mark.ready` / `order.*` |
+| | `complete` | `order.mark.completed` / `order.*` |
+| | `DELETE /{id}` | `order.delete` / `order.*` |
+| **Payments** | `POST /`, `GET /`, `GET /{id}`, `expire`, `fail` | `payment.create` / `payment.read` / `payment.update` / `payment.*` (per operasi) |
+| **Invoices** | `POST /`, `GET /`, `GET /{id}`, `void`, `DELETE /{id}` | `invoice.create` / `invoice.read` / `invoice.update` / `invoice.delete` / `invoice.*` (per operasi) |
+| **Dining** | `POST /` (open), `POST /{id}/orders`, `POST /{id}/close` | `dining.create` / `dining.update` / `dining.*` |
+| | `GET /`, `GET /{id}` | `dining.read` / `dining.*` |
+| **Tables** | CRUD | `table.create` / `table.read` / `table.update` / `table.delete` / `table.*` |
+| **Menus V1/V2** | `POST /`, `PUT /{id}`, `PATCH restore`, `DELETE` | `menu.create` / `menu.update` / `menu.delete` / `menu.*` |
+| **Categories** | CRUD | `menu-category.create` / `menu-category.read` / `menu-category.update` / `menu-category.delete` / `menu-category.*` |
+| **Modifiers** | CRUD | `menu-modifier.create` / `menu-modifier.read` / `menu-modifier.update` / `menu-modifier.delete` / `menu-modifier.*` |
+| **Admin menus** | `GET /admin/menus/*` | Cukup login |
+| **Image upload auth** | `GET /images/auth` | `image.create` / `image.*` ⚠️ |
+| **Reports** | `GET /reports/dashboard/summary` | `report.read` — **tanpa wildcard**, hanya ADMIN & CASHIER |
+
+> ⚠️ **Quirk upload gambar:** endpoint `GET /images/auth` menuntut `image.create`, tetapi seeder hanya memberi `image.read` ke kasir/waiter/kitchen — jadi di dev, **hanya admin yang bisa upload gambar**. Kalau FE butuh kasir upload, ubah seeder (kasir + `image.create`) atau anotasi controller — jangan di FE.
+
+### 5.4 Peta authority per role dev (untuk gating UI)
+
+Ringkasan `DevRoleSeeder` — ini yang benar-benar dimiliki tiap role:
+
+| Role | Authority yang relevan untuk UI |
+|---|---|
+| **ADMIN** | Semuanya (`AuthorityCatalog.names()`) |
+| **CASHIER** | `order.create/read/update`, `payment.create/read/update`, `invoice.read/update`, `dining.read`, `table.read`, `menu.read`, `menu-category.read`, `menu-modifier.read`, `customer.create/read/update`, `image.read`, `report.read` |
+| **WAITER** | `order.create/read/update` + `order.mark.completed`, `dining.create/read/update`, `table.create/read/update`, `customer.read`, `payment.read`, `menu.read`, `menu-category.read`, `menu-modifier.read`, `image.read` |
+| **KITCHEN** | `order.read`, `order.mark.preparing`, `order.mark.ready`, `kitchen.read/update`, `menu.read`, `image.read` |
+
+Konsekuensi praktis: kasir **tidak** punya `invoice.create`/`invoice.delete` (invoice dining dibuat otomatis oleh backend; void/delete khusus admin), kasir **tidak** punya `order.delete`/`order.mark.*` (kitchen/waiter), dan dashboard (`report.read`) hanya kasir + admin.
 
 > Quirk yang perlu diketahui: `GET /auths/authorities/{id}` membutuhkan authority `authority.create` (bukan `read`) karena anotasi di implementasi backend memakai nilai tersebut. Anotasi `@PreAuthorize` pada `GET` menu V1/V2 di-comment dan endpoint-nya di-`permitAll` di `SecurityConfig`, jadi pembacaan menu bersifat public; endpoint menu lainnya cukup login.
 
@@ -929,7 +986,7 @@ Pada contoh di atas, baris `id: 1` di-update, baris baru (`menuId: 2`) ditambahk
 
 ### K. Payments (`/api/v1/payments`)
 
-Membutuhkan login, kecuali webhook.
+Membutuhkan login + authority payment (`payment.create` untuk create, `payment.read` untuk baca, `payment.update` untuk expire/fail), kecuali webhook.
 
 #### Status Flow Payment
 
@@ -1293,7 +1350,7 @@ Catatan penting:
 |---|---|---|
 | `BAD_REQUEST` | 400 | Input tidak valid atau request malformed (termasuk PATCH kosong, ID tidak valid, pelanggaran flow order/payment) |
 | `INVALID_ARGUMENT` | 400 | Argumen tidak valid — biasanya enum salah tulis; pesan error menyebutkan nilai yang diperbolehkan |
-| `MALFORMED_JSON` | 400 | JSON body tidak bisa di-parse |
+| `MALFORMED_JSON` | 400 | JSON body tidak bisa di-parse — **message generik**; detail parse hanya di log server |
 | `MISSING_PARAMETER` | 400 | Parameter wajib tidak dikirim |
 | (validasi, `errorCode: null`) | 400 | Validasi gagal — detail per field ada di array `errors` |
 | `UNAUTHORIZED` | 401 | Token tidak valid, kedaluwarsa, tidak ada, atau `"Refresh token is missing"` |
@@ -1305,8 +1362,10 @@ Catatan penting:
 | `METHOD_NOT_ALLOWED` | 405 | HTTP method tidak didukung untuk path tersebut |
 | `UNSUPPORTED_MEDIA_TYPE` | 415 | Content-Type tidak didukung (kirim `application/json`) |
 | `CONFLICT` | 409 | Konflik data |
-| `DUPLICATE_ENTRY` | 409 | Data duplikat di database (misalnya email atau nama role ganda) |
-| `INTERNAL_SERVER_ERROR` | 500 | Error tak terduga di server |
+| `DUPLICATE_ENTRY` | 409 | Pelanggaran constraint DB (duplikat/FK/not-null) — **message generik**; nama constraint & detail hanya di log server |
+| `INTERNAL_SERVER_ERROR` | 500 | Error tak terduga — **message selalu generik**; detail + stacktrace hanya di log server (saat melapor bug, sertakan `meta.timestamp`) |
+
+> Kebijakan masking lengkap: lihat §3.C. Intinya: `message` dijamin akurat untuk kondisi yang ditulis sadar kode (guard bisnis, validasi, enum); baris bertanda generik di atas **bukan untuk di-match** FE — branch on `isSuccess` + status + `errorCode`.
 
 ---
 
@@ -1406,7 +1465,7 @@ POST   /api/v1/orders/{id}/ready
 POST   /api/v1/orders/{id}/complete
 POST   /api/v1/orders/{id}/cancel
 
-PAYMENTS (pay/PUT/PATCH/DELETE = DISABLED)
+PAYMENTS (tanpa refund; pay/PUT/PATCH/DELETE DISABLED)
 POST   /api/v1/payments
 GET    /api/v1/payments?page=&size=&keyword=&invoiceId=&status=&paymentProvider=
 GET    /api/v1/payments/{id}
