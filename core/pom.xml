@@ -59,6 +59,9 @@
         <module>report-core</module>
         <module>employee-api</module>
         <module>employee-core</module>
+        <module>notification-api</module>
+        <module>notification-core</module>
+        <module>notification-resend</module>
         <module>core-app</module>
     </modules>
 
@@ -198,6 +201,22 @@
             <dependency>
                 <groupId>id.my.rascal</groupId>
                 <artifactId>report-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>id.my.rascal</groupId>
+                <artifactId>notification-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>id.my.rascal</groupId>
+                <artifactId>notification-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>id.my.rascal</groupId>
+                <artifactId>notification-resend</artifactId>
                 <version>${project.version}</version>
             </dependency>
 

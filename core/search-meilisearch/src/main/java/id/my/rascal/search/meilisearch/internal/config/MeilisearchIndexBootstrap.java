@@ -5,6 +5,7 @@ import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.http.MediaType;
@@ -25,7 +26,10 @@ public class MeilisearchIndexBootstrap {
     private final List<SearchIndexInitializer> initializers;
     private final RestClient client;
 
-    public MeilisearchIndexBootstrap(RestClient client, List<SearchIndexInitializer> initializers) {
+    public MeilisearchIndexBootstrap(
+        @Qualifier("meilisearchRestClient") RestClient client, 
+        List<SearchIndexInitializer> initializers
+    ) {
         this.client = client;
         this.initializers = initializers;
     }

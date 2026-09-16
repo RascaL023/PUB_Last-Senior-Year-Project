@@ -22,6 +22,12 @@
             <artifactId>auth-api</artifactId>
         </dependency>
 
+        <!-- Notification API -->
+        <dependency>
+            <groupId>id.my.rascal</groupId>
+            <artifactId>notification-api</artifactId>
+        </dependency>
+
         <!-- Starter Web -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

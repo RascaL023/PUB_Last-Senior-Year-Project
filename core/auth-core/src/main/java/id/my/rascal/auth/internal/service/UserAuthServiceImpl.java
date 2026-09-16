@@ -149,6 +149,16 @@ public class UserAuthServiceImpl implements UserAuthService {
         userAuthRepository.save(userAuth);
     }
 
+    @Override
+    @Transactional
+    public void updatePassword(Long userId, String newPassword) {
+        UserAuth userAuth = validateAndGetUserById(userId);
+        if (newPassword == null || newPassword.length() < 8)
+            throw new BadRequestException("Password must be at least 8 characters");
+        userAuth.setHashedPassword(passwordEncoder.encode(newPassword));
+        userAuthRepository.save(userAuth);
+    }
+
     private UserAuth validateAndGetUserById(Long id) {
         return userAuthRepository.findActiveById(id)
             .orElseThrow(() -> new NotFoundException("User not found with id: " + id));

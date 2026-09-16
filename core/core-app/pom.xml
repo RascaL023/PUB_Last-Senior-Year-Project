@@ -91,9 +91,20 @@
             <groupId>id.my.rascal</groupId>
             <artifactId>report-core</artifactId>
         </dependency>
+
         <dependency>
             <groupId>id.my.rascal</groupId>
             <artifactId>report-api</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>id.my.rascal</groupId>
+            <artifactId>notification-core</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>id.my.rascal</groupId>
+            <artifactId>notification-resend</artifactId>
         </dependency>
 
         <dependency>

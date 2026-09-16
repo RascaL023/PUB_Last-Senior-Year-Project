@@ -8,8 +8,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.util.Collection;
-import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -25,7 +23,7 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
     boolean existsActiveById(@Param("id") Long id);
 
     @Query("""
-        select c.id from Customer c
+        select c from Customer c
         where c.deletedAt is null
         and (
             :keyword is null or :keyword = ''
@@ -34,9 +32,6 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
             or lower(c.phone) like lower(concat('%', cast(:keyword as string), '%'))
         )
     """)
-    Page<Long> findSearchIds(@Param("keyword") String keyword, Pageable pageable);
-
-    @Query("select c from Customer c where c.id in :ids and c.deletedAt is null")
-    List<Customer> findAllActiveByIds(@Param("ids") Collection<Long> ids);
+    Page<Customer> search(@Param("keyword") String keyword, Pageable pageable);
 
 }

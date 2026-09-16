@@ -2,6 +2,7 @@ package id.my.rascal.customer.internal.model.request;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 public record CustomerRegisterRequest(
@@ -18,5 +19,12 @@ public record CustomerRegisterRequest(
     String password,
 
     @Size(max = 20, message = "Phone must be at most 20 characters")
-    String phone
+    @Pattern(
+        regexp = "^(\\+62|62|0)8[1-9][0-9]{6,10}$", 
+        message = "Invalid phone number (e.g: 08123456789)"
+    )
+    String phone,
+
+    @Size(max = 500, message = "Notes must be at most 500 characters")
+    String notes
 ) {}

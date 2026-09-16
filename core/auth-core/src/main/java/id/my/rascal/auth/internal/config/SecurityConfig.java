@@ -46,10 +46,12 @@ public class SecurityConfig {
                 .requestMatchers(
                     "/api/v1/auths/login",
                     "/api/v1/auths/refresh",
+                    "/api/v1/auths/forgot-password",
+                    "/api/v1/auths/reset-password",
                     "/api/v1/payments/webhooks/xendit",
-                    "/api/v1/images/imagekit/webhooks"
+                    "/api/v1/images/imagekit/webhooks",
+                    "/api/v1/customers/register"
                 ).permitAll()
-                .requestMatchers(HttpMethod.POST, "/api/v1/customers/register").permitAll()
                 .requestMatchers(HttpMethod.GET,
                     "/api/v1/menus",
                     "/api/v1/menus/{id}",

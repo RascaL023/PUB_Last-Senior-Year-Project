@@ -7,34 +7,59 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import id.my.rascal.auth.api.AuthApi;
+import id.my.rascal.auth.api.CreateAccountRequest;
+import id.my.rascal.auth.api.UserAuthApiResponse;
 import id.my.rascal.common.exception.BadRequestException;
 import id.my.rascal.common.util.StringUtil;
 import id.my.rascal.customer.internal.entity.Customer;
 import id.my.rascal.customer.internal.model.mapper.CustomerMapper;
 import id.my.rascal.customer.internal.model.request.CustomerPatchRequest;
 import id.my.rascal.customer.internal.model.request.CustomerPutRequest;
+import id.my.rascal.customer.internal.model.request.CustomerRegisterRequest;
 import id.my.rascal.customer.internal.model.request.CustomerRequest;
 import id.my.rascal.customer.internal.model.response.CustomerResponse;
 import id.my.rascal.customer.internal.repository.CustomerRepository;
-import id.my.rascal.customer.internal.service.CustomerQueryService;
 
 @Service
 public class CustomerService {
 
+    private static final String CUSTOMER_ROLE = "CUSTOMER_BASE";
+
     private final CustomerRepository customerRepository;
     private final CustomerQueryService customerQueryService;
+    private final AuthApi authApi;
 
-    public CustomerService(CustomerRepository customerRepository, CustomerQueryService customerQueryService) {
+    public CustomerService(
+        CustomerRepository customerRepository, 
+        CustomerQueryService customerQueryService, 
+        AuthApi authApi
+    ) {
         this.customerRepository = customerRepository;
         this.customerQueryService = customerQueryService;
+        this.authApi = authApi;
+    }
+
+    @Transactional
+    public CustomerResponse register(CustomerRegisterRequest request) {
+        String email = requireEmail(request.email());
+
+        UserAuthApiResponse auth = authApi.createAccount(
+            new CreateAccountRequest(
+                email, 
+                request.password(), CUSTOMER_ROLE
+            )
+        );
+
+        Customer customer = buildCustomer(auth.id(), request.name(), email, request.phone());
+        customer.setCreatedAt(LocalDateTime.now());
+
+        return CustomerMapper.toResponse(customerRepository.save(customer));
     }
 
     @Transactional
     public CustomerResponse create(CustomerRequest request) {
-        Customer customer = new Customer();
-        customer.setName(requireName(request.name()));
-        customer.setEmail(normalizeNullable(request.email()));
-        customer.setPhone(normalizePhone(request.phone()));
+        Customer customer = buildCustomer(null, request.name(), normalizeNullable(request.email()), request.phone());
         customer.setNotes(normalizeNullable(request.notes()));
         customer.setCreatedAt(LocalDateTime.now());
 
@@ -45,10 +70,7 @@ public class CustomerService {
     public CustomerResponse update(Long id, CustomerPutRequest request) {
         Customer customer = customerQueryService.findById(id);
 
-        customer.setName(requireName(request.name()));
-        customer.setEmail(normalizeNullable(request.email()));
-        customer.setPhone(normalizePhone(request.phone()));
-        customer.setNotes(normalizeNullable(request.notes()));
+        applyProfile(customer, request.name(), request.phone(), request.notes());
         customer.setUpdatedAt(LocalDateTime.now());
 
         return CustomerMapper.toResponse(customerRepository.save(customer));
@@ -59,7 +81,6 @@ public class CustomerService {
         Customer customer = customerQueryService.findById(id);
 
         request.nameOpt().ifPresent(name -> customer.setName(requireName(name)));
-        request.emailOpt().ifPresent(email -> customer.setEmail(normalizeNullable(email)));
         request.phoneOpt().ifPresent(phone -> customer.setPhone(normalizePhone(phone)));
         request.notesOpt().ifPresent(notes -> customer.setNotes(normalizeNullable(notes)));
         customer.setUpdatedAt(LocalDateTime.now());
@@ -70,6 +91,8 @@ public class CustomerService {
     @Transactional
     public void delete(Long id) {
         Customer customer = customerQueryService.findById(id);
+        if (customer.getUserAuthId() != null)
+            authApi.softDeleteAccount(customer.getUserAuthId());
         customer.setDeletedAt(LocalDateTime.now());
         customerRepository.save(customer);
     }
@@ -80,14 +103,50 @@ public class CustomerService {
     }
 
     @Transactional(readOnly = true)
+    public CustomerResponse getMe(Long userAuthId) {
+        return CustomerMapper.toResponse(customerQueryService.findByUserAuthId(userAuthId));
+    }
+
+    @Transactional
+    public CustomerResponse updateMe(Long userAuthId, CustomerPutRequest request) {
+        Customer customer = customerQueryService.findByUserAuthId(userAuthId);
+
+        applyProfile(customer, request.name(), request.phone(), request.notes());
+        customer.setUpdatedAt(LocalDateTime.now());
+
+        return CustomerMapper.toResponse(customerRepository.save(customer));
+    }
+
+    @Transactional(readOnly = true)
     public Page<CustomerResponse> search(String keyword, Pageable pageable) {
         return customerQueryService.search(keyword, pageable).map(CustomerMapper::toResponse);
+    }
+
+    private Customer buildCustomer(Long userAuthId, String name, String email, String phone) {
+        Customer customer = new Customer();
+        customer.setUserAuthId(userAuthId);
+        customer.setName(requireName(name));
+        customer.setEmail(email);
+        customer.setPhone(normalizePhone(phone));
+        return customer;
+    }
+
+    private void applyProfile(Customer customer, String name, String phone, String notes) {
+        customer.setName(requireName(name));
+        customer.setPhone(normalizePhone(phone));
+        customer.setNotes(normalizeNullable(notes));
     }
 
     private String requireName(String name) {
         if (StringUtil.safeIsBlank(name) || name.trim().length() < 3)
             throw new BadRequestException("Name must be 3-50 characters");
         return StringUtil.normalizeSpaces(name);
+    }
+
+    private String requireEmail(String email) {
+        if (StringUtil.safeIsBlank(email))
+            throw new BadRequestException("Email is required");
+        return StringUtil.normalizeSpaces(email).trim().toLowerCase();
     }
 
     private String normalizeNullable(String value) {

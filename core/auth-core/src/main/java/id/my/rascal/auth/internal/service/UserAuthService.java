@@ -15,4 +15,6 @@ public interface UserAuthService {
     UserAuthResponse update(Long id, UserAuthPutRequest request);
     UserAuthResponse update(Long id, UserAuthPatchRequest request);
     void delete(Long id);
+
+    void updatePassword(Long userId, String newPassword);
 }

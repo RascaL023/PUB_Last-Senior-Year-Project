@@ -115,3 +115,22 @@ Content-Type: application/json
 ### Delete
 DELETE {{baseUrl}}/auths/users/1
 Authorization: Bearer {{token}}
+
+
+###### PASSWORD RESET ######
+### Forgot Password
+POST {{baseUrl}}/auths/forgot-password
+Content-Type: application/json
+
+{
+    "email": "admin@rascal.id"
+}
+
+### Reset Password (token format: {userId}_{rawToken} from email link, successful reset revokes all sessions)
+POST {{baseUrl}}/auths/reset-password
+Content-Type: application/json
+
+{
+    "token": "{USER_ID}_{YOUR_RESET_TOKEN}",
+    "newPassword": "newpassword123"
+}

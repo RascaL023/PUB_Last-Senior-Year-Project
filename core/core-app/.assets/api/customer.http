@@ -1,74 +1,72 @@
-###### CUSTOMERS — modul customer (CustomerController) ######
-### Base: {{baseUrl}}/customers
-### Member loyalty + snapshot nama di order (orders.customerId → customers.id).
-### Guest tetap bisa order dengan customerId=null.
-### CATATAN: DTO CustomerRegisterRequest / CustomerClaimRequest ada di kode
-### tapi route POST /register dan POST /{id}/claim BELUM ADA di controller
-### saat ini — jangan coba sebelum diimplementasikan.
-
-### Create member (tanpa login-akun) — authority customer.create
-POST {{baseUrl}}/customers
-Authorization: Bearer {{token}}
+###### CUSTOMER SELF-SERVICE ######
+### Register (public, creates auth account + customer profile)
+POST {{baseUrl}}/customers/register
 Content-Type: application/json
 
 {
     "name": "Budi Santoso",
     "email": "budi@example.com",
-    "phone": "081234567890",
-    "notes": "Langganan kopi tubruk"
+    "password": "password123",
+    "phone": "081234567890"
 }
 
-### Search active or GetAll — authority customer.read
-### filter: keyword (name/email/phone); default sort createdAt,desc
+### Get My Profile
+GET {{baseUrl}}/customers/me
+Authorization: Bearer {{token}}
+
+### Update My Profile
+PUT {{baseUrl}}/customers/me
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "name": "Budi Santoso",
+    "phone": "081234567890",
+    "notes": "Alergi kacang"
+}
+
+
+###### CUSTOMER STAFF (cashier/admin) ######
+### Create Guest (no login account)
+POST {{baseUrl}}/customers
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "name": "Tamu Walk-in",
+    "email": "tamu@example.com",
+    "phone": "081234567891",
+    "notes": "Dine-in meja 5"
+}
+
+### Search active or GetAll
 GET {{baseUrl}}/customers?keyword=budi
 Authorization: Bearer {{token}}
 
-### Search - pagination
-GET {{baseUrl}}/customers?page=0&size=5&sort=createdAt,desc
-Authorization: Bearer {{token}}
-
-### Get by ID — authority customer.read
+### Get by ID
 GET {{baseUrl}}/customers/1
 Authorization: Bearer {{token}}
 
-### Full update (PUT) — authority customer.update, profil saja (tidak mengubah akun)
+### Update
 PUT {{baseUrl}}/customers/1
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
     "name": "Budi Santoso",
-    "email": "budi@example.com",
     "phone": "081234567890",
-    "notes": "Langganan kopi tubruk"
+    "notes": "Member gold"
 }
 
-### Partial update (PATCH) — authority customer.update, minimal satu field terisi
+### Patch
 PATCH {{baseUrl}}/customers/1
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-    "phone": "081999888777"
+    "phone": "081234567899"
 }
 
-### Delete (soft delete) — authority customer.delete, response 204; akun auth_users tidak ikut terhapus
+### Delete (also soft-deletes linked auth account)
 DELETE {{baseUrl}}/customers/1
 Authorization: Bearer {{token}}
-
-
-### ========================================
-### VALIDATION
-### ========================================
-
-### Get by ID - not found (404)
-GET {{baseUrl}}/customers/999
-Authorization: Bearer {{token}}
-
-### Patch kosong (400 "PATCH can't be empty")
-PATCH {{baseUrl}}/customers/1
-Authorization: Bearer {{token}}
-Content-Type: application/json
-
-{
-}
