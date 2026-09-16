@@ -25,11 +25,6 @@ import id.my.rascal.report.api.DashboardSummaryApiResponse.RecentActivityEntry;
 import id.my.rascal.report.api.DashboardSummaryApiResponse.Sales;
 import id.my.rascal.report.api.DashboardSummaryApiResponse.TopMenuEntry;
 
-/**
- * Report adalah <b>pembaca langsung</b>: tidak ada tabel projection dan tidak ada listener event.
- * Semua angka diambil saat request dari fakta yang sudah dimiliki domain lain
- * (invoice = tagihan, payment = kas, order/dining = operasional) lewat contract.
- */
 @Service
 public class ReportServiceImpl implements ReportService {
 
@@ -65,7 +60,6 @@ public class ReportServiceImpl implements ReportService {
 
         if (toDate.isBefore(fromDate))
             throw new BadRequestException("'to' date must not be before 'from' date");
-        // B12: periode masa depan bukan "tidak ada penjualan" — tolak biar tidak disalahbaca.
         if (fromDate.isAfter(today))
             throw new BadRequestException("'from' date must not be in the future");
 
@@ -110,11 +104,6 @@ public class ReportServiceImpl implements ReportService {
         );
     }
 
-    /**
-     * Label menu diambil dari master menu (bukan snapshot deskripsi tagihan) supaya nama yang
-     * tampil adalah nama yang sekarang dikenal; deskripsi tagihan dipakai sebagai fallback bila
-     * menu sudah tidak ada / baris tagihan manual.
-     */
     private List<TopMenuEntry> toTopMenus(List<InvoiceReportApi.MenuSalesRow> rows) {
         if (rows.isEmpty()) return List.of();
 
@@ -142,10 +131,6 @@ public class ReportServiceImpl implements ReportService {
             .toList();
     }
 
-    /**
-     * Order tidak menyimpan status bayar — status billing tiap order diambil dari invoice aktif
-     * lewat satu query batch (hindari N+1).
-     */
     private List<RecentActivityEntry> withBillingStatus(List<OrderReportApi.RecentActivityEntry> orders) {
         if (orders.isEmpty()) return List.of();
 
