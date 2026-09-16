@@ -10,7 +10,6 @@ import id.my.rascal.order.internal.model.enums.OrderStatus;
 import id.my.rascal.order.internal.model.report.OrderRecentActivityProjection;
 import jakarta.persistence.EntityManager;
 
-// Read only — agregasi untuk report-core lewat OrderReportApi.
 @Repository
 public class OrderReportRepository {
 

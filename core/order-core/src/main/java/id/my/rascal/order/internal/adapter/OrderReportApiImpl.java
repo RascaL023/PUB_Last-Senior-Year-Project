@@ -6,7 +6,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import id.my.rascal.order.api.OrderReportApi;
-import id.my.rascal.order.api.OrderReportApi.RecentActivityEntry;
 import id.my.rascal.order.internal.model.enums.OrderStatus;
 import id.my.rascal.order.internal.repository.OrderReportRepository;
 
