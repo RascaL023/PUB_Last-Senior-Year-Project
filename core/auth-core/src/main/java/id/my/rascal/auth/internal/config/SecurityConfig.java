@@ -50,7 +50,7 @@ public class SecurityConfig {
                     "/api/v1/auths/reset-password",
                     "/api/v1/payments/webhooks/xendit",
                     "/api/v1/images/imagekit/webhooks",
-                    "/api/v1/customers"
+                    "/api/v1/customers/register"
                 ).permitAll()
                 .requestMatchers(HttpMethod.GET,
                     "/api/v1/menus",

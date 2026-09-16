@@ -87,11 +87,11 @@ Content-Type: application/json
     "email": "admin@rascal.id"
 }
 
-### Reset Password
+### Reset Password (token format: {userId}_{rawToken} from email link, successful reset revokes all sessions)
 POST {{baseUrl}}/auths/reset-password
 Content-Type: application/json
 
 {
-    "token": "{YOUR_RESET_TOKEN}",
+    "token": "{USER_ID}_{YOUR_RESET_TOKEN}",
     "newPassword": "newpassword123"
 }

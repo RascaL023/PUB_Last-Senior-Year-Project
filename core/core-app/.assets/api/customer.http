@@ -1,0 +1,72 @@
+###### CUSTOMER SELF-SERVICE ######
+### Register (public, creates auth account + customer profile)
+POST {{baseUrl}}/customers/register
+Content-Type: application/json
+
+{
+    "name": "Budi Santoso",
+    "email": "budi@example.com",
+    "password": "password123",
+    "phone": "081234567890"
+}
+
+### Get My Profile
+GET {{baseUrl}}/customers/me
+Authorization: Bearer {{token}}
+
+### Update My Profile
+PUT {{baseUrl}}/customers/me
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "name": "Budi Santoso",
+    "phone": "081234567890",
+    "notes": "Alergi kacang"
+}
+
+
+###### CUSTOMER STAFF (cashier/admin) ######
+### Create Guest (no login account)
+POST {{baseUrl}}/customers
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "name": "Tamu Walk-in",
+    "email": "tamu@example.com",
+    "phone": "081234567891",
+    "notes": "Dine-in meja 5"
+}
+
+### Search active or GetAll
+GET {{baseUrl}}/customers?keyword=budi
+Authorization: Bearer {{token}}
+
+### Get by ID
+GET {{baseUrl}}/customers/1
+Authorization: Bearer {{token}}
+
+### Update
+PUT {{baseUrl}}/customers/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "name": "Budi Santoso",
+    "phone": "081234567890",
+    "notes": "Member gold"
+}
+
+### Patch
+PATCH {{baseUrl}}/customers/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "phone": "081234567899"
+}
+
+### Delete (also soft-deletes linked auth account)
+DELETE {{baseUrl}}/customers/1
+Authorization: Bearer {{token}}

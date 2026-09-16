@@ -17,6 +17,7 @@ import id.my.rascal.customer.internal.model.mapper.CustomerMapper;
 import id.my.rascal.customer.internal.model.request.CustomerPatchRequest;
 import id.my.rascal.customer.internal.model.request.CustomerPutRequest;
 import id.my.rascal.customer.internal.model.request.CustomerRegisterRequest;
+import id.my.rascal.customer.internal.model.request.CustomerRequest;
 import id.my.rascal.customer.internal.model.response.CustomerResponse;
 import id.my.rascal.customer.internal.repository.CustomerRepository;
 
@@ -50,11 +51,16 @@ public class CustomerService {
             )
         );
 
-        Customer customer = new Customer();
-        customer.setUserAuthId(auth.id());
-        customer.setName(requireName(request.name()));
-        customer.setEmail(email);
-        customer.setPhone(normalizePhone(request.phone()));
+        Customer customer = buildCustomer(auth.id(), request.name(), email, request.phone());
+        customer.setCreatedAt(LocalDateTime.now());
+
+        return CustomerMapper.toResponse(customerRepository.save(customer));
+    }
+
+    @Transactional
+    public CustomerResponse create(CustomerRequest request) {
+        Customer customer = buildCustomer(null, request.name(), normalizeNullable(request.email()), request.phone());
+        customer.setNotes(normalizeNullable(request.notes()));
         customer.setCreatedAt(LocalDateTime.now());
 
         return CustomerMapper.toResponse(customerRepository.save(customer));
@@ -64,9 +70,7 @@ public class CustomerService {
     public CustomerResponse update(Long id, CustomerPutRequest request) {
         Customer customer = customerQueryService.findById(id);
 
-        customer.setName(requireName(request.name()));
-        customer.setPhone(normalizePhone(request.phone()));
-        customer.setNotes(normalizeNullable(request.notes()));
+        applyProfile(customer, request.name(), request.phone(), request.notes());
         customer.setUpdatedAt(LocalDateTime.now());
 
         return CustomerMapper.toResponse(customerRepository.save(customer));
@@ -107,9 +111,7 @@ public class CustomerService {
     public CustomerResponse updateMe(Long userAuthId, CustomerPutRequest request) {
         Customer customer = customerQueryService.findByUserAuthId(userAuthId);
 
-        customer.setName(requireName(request.name()));
-        customer.setPhone(normalizePhone(request.phone()));
-        customer.setNotes(normalizeNullable(request.notes()));
+        applyProfile(customer, request.name(), request.phone(), request.notes());
         customer.setUpdatedAt(LocalDateTime.now());
 
         return CustomerMapper.toResponse(customerRepository.save(customer));
@@ -118,6 +120,21 @@ public class CustomerService {
     @Transactional(readOnly = true)
     public Page<CustomerResponse> search(String keyword, Pageable pageable) {
         return customerQueryService.search(keyword, pageable).map(CustomerMapper::toResponse);
+    }
+
+    private Customer buildCustomer(Long userAuthId, String name, String email, String phone) {
+        Customer customer = new Customer();
+        customer.setUserAuthId(userAuthId);
+        customer.setName(requireName(name));
+        customer.setEmail(email);
+        customer.setPhone(normalizePhone(phone));
+        return customer;
+    }
+
+    private void applyProfile(Customer customer, String name, String phone, String notes) {
+        customer.setName(requireName(name));
+        customer.setPhone(normalizePhone(phone));
+        customer.setNotes(normalizeNullable(notes));
     }
 
     private String requireName(String name) {
