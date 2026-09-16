@@ -4,6 +4,9 @@
 ### Alur: PENDING ──(INTERNAL langsung PAID / webhook Xendit)──> PAID (terminal)
 ###         PENDING ──expire──> EXPIRED | PENDING ──fail──> FAILED
 ### Payment selalu menarget satu invoice (invoiceId) → nominal diteruskan via PaymentSettledEvent.
+### Ini satu-satunya jalur uang (B2 ditutup): tidak ada lagi POST /invoices/{id}/payments.
+### Partial pay: kirim "amount" opsional (1..sisa tagihan); tanpa amount = lunasi seluruh sisa.
+### Guard: satu payment PENDING aktif per invoice (dua QRIS tidak boleh menagih tagihan yang sama).
 ### Field response penting: invoiceId/invoiceNumber, amount (uang masuk),
 ### appliedAmount (nempel ke tagihan), excessAmount (parkir/kembalian), paidAt.
 
@@ -34,6 +37,18 @@ Content-Type: application/json
     "paymentDetail": "QRIS meja 3"
 }
 
+### Create - partial pay: amount opsional, harus ≤ sisa tagihan (400 "Payment amount exceeds remaining amount" bila lebih)
+POST {{baseUrl}}/payments
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "invoiceId": 1,
+    "paymentProvider": "INTERNAL",
+    "paymentDetail": "DP meja 3",
+    "amount": 20000
+}
+
 ### Create - invalid: invoice sudah lunas (400 "Invoice already paid")
 POST {{baseUrl}}/payments
 Authorization: Bearer {{token}}
@@ -43,6 +58,17 @@ Content-Type: application/json
     "invoiceId": 1,
     "paymentProvider": "INTERNAL",
     "paymentDetail": "double pay"
+}
+
+### Create - invalid: sudah ada payment PENDING aktif untuk invoice ini (400 "Invoice already has an active pending payment")
+POST {{baseUrl}}/payments
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "invoiceId": 1,
+    "paymentProvider": "XENDIT",
+    "paymentDetail": "QRIS dobel"
 }
 
 

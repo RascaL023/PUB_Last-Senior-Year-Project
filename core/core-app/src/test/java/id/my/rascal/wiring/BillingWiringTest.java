@@ -192,7 +192,7 @@ class BillingWiringTest {
     @Test
     @Order(5)
     void cashPayment_settlesInvoiceAndRecordsSplit() {
-        paymentService.create(new PaymentRequest(diningInvoiceId, PaymentProvider.INTERNAL, null));
+        paymentService.create(new PaymentRequest(diningInvoiceId, PaymentProvider.INTERNAL, null, null));
 
         InvoiceApiResponse invoice = awaitInvoiceStatus(diningInvoiceId, "PAID");
 

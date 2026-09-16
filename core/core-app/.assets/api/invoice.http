@@ -40,20 +40,6 @@ Content-Type: application/json
 
 
 ### ========================================
-### PAYMENT ON INVOICE (direct apply — kasir manual)
-### ========================================
-
-### Apply payment — amount = uang yang masuk; status invoice → PARTIALLY_PAID / PAID otomatis
-POST {{baseUrl}}/invoices/1/payments
-Authorization: Bearer {{token}}
-Content-Type: application/json
-
-{
-    "amount": 18000
-}
-
-
-### ========================================
 ### VOID & DELETE
 ### ========================================
 
@@ -67,7 +53,6 @@ Authorization: Bearer {{token}}
 DELETE {{baseUrl}}/invoices/1
 Authorization: Bearer {{token}}
 
-
 ### ========================================
 ### VALIDATION
 ### ====================================
@@ -76,21 +61,8 @@ Authorization: Bearer {{token}}
 GET {{baseUrl}}/invoices/999
 Authorization: Bearer {{token}}
 
-### Apply payment — invalid: amount melebihi remaining (400)
-POST {{baseUrl}}/invoices/1/payments
-Authorization: Bearer {{token}}
-Content-Type: application/json
+### CATATAN (B2): tidak ada lagi POST /invoices/{id}/payments.
+### Satu-satunya jalur uang adalah POST /payments (lihat payment.http).
 
-{
-    "amount": 99999999
-}
 
-### Apply payment — invalid: invoice VOID (400 "Cannot apply payment to a VOID invoice")
-POST {{baseUrl}}/invoices/1/payments
-Authorization: Bearer {{token}}
-Content-Type: application/json
-
-{
-    "amount": 5000
-}
 

@@ -41,11 +41,6 @@ public class InvoiceApiImpl implements InvoiceApi {
     }
 
     @Override
-    public InvoiceApiResponse applyPayment(Long invoiceId, Integer amount) {
-        return InvoiceMapper.toApiResponse(invoiceService.applyPayment(invoiceId, amount));
-    }
-
-    @Override
     public boolean hasAppliedPayment(Long orderId) {
         return invoiceQueryService.hasAppliedPayment(orderId);
     }

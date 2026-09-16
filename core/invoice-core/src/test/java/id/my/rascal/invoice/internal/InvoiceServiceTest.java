@@ -25,7 +25,6 @@ import id.my.rascal.dining.api.event.DiningOrderAddedEvent;
 import id.my.rascal.invoice.internal.entity.Invoice;
 import id.my.rascal.invoice.internal.entity.InvoiceItem;
 import id.my.rascal.invoice.internal.entity.InvoiceStatus;
-import id.my.rascal.invoice.internal.model.request.ApplyPaymentRequest;
 import id.my.rascal.invoice.internal.model.request.CreateInvoiceRequest;
 import id.my.rascal.invoice.internal.model.request.InvoiceItemRequest;
 import id.my.rascal.invoice.internal.model.response.InvoiceResponse;
@@ -73,13 +72,13 @@ class InvoiceServiceTest {
         InvoiceResponse created = invoiceService.create(requestOf(null, 101L, 225000));
         stubFindActive(created.id(), 225000, 0);
 
-        InvoiceResponse partial = invoiceService.applyPayment(created.id(), new ApplyPaymentRequest(60000));
+        InvoiceResponse partial = invoiceService.applyPayment(created.id(), 60000);
         assertEquals(60000, partial.paidAmount());
         assertEquals(165000, partial.remainingAmount());
         assertEquals(InvoiceStatus.PARTIALLY_PAID, partial.status());
 
         stubFindActive(created.id(), 225000, 60000);
-        InvoiceResponse paid = invoiceService.applyPayment(created.id(), new ApplyPaymentRequest(165000));
+        InvoiceResponse paid = invoiceService.applyPayment(created.id(), 165000);
         assertEquals(225000, paid.paidAmount());
         assertEquals(0, paid.remainingAmount());
         assertEquals(InvoiceStatus.PAID, paid.status());
@@ -91,7 +90,7 @@ class InvoiceServiceTest {
         stubFindActive(created.id(), 225000, 0);
 
         assertThrows(BadRequestException.class,
-            () -> invoiceService.applyPayment(created.id(), new ApplyPaymentRequest(225001)));
+            () -> invoiceService.applyPayment(created.id(), 225001));
     }
 
     @Test
@@ -100,11 +99,11 @@ class InvoiceServiceTest {
         verify(invoiceEventPublisherService).publishCreated(any(Invoice.class));
 
         stubFindActive(created.id(), 225000, 0);
-        invoiceService.applyPayment(created.id(), new ApplyPaymentRequest(60000));
+        invoiceService.applyPayment(created.id(), 60000);
         verify(invoiceEventPublisherService, never()).publishPaid(any(Invoice.class));
 
         stubFindActive(created.id(), 225000, 60000);
-        invoiceService.applyPayment(created.id(), new ApplyPaymentRequest(165000));
+        invoiceService.applyPayment(created.id(), 165000);
 
         ArgumentCaptor<Invoice> paid = ArgumentCaptor.forClass(Invoice.class);
         verify(invoiceEventPublisherService).publishPaid(paid.capture());

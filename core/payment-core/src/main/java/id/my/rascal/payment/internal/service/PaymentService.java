@@ -61,8 +61,15 @@ public class PaymentService {
     }
 
     public PaymentResponse create(PaymentRequest request) {
+        // B2: POST /payments adalah satu-satunya jalur uang. Partial pay lewat `amount` opsional.
+        if (paymentRepository.existsActivePendingByInvoiceId(request.invoiceId()))
+            throw new BadRequestException("Invoice already has an active pending payment");
+
         ResolvedTarget target = resolveInvoice(request.invoiceId());
         if (target.amount() == null || target.amount() <= 0) throw new BadRequestException("Invoice already paid");
+        if (request.amount() != null && request.amount() > target.amount())
+            throw new BadRequestException("Payment amount exceeds remaining amount");
+        int billedAmount = request.amount() != null ? request.amount() : target.amount();
         String externalId = "INV-" + UUID.randomUUID();
 
         PaymentProcessor processor = paymentProcessorResolver.resolve(request.paymentProvider().toString());
@@ -70,7 +77,7 @@ public class PaymentService {
         try {
              processorResponse = processor.process(
                 new PaymentProcessorRequest(
-                    target.amount(),
+                    billedAmount,
                     "IDR",
                     target.reference(),
                     externalId,
@@ -102,7 +109,8 @@ public class PaymentService {
         payment.setPaymentChannel(processorResponse.paymentChannel());
         payment.setInvoiceId(request.invoiceId());
         payment.setInvoiceNumber(target.reference());
-        payment.setAmount(target.amount());
+        // amount request sudah divalidasi di create() (≤ sisa tagihan); absen = sisa penuh.
+        payment.setAmount(request.amount() != null ? request.amount() : target.amount());
         payment.setPaymentDetail(request.paymentDetail());
         payment.setExternalId(externalId);
 
@@ -155,6 +163,11 @@ public class PaymentService {
         return toResponse(paymentRepository.save(payment));
     }
 
+    /**
+     * Snapshot tagihan untuk pembuatan payment: sisa tagihan + nomor invoice.
+     * B2: pelunasan invoice HANYA terjadi lewat PaymentSettledEvent (listener invoice);
+     * tidak ada lagi penulisan paid_at/settled_amount di luar jalur payment.
+     */
     private ResolvedTarget resolveInvoice(Long invoiceId) {
         InvoiceApiResponse invoice = invoiceApi.getInvoice(invoiceId);
         return new ResolvedTarget(invoice.remainingAmount(), invoice.invoiceNumber());

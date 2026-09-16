@@ -7,7 +7,6 @@ import id.my.rascal.invoice.internal.entity.Invoice;
 import id.my.rascal.invoice.internal.entity.InvoiceItem;
 import id.my.rascal.invoice.internal.entity.InvoiceStatus;
 import id.my.rascal.invoice.internal.model.mapper.InvoiceMapper;
-import id.my.rascal.invoice.internal.model.request.ApplyPaymentRequest;
 import id.my.rascal.invoice.internal.model.request.CreateInvoiceRequest;
 import id.my.rascal.invoice.internal.model.request.InvoiceItemRequest;
 import id.my.rascal.invoice.internal.model.response.InvoiceResponse;
@@ -230,21 +229,20 @@ public class InvoiceService {
         invoiceRepository.save(invoice);
     }
 
+    /**
+     * B2: satu-satunya pemanggil method ini adalah InvoicePaymentEventListener (settlement dari
+     * payment). Tidak ada lagi jalur HTTP untuk mencatat uang langsung di invoice.
+     */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public InvoiceResponse applyPayment(Long id, ApplyPaymentRequest request) {
+    public InvoiceResponse applyPayment(Long id, Integer amount) {
         Invoice invoice = findActiveInvoice(id);
-        invoice.applyPayment(request.amount());
+        invoice.applyPayment(amount);
         Invoice saved = invoiceRepository.save(invoice);
         // Hanya pelunasan penuh yang dipublikasikan: report memakai event ini sebagai
         // pemicu proyeksi menu harian, jadi pembayaran parsial tidak boleh memicunya.
         if (saved.getStatus() == InvoiceStatus.PAID)
             invoiceEventPublisherService.publishPaid(saved);
         return InvoiceMapper.toResponse(saved);
-    }
-
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public InvoiceResponse applyPayment(Long id, Integer amount) {
-        return applyPayment(id, new ApplyPaymentRequest(amount));
     }
 
     @Transactional

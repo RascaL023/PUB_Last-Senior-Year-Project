@@ -31,7 +31,6 @@ import org.springframework.data.domain.PageRequest;
 
 import id.my.rascal.auth.internal.seeder.authority.AuthorityCatalog;
 import id.my.rascal.common.exception.BadRequestException;
-import id.my.rascal.invoice.api.InvoiceApi;
 import id.my.rascal.invoice.internal.entity.InvoiceStatus;
 import id.my.rascal.invoice.internal.model.response.InvoiceResponse;
 import id.my.rascal.invoice.internal.service.InvoiceQueryService;
@@ -87,8 +86,6 @@ class ReportWiringTest {
     private MenuApi menuApi;
     @Autowired
     private OrderService orderService;
-    @Autowired
-    private InvoiceApi invoiceApi;
     @Autowired
     private InvoiceQueryService invoiceQueryService;
     @Autowired
@@ -148,27 +145,33 @@ class ReportWiringTest {
 
     @Test
     @Order(3)
-    void manualInvoicePayment_movesToBillingOnlyNotToCash() {
-        // Pelunasan manual (POST /invoices/{id}/payments) tidak membentuk Payment record.
-        invoiceApi.applyPayment(invoiceId, MANUAL_PARTIAL_AMOUNT);
+    void partialPayment_movesCashAndOutstandingWithoutSettling() {
+        // [B2] Partial pay lewat POST /payments (amount opsional): kas bergerak sebagian,
+        // tagihan belum lunas → belum masuk settledAmount, tapi piutangnya berkurang.
+        paymentService.create(new PaymentRequest(
+            invoiceId, PaymentProvider.INTERNAL, null, MANUAL_PARTIAL_AMOUNT
+        ));
         awaitInvoiceStatus(invoiceId, InvoiceStatus.PARTIALLY_PAID);
 
         DashboardSummaryApiResponse summary = reportService.getDashboardSummary(null, null);
 
-        // Kas tidak bergerak: tidak ada payment yang masuk.
-        assertEquals(0, summary.sales().cash().received());
-        // Tagihan belum lunas, jadi belum masuk settledAmount — tapi piutangnya berkurang.
-        assertEquals(0, summary.sales().billing().settledInvoices());
-        assertEquals(ORDER_AMOUNT - MANUAL_PARTIAL_AMOUNT, summary.sales().billing().outstandingAmount());
-        assertTrue(summary.topMenus().isEmpty(), "pelunasan manual parsial bukan penjualan lunas");
+        Cash cash = summary.sales().cash();
+        assertEquals(MANUAL_PARTIAL_AMOUNT, cash.received());
+
+        Billing billing = summary.sales().billing();
+        assertEquals(0, billing.settledInvoices());
+        assertEquals(0, billing.settledAmount());
+        assertEquals(ORDER_AMOUNT - MANUAL_PARTIAL_AMOUNT, billing.outstandingAmount());
+        assertTrue(summary.topMenus().isEmpty(), "pembayaran parsial bukan penjualan lunas");
         assertEquals("PARTIALLY_PAID", billingStatusOf(summary, orderId));
     }
 
     @Test
     @Order(4)
     void cashPayment_fillsCashAndBillingBases() {
+        // Pelunasan sisa tagihan (tanpa amount = remainingAmount) → invoice PAID.
         PaymentResponse payment = paymentService.create(new PaymentRequest(
-            invoiceId, PaymentProvider.INTERNAL, null
+            invoiceId, PaymentProvider.INTERNAL, null, null
         ));
         paymentId = payment.id();
         assertEquals(CASH_PAYMENT_AMOUNT, payment.amount());
@@ -181,7 +184,7 @@ class ReportWiringTest {
         );
 
         Cash cash = summary.sales().cash();
-        assertEquals(CASH_PAYMENT_AMOUNT, cash.received());
+        assertEquals(ORDER_AMOUNT, cash.received());
 
         Billing billing = summary.sales().billing();
         assertEquals(1, billing.settledInvoices());
@@ -190,9 +193,9 @@ class ReportWiringTest {
         assertEquals(0, billing.outstandingInvoices());
         assertEquals(0, billing.outstandingAmount());
 
-        // Dua basis sengaja berbeda: 20.000 dari pelunasan manual tidak lewat payment,
-        // jadi uang masuk (kas) lebih kecil dari nilai tagihan yang lunas.
-        assertEquals(MANUAL_PARTIAL_AMOUNT, billing.settledAmount() - cash.received());
+        // Dua basis kini bergerak bersama: satu-satunya jalur uang adalah payment (B2 ditutup),
+        // jadi kas terakumulasi (partial 20.000 + pelunasan 30.000) == billing.settledAmount.
+        assertEquals(billing.settledAmount(), cash.received());
 
         TopMenuEntry topMenu = summary.topMenus().get(0);
         assertEquals(MENU_NASI_GORENG, topMenu.menuId().longValue());

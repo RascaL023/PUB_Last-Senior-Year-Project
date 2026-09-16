@@ -2,18 +2,17 @@
 ### JANGAN dipakai untuk flow normal. File ini untuk membuktikan temuan audit
 ### branch shadow (lihat AUDIT-SHADOW-KODE.md) sebelum diperbaiki.
 ### Tiap blok menjelaskan KENAPA JELEK + lokasi kode sumber.
-### Urutan coba yang disarankan: B2 → B5/B7 → B12 → rute mati.
-### (B1/B4/B6/B8 sudah tertutup: refund dihapus dari model.)
+### Urutan coba yang disarankan: B5/B7 → B12 → rute mati.
+### (B1/B2/B4/B6/B8 sudah tertutup: refund dihapus, jalur uang manual ditutup.)
 
 
 ### ========================================
-### B2 (TINGGI) — Jalur uang ganda: pelunasan manual invoice tanpa Payment record
-### Lokasi: invoice-core InvoiceController.applyPayment + DevRoleSeeder (kasir pegang invoice.update)
-### Efek: sales.billing bergerak, sales.cash DIAM → dashboard terlihat "uang hilang".
-### Keputusan yang ditunggu: tutup/ketatkan endpoint ini, atau jadikan koreksi admin saja.
+### B2 (TINGGI) — ✅ TERTUTUP: jalur uang ganda sudah dihapus
+### POST /invoices/{id}/payments tidak ada lagi (404/405). Satu-satunya jalur uang:
+### POST /payments (partial pay lewat "amount" opsional). Coba di bawah — ekspektasi 404/405.
 ### ========================================
 
-### B2: pelunasan manual parsial — kas tidak bergerak, cek dashboard lalu bandingkan sales.cash vs sales.billing
+### B2 (MATI): pelunasan manual invoice
 POST {{baseUrl}}/invoices/1/payments
 Authorization: Bearer {{token}}
 Content-Type: application/json
@@ -21,10 +20,6 @@ Content-Type: application/json
 {
     "amount": 20000
 }
-
-### B2: cek invoice-nya (status berubah, tapi tidak ada Payment record baru di GET /payments?invoiceId=1)
-GET {{baseUrl}}/invoices/1
-Authorization: Bearer {{token}}
 
 
 ### ========================================

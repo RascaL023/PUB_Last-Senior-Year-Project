@@ -6,7 +6,7 @@
 ###   topMenus        ← baris invoice dari invoice yang lunas (sejalan dengan settledAmount)
 ###   operations      ← dining & order
 ###   recentActivity  ← order terbaru + billingStatus dari invoice aktif
-### Pelunasan manual (POST /invoices/{id}/payments) hanya menambah basis billing, bukan kas.
+### Satu-satunya jalur uang adalah POST /payments (B2 ditutup) — kas & billing bergerak dari jalur yang sama.
 GET {{baseUrl}}/reports/dashboard/summary
 Authorization: Bearer {{token}}
 

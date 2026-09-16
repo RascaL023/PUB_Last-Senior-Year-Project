@@ -8,7 +8,6 @@ public interface InvoiceApi {
     InvoiceApiResponse getInvoice(Long id);
     List<InvoiceApiResponse> getInvoices(Collection<Long> ids);
     InvoiceApiResponse getDiningInvoice(Long diningId);
-    InvoiceApiResponse applyPayment(Long invoiceId, Integer amount);
     boolean hasAppliedPayment(Long orderId);
 
 }

@@ -22,6 +22,7 @@ import id.my.rascal.invoice.api.InvoiceApiResponse;
 import id.my.rascal.payment.api.event.PaymentSettledEvent;
 import id.my.rascal.payment.internal.adapter.CashPaymentProcessor;
 import id.my.rascal.payment.internal.component.PaymentEffect;
+import id.my.rascal.payment.internal.entity.Payment;
 import id.my.rascal.payment.internal.component.PaymentProcessorResolver;
 import id.my.rascal.payment.internal.component.PaymentStatusFlowPolicy;
 import id.my.rascal.payment.internal.model.enums.PaymentProvider;
@@ -61,8 +62,9 @@ class PaymentSettlementParityTest {
             900L, "INV-08092026-AAAAAA", null, "OPEN", 58000, 0, 58000,
             LocalDateTime.now(), LocalDateTime.now(), List.of()
         ));
+        when(paymentRepository.existsActivePendingByInvoiceId(900L)).thenReturn(false);
 
-        paymentService.create(new PaymentRequest(900L, PaymentProvider.INTERNAL, null));
+        paymentService.create(new PaymentRequest(900L, PaymentProvider.INTERNAL, null, null));
 
         ArgumentCaptor<PaymentSettledEvent> event = ArgumentCaptor.forClass(PaymentSettledEvent.class);
         verify(eventPublisher).publishEvent(event.capture());
@@ -79,10 +81,54 @@ class PaymentSettlementParityTest {
             900L, "INV-08092026-AAAAAA", null, "PAID", 58000, 58000, 0,
             LocalDateTime.now(), LocalDateTime.now(), List.of()
         ));
+        when(paymentRepository.existsActivePendingByInvoiceId(900L)).thenReturn(false);
 
         org.junit.jupiter.api.Assertions.assertThrows(
             id.my.rascal.common.exception.BadRequestException.class,
-            () -> paymentService.create(new PaymentRequest(900L, PaymentProvider.INTERNAL, null))
+            () -> paymentService.create(new PaymentRequest(900L, PaymentProvider.INTERNAL, null, null))
+        );
+    }
+
+    // [B2] Partial pay: amount opsional membatasi nominal yang ditagih.
+    @Test
+    void partialPayment_billsRequestedAmountNotFullRemaining() {
+        when(invoiceApi.getInvoice(900L)).thenReturn(new InvoiceApiResponse(
+            900L, "INV-08092026-AAAAAA", null, "PARTIALLY_PAID", 50000, 20000, 30000,
+            LocalDateTime.now(), LocalDateTime.now(), List.of()
+        ));
+        when(paymentRepository.existsActivePendingByInvoiceId(900L)).thenReturn(false);
+
+        paymentService.create(new PaymentRequest(900L, PaymentProvider.INTERNAL, null, 10000));
+
+        ArgumentCaptor<Payment> saved = ArgumentCaptor.forClass(Payment.class);
+        verify(paymentRepository).save(saved.capture());
+        assertEquals(10000, saved.getValue().getAmount());
+        assertEquals(900L, saved.getValue().getInvoiceId());
+    }
+
+    // [B2] Partial pay: amount melebihi sisa tagihan ditolak, bukan diparkir.
+    @Test
+    void partialPayment_overRemaining_rejected() {
+        when(invoiceApi.getInvoice(900L)).thenReturn(new InvoiceApiResponse(
+            900L, "INV-08092026-AAAAAA", null, "PARTIALLY_PAID", 50000, 20000, 30000,
+            LocalDateTime.now(), LocalDateTime.now(), List.of()
+        ));
+        when(paymentRepository.existsActivePendingByInvoiceId(900L)).thenReturn(false);
+
+        org.junit.jupiter.api.Assertions.assertThrows(
+            id.my.rascal.common.exception.BadRequestException.class,
+            () -> paymentService.create(new PaymentRequest(900L, PaymentProvider.INTERNAL, null, 30001))
+        );
+    }
+
+    // [B2] Satu payment PENDING aktif per invoice — dua QRIS tidak boleh menagih tagihan yang sama.
+    @Test
+    void pendingPaymentActive_rejectsNewPayment() {
+        when(paymentRepository.existsActivePendingByInvoiceId(900L)).thenReturn(true);
+
+        org.junit.jupiter.api.Assertions.assertThrows(
+            id.my.rascal.common.exception.BadRequestException.class,
+            () -> paymentService.create(new PaymentRequest(900L, PaymentProvider.XENDIT, null, null))
         );
     }
 

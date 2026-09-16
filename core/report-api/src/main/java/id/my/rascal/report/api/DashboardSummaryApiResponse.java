@@ -10,12 +10,12 @@ import java.util.List;
  * <p>Angka finansial dipisah menjadi dua basis yang <b>tidak boleh dicampur</b>:
  * <ul>
  *   <li>{@code sales.cash} — uang yang benar-benar masuk lewat payment
- *       ({@code applied_amount}), jadi hanya jalur {@code POST /payments}.</li>
- *   <li>{@code sales.billing} — nilai tagihan invoice saat lunas ({@code settled_amount}),
- *       termasuk pelunasan yang dicatat langsung di invoice.</li>
+ *       ({@code applied_amount}); satu-satunya jalur uang adalah {@code POST /payments}.</li>
+ *   <li>{@code sales.billing} — nilai tagihan invoice saat lunas ({@code settled_amount}).</li>
  * </ul>
- * Dua angka itu wajar berbeda (mis. pelunasan manual tanpa payment record, atau kelebihan bayar
- * yang diparkir) — makanya tidak pernah digabung menjadi satu "revenue".
+ * Keduanya bergerak dari jalur yang sama (B2 ditutup); selisih normal hanya dari kelebihan
+ * bayar yang diparkir ({@code excess_amount}) atau void — makanya tidak digabung menjadi satu
+ * "revenue".
  */
 public record DashboardSummaryApiResponse(
     Period period,

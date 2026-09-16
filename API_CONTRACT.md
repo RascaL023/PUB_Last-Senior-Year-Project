@@ -943,6 +943,8 @@ Membutuhkan login, kecuali webhook.
 
 Status `PAID` dicapai lewat webhook Xendit atau langsung saat create dengan provider `INTERNAL` (tunai/CASH). Payment yang `PAID` otomatis meneruskan nominalnya ke invoice-nya (`OPEN` → `PARTIALLY_PAID` → `PAID`). Endpoint yang aktif untuk mengubah status secara manual hanya `expire` dan `fail`.
 
+> **B2 ditutup — ini satu-satunya jalur uang.** Tidak ada lagi `POST /invoices/{id}/payments`; satu-satunya cara uang bergerak di invoice adalah melalui Payment record di sini, diteruskan via `PaymentSettledEvent`. Partial pay didukung lewat field `amount` opsional. Guard: hanya ada **satu payment `PENDING` aktif per invoice** (`400 "Invoice already has an active pending payment"`), dan `amount` > sisa ditolak (`400 "Payment amount exceeds remaining amount"`).
+
 | Dari | Ke | Syarat |
 |---|---|---|
 | `PENDING` | `PAID` | Via webhook Xendit |
@@ -974,7 +976,7 @@ Endpoint berikut di-comment di source code dan tidak boleh dipakai: `POST /{id}/
 }
 ```
 
-Ada 3 field: `invoiceId` (wajib, minimal 1 — payment selalu menarget invoice; nominal yang ditagihkan = sisa belum bayar / `remainingAmount`), `paymentProvider` (`INTERNAL` yang berarti tunai/CASH, atau `XENDIT`), dan `paymentDetail` opsional (maksimal 255 karakter). Field seperti `externalId` dan `invoiceUrl` diisi oleh backend, bukan oleh frontend.
+Ada 4 field: `invoiceId` (wajib, minimal 1 — payment selalu menarget invoice), `paymentProvider` (`INTERNAL` yang berarti tunai/CASH, atau `XENDIT`), `paymentDetail` opsional (maksimal 255 karakter), dan `amount` **opsional** (partial pay: minimal 1, maksimal = sisa tagihan; absen/null = lunasi seluruh `remainingAmount`). Field seperti `externalId` dan `invoiceUrl` diisi oleh backend, bukan oleh frontend.
 
 #### PaymentResponse
 
@@ -1160,7 +1162,6 @@ Invoice umumnya **dibuat otomatis oleh backend via event**, bukan oleh frontend:
 | `POST /` | Create manual | `invoice.create` / `invoice.*` | Response `201`; untuk kebutuhan admin — operational flow memakai event |
 | `GET /` | List invoices | `invoice.read` / `invoice.*` | Filter `keyword` (nomor invoice), `status`, `diningId` (tagihan 1 sesi), `orderId` (tagihan order standalone); default `sort=createdAt,desc` |
 | `GET /{id}` | Get by ID | `invoice.read` / `invoice.*` | |
-| `POST /{id}/payments` | Catat pembayaran manual | `invoice.update` / `invoice.*` | Body `{ "amount": 60000 }` (`amount` minimal 1, tidak boleh melebihi sisa) |
 | `POST /{id}/void` | Void invoice | `invoice.update` / `invoice.*` | Hanya dari `OPEN`/`PARTIALLY_PAID`; invoice `PAID` tidak bisa di-void. Setelah void, dining `addOrder` ditolak; close dining diizinkan. |
 | `DELETE /{id}` | Soft delete | `invoice.delete` / `invoice.*` | Tolak jika `PAID`/`PARTIALLY_PAID`. Invoice dining ditolak jika sesi masih `OPEN` (`400` "Tutup sesi dulu..."). |
 
@@ -1248,9 +1249,9 @@ Ketentuan periode:
 
 Catatan penting:
 
-- **Pelunasan manual di invoice** (`POST /invoices/{id}/payments`) tidak membentuk Payment record → hanya menambah basis **billing** (saat invoice lunas) dan mengurangi piutang; `sales.cash` **tidak** bergerak. Untuk kas, pakai `POST /payments` (provider `INTERNAL`).
+- **Satu-satunya jalur uang adalah `POST /payments`** (B2 ditutup): `POST /invoices/{id}/payments` sudah dihapus. Pelunasan invoice HANYA terjadi lewat `PaymentSettledEvent` — tidak ada lagi angka yang bergerak di luar Payment record. Partial pay didukung lewat field `amount` opsional di `POST /payments`.
 - **Refund sudah dihapus dari model** (keputusan MVP): tidak ada `cash.refunded`/`net` maupun `billing.refundedAmount`; invoice dengan pembayaran bersifat permanen, koreksi setelah uang masuk dilakukan di luar sistem.
-- Dua basis bisa berbeda tanpa berarti salah (mis. 50.000 tagihan lunas dengan 20.000 pelunasan manual: kas 30.000, billing 50.000).
+- Dua basis tetap dipisah, tetapi kini bergerak dari jalur yang sama: `sales.cash` menghitung uang (`applied_amount`), `sales.billing` menghitung tagihan (`settled_amount`). Selisih normal yang tersisa hanya dari kelebihan bayar yang diparkir (`excess_amount`) atau void. Selama tidak ada keduanya, `cash.received` == `billing.settledAmount`.
 - Perubahan nama dari versi report lama: `grossRevenue`/`paidOrders`/`unpaidOrders`/`averageOrderValue` digantikan `sales.cash.*` dan `sales.billing.*`.
 
 **Response `200`:**
@@ -1419,7 +1420,6 @@ INVOICES
 POST   /api/v1/invoices
 GET    /api/v1/invoices?page=&size=&keyword=&status=&diningId=&orderId=
 GET    /api/v1/invoices/{id}
-POST   /api/v1/invoices/{id}/payments
 POST   /api/v1/invoices/{id}/void
 DELETE /api/v1/invoices/{id}
 

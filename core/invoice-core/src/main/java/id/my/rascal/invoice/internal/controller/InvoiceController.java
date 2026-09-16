@@ -23,7 +23,6 @@ import id.my.rascal.common.exception.BadRequestException;
 import id.my.rascal.common.template.SuccessPagedTemplate;
 import id.my.rascal.common.template.SuccessTemplate;
 import id.my.rascal.invoice.internal.entity.InvoiceStatus;
-import id.my.rascal.invoice.internal.model.request.ApplyPaymentRequest;
 import id.my.rascal.invoice.internal.model.request.CreateInvoiceRequest;
 import id.my.rascal.invoice.internal.model.response.InvoiceResponse;
 import id.my.rascal.invoice.internal.service.InvoiceQueryService;
@@ -52,20 +51,6 @@ public class InvoiceController {
             HttpStatus.CREATED,
             DEFAULT_CREATE_SUCCESS_MESSAGE,
             invoiceService.create(request)
-        );
-    }
-
-    @PostMapping("/{id}/payments")
-    @PreAuthorize("hasAnyAuthority('invoice.update', 'invoice.*')")
-    public ResponseEntity<SuccessTemplate<InvoiceResponse>> applyPayment(
-        @PathVariable Long id,
-        @Valid @RequestBody ApplyPaymentRequest request
-    ) {
-        validateId(id);
-        return ApiResponse.success(
-            HttpStatus.OK,
-            "Payment successfully applied to invoice",
-            invoiceService.applyPayment(id, request)
         );
     }
 
