@@ -9,6 +9,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -69,6 +70,31 @@ public class CustomerController {
             page.getTotalElements(),
             page.hasNext(),
             page.hasPrevious()
+        );
+    }
+
+    @GetMapping("/me")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<SuccessTemplate<CustomerResponse>> getMe(Authentication authentication) {
+        Long userAuthId = Long.valueOf(authentication.getName());
+        return ApiResponse.success(
+            HttpStatus.OK,
+            "Profile successfully retrieved",
+            customerService.getMe(userAuthId)
+        );
+    }
+
+    @PutMapping("/me")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<SuccessTemplate<CustomerResponse>> updateMe(
+        Authentication authentication,
+        @Valid @RequestBody CustomerPutRequest request
+    ) {
+        Long userAuthId = Long.valueOf(authentication.getName());
+        return ApiResponse.success(
+            HttpStatus.OK,
+            "Profile successfully updated",
+            customerService.updateMe(userAuthId, request)
         );
     }
 

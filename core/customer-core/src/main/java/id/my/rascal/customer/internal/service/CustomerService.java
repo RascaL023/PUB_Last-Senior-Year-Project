@@ -97,6 +97,23 @@ public class CustomerService {
     }
 
     @Transactional(readOnly = true)
+    public CustomerResponse getMe(Long userAuthId) {
+        return CustomerMapper.toResponse(customerQueryService.findByUserAuthId(userAuthId));
+    }
+
+    @Transactional
+    public CustomerResponse updateMe(Long userAuthId, CustomerPutRequest request) {
+        Customer customer = customerQueryService.findByUserAuthId(userAuthId);
+
+        customer.setName(requireName(request.name()));
+        customer.setPhone(normalizePhone(request.phone()));
+        customer.setNotes(normalizeNullable(request.notes()));
+        customer.setUpdatedAt(LocalDateTime.now());
+
+        return CustomerMapper.toResponse(customerRepository.save(customer));
+    }
+
+    @Transactional(readOnly = true)
     public Page<CustomerResponse> search(String keyword, Pageable pageable) {
         return customerQueryService.search(keyword, pageable).map(CustomerMapper::toResponse);
     }
