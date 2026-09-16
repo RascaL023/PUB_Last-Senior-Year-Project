@@ -15,6 +15,7 @@ import id.my.rascal.auth.internal.entity.Role;
 import id.my.rascal.auth.internal.entity.UserAuth;
 import id.my.rascal.auth.internal.repository.RoleRepository;
 import id.my.rascal.auth.internal.repository.UserAuthRepository;
+import id.my.rascal.auth.internal.service.AuthService;
 import id.my.rascal.common.exception.BadRequestException;
 import id.my.rascal.common.exception.ConflictException;
 import id.my.rascal.common.exception.NotFoundException;
@@ -26,15 +27,18 @@ public class AuthApiImpl implements AuthApi {
     private final UserAuthRepository userAuthRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
+    private final AuthService authService;
 
     public AuthApiImpl(
         UserAuthRepository userAuthRepository,
         RoleRepository roleRepository,
-        PasswordEncoder passwordEncoder
+        PasswordEncoder passwordEncoder,
+        AuthService authService
     ) {
         this.userAuthRepository = userAuthRepository;
         this.roleRepository = roleRepository;
         this.passwordEncoder = passwordEncoder;
+        this.authService = authService;
     }
 
     @Override
@@ -73,6 +77,18 @@ public class AuthApiImpl implements AuthApi {
 
         userAuth = userAuthRepository.save(userAuth);
         return new UserAuthApiResponse(userAuth.getId(), userAuth.getEmail());
+    }
+
+    @Override
+    @Transactional
+    public void softDeleteAccount(Long userAuthId) {
+        if (userAuthId == null || userAuthId <= 0)
+            throw new BadRequestException("Invalid userAuthId");
+        userAuthRepository.findActiveById(userAuthId).ifPresent(userAuth -> {
+            authService.logoutAll(userAuth.getId());
+            userAuth.setDeletedAt(LocalDateTime.now());
+            userAuthRepository.save(userAuth);
+        });
     }
 
 }

@@ -87,6 +87,8 @@ public class CustomerService {
     @Transactional
     public void delete(Long id) {
         Customer customer = customerQueryService.findById(id);
+        if (customer.getUserAuthId() != null)
+            authApi.softDeleteAccount(customer.getUserAuthId());
         customer.setDeletedAt(LocalDateTime.now());
         customerRepository.save(customer);
     }
