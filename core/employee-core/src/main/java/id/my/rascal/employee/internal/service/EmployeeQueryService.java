@@ -28,6 +28,12 @@ public class EmployeeQueryService {
     }
 
     @Transactional(readOnly = true)
+    public Employee findByUserAuthId(Long userAuthId) {
+        return employeeRepository.findActiveByUserAuthId(userAuthId)
+            .orElseThrow(() -> new NotFoundException("Employee with userAuthId " + userAuthId + " not found"));
+    }
+
+    @Transactional(readOnly = true)
     public Page<Employee> findAllPaged(String keyword, Pageable pageable) {
         return employeeRepository.findByKeyword(keyword, pageable);
     }

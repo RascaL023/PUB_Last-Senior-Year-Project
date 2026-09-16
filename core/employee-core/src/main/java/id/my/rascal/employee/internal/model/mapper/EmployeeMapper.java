@@ -12,6 +12,7 @@ public class EmployeeMapper {
         return new EmployeeResponse(
             employee.getId(),
             employee.getUserAuthId(),
+            employee.getRoleName(),
             employee.getName(),
             employee.getEmail(),
             employee.getPhone(),

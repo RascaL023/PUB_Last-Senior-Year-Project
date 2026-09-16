@@ -12,6 +12,8 @@ import id.my.rascal.auth.internal.repository.UserAuthRepository;
 import id.my.rascal.common.exception.BadRequestException;
 import id.my.rascal.common.exception.ConflictException;
 import id.my.rascal.common.exception.NotFoundException;
+import id.my.rascal.auth.api.event.UserRolesUpdatedEvent;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -36,15 +38,18 @@ public class UserAuthServiceImpl implements UserAuthService {
     private final UserAuthRepository userAuthRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
+    private final ApplicationEventPublisher eventPublisher;
 
     public UserAuthServiceImpl(
         UserAuthRepository userAuthRepository,
         RoleRepository roleRepository,
-        PasswordEncoder passwordEncoder
+        PasswordEncoder passwordEncoder,
+        ApplicationEventPublisher eventPublisher
     ) {
         this.userAuthRepository = userAuthRepository;
         this.roleRepository = roleRepository;
         this.passwordEncoder = passwordEncoder;
+        this.eventPublisher = eventPublisher;
     }
 
     @Override
@@ -102,11 +107,13 @@ public class UserAuthServiceImpl implements UserAuthService {
         UserAuth userAuth = validateAndGetUserById(id);
         checkEmailConflict(userAuth.getEmail(), request.email());
 
+        Set<String> rolesBefore = roleNamesOf(userAuth);
         UserAuthMapper.updateEntity(userAuth, request);
         userAuth.setHashedPassword(passwordEncoder.encode(request.password()));
         applyRoles(userAuth, request.roleIds());
 
         userAuth = userAuthRepository.save(userAuth);
+        publishRolesIfChanged(userAuth.getId(), rolesBefore, roleNamesOf(userAuth));
         return UserAuthMapper.toResponse(userAuth);
     }
 
@@ -134,10 +141,15 @@ public class UserAuthServiceImpl implements UserAuthService {
             && !request.password().get().isBlank())
             userAuth.setHashedPassword(passwordEncoder.encode(request.password().get()));
 
-        if (request.roleIds() != null && request.roleIds().isPresent())
+        Set<String> rolesBefore = null;
+        if (request.roleIds() != null && request.roleIds().isPresent()) {
+            rolesBefore = roleNamesOf(userAuth);
             userAuth.setRoles(resolveActiveRoles(request.roleIds().get()));
+        }
 
         userAuth = userAuthRepository.save(userAuth);
+        if (rolesBefore != null)
+            publishRolesIfChanged(userAuth.getId(), rolesBefore, roleNamesOf(userAuth));
         return UserAuthMapper.toResponse(userAuth);
     }
 
@@ -188,6 +200,18 @@ public class UserAuthServiceImpl implements UserAuthService {
         return new HashSet<>(roles);
     }
 
+    private Set<String> roleNamesOf(UserAuth userAuth) {
+        return userAuth.getRoles().stream()
+            .filter(role -> role.getDeletedAt() == null)
+            .map(Role::getName)
+            .collect(Collectors.toSet());
+    }
+
+    private void publishRolesIfChanged(Long userAuthId, Set<String> before, Set<String> after) {
+        if (!before.equals(after))
+            eventPublisher.publishEvent(new UserRolesUpdatedEvent(userAuthId, Set.copyOf(after)));
+    }
+
     private void applyRoles(UserAuth userAuth, Set<Long> roleIds) {
         if (roleIds != null) {
             userAuth.setRoles(resolveActiveRoles(roleIds));
@@ -199,7 +223,7 @@ public class UserAuthServiceImpl implements UserAuthService {
 
     private void checkEmailConflict(String currentEmail, String newEmail) {
         if (!currentEmail.equals(newEmail)
-            && userAuthRepository.findActiveByEmail(newEmail).isPresent())
+            && userAuthRepository.existsByEmailAndDeletedAtIsNull(newEmail))
             throw new ConflictException("Email already exists: " + newEmail);
     }
 

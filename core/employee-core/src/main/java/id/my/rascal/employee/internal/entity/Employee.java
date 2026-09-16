@@ -26,6 +26,9 @@ public class Employee {
     @Column(name = "user_auth_id", unique = true)
     private Long userAuthId;
 
+    @Column(name = "role_name")
+    private String roleName;
+
     @Column(name = "name", nullable = false)
     private String name;
 

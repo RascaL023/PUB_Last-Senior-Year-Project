@@ -25,6 +25,9 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
     @Query("select e from Employee e where e.id = :id and e.deletedAt is null")
     Optional<Employee> findActiveById(@Param("id") Long id);
 
+    @Query("select e from Employee e where e.userAuthId = :userAuthId and e.deletedAt is null")
+    Optional<Employee> findActiveByUserAuthId(@Param("userAuthId") Long userAuthId);
+
     @Query("select e from Employee e where e.id in :ids")
     List<Employee> findAllByIds(@Param("ids") Collection<Long> ids);
 

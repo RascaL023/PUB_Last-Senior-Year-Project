@@ -50,6 +50,7 @@ public class EmployeeService {
 
         Employee employee = new Employee();
         employee.setUserAuthId(auth.id());
+        employee.setRoleName(request.roleName().toUpperCase());
         employee.setName(request.name());
         employee.setEmail(request.email());
         employee.setPhone(request.phone());
