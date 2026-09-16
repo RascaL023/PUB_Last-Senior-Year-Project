@@ -42,7 +42,7 @@ public class CustomerController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyAuthority('customer.create', 'customer.*')")
+    // @PreAuthorize("hasAnyAuthority('customer.create', 'customer.*')")
     public ResponseEntity<SuccessTemplate<CustomerResponse>> create(
         @Valid @RequestBody CustomerRequest request
     ) {

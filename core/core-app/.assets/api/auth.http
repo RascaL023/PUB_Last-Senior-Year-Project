@@ -76,3 +76,22 @@ Authorization: Bearer {{token}}
 ### Delete
 DELETE {{baseUrl}}/auths/users/1
 Authorization: Bearer {{token}}
+
+
+###### PASSWORD RESET ######
+### Forgot Password
+POST {{baseUrl}}/auths/forgot-password
+Content-Type: application/json
+
+{
+    "email": "admin@rascal.id"
+}
+
+### Reset Password
+POST {{baseUrl}}/auths/reset-password
+Content-Type: application/json
+
+{
+    "token": "{YOUR_RESET_TOKEN}",
+    "newPassword": "newpassword123"
+}

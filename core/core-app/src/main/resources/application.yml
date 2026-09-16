@@ -32,6 +32,7 @@ server:
   port: ${SERVICES_CORE_PORT:8081}
 
 app:
+  name: ${APP_NAME:hysteria-cafe}
   dev-base-url: ${APP_DEV_BASE_URL:https://dev.rascal.my.id}
 
 id:
@@ -41,6 +42,13 @@ id:
         - /api/v1/auths/refresh
         - /api/v1/payments/webhooks/xendit
         - /api/v1/images/webhooks/imagekit
+        - /api/v1/auths/login
+        - /api/v1/auths/refresh
+        - /api/v1/auths/forgot-password
+        - /api/v1/auths/reset-password
+        - /api/v1/customers/register
+        - /api/v1/menus
+        - /api/v1/menus/{id}
 logging.level.id.rascal.filter: ${SECURITY_FILTER_LOG_LEVEL:WARN}
 
 imagekit:
@@ -61,3 +69,12 @@ xendit:
 meilisearch:
   url: ${MEILISEARCH_URL:http://localhost:7700}
   api-key: ${MEILISEARCH_API_KEY:}
+
+resend:
+  api-key: ${RESEND_API_KEY:}
+  from-email: ${RESEND_FROM_EMAIL:noreply@rascal.my.id}
+  base-url: ${RESEND_BASE_URL:https://api.resend.com}
+  sender-name: ${RESEND_SENDER_NAME:""}
+
+notification:
+  reset-token-expiry-minutes: ${NOTIFICATION_RESET_TOKEN_EXPIRY_MINUTES:60}

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.ResourceAccessException;
@@ -42,7 +43,9 @@ public class MeilisearchApiImpl implements SearchApi {
     private static final String INFRA_ERROR_PREFIX = "Meilisearch unavailable";
     private final RestClient client;
 
-    public MeilisearchApiImpl(RestClient client) {
+    public MeilisearchApiImpl(
+        @Qualifier("meilisearchRestClient") RestClient client
+    ) {
         this.client = client;
     }
 
