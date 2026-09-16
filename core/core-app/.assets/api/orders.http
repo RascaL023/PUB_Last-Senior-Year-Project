@@ -186,7 +186,7 @@ Content-Type: application/json
 }
 
 ### Update (PUT) - invalid: order sudah punya pembayaran (400)
-### Invoice dengan paidAmount > 0 = frozen. Pakai POST /payments/{id}/refund dulu.
+### Invoice dengan paidAmount > 0 = frozen (tidak ada jalur koreksi di sistem).
 PUT {{baseUrl}}/orders/1
 Authorization: Bearer {{token}}
 Content-Type: application/json
@@ -241,6 +241,6 @@ Content-Type: application/json
 DELETE {{baseUrl}}/orders/1
 Authorization: Bearer {{token}}
 
-### Delete - invalid: order sudah punya pembayaran (400, "use refund first")
+### Delete - invalid: order sudah punya pembayaran (400, "already has an applied payment")
 DELETE {{baseUrl}}/orders/1
 Authorization: Bearer {{token}}

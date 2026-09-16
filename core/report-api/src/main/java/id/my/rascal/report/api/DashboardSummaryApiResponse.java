@@ -9,7 +9,7 @@ import java.util.List;
  *
  * <p>Angka finansial dipisah menjadi dua basis yang <b>tidak boleh dicampur</b>:
  * <ul>
- *   <li>{@code sales.cash} — uang yang benar-benar masuk/keluar lewat payment
+ *   <li>{@code sales.cash} — uang yang benar-benar masuk lewat payment
  *       ({@code applied_amount}), jadi hanya jalur {@code POST /payments}.</li>
  *   <li>{@code sales.billing} — nilai tagihan invoice saat lunas ({@code settled_amount}),
  *       termasuk pelunasan yang dicatat langsung di invoice.</li>
@@ -39,14 +39,9 @@ public record DashboardSummaryApiResponse(
      * Basis kas.
      *
      * @param received Σ {@code applied_amount} payment yang settlement-nya di periode
-     * @param refunded Σ nominal payment yang di-refund pada periode
-     * @param net      {@code received - refunded} (bisa negatif bila refund periode ini
-     *                 berasal dari penjualan periode sebelumnya)
      */
     public record Cash(
-        long received,
-        long refunded,
-        long net
+        long received
     ) {}
 
     /**
@@ -55,7 +50,6 @@ public record DashboardSummaryApiResponse(
      * @param settledInvoices      jumlah invoice yang dilunasi pada periode (waktu pelunasan)
      * @param settledAmount        Σ nilai tagihan saat dilunasi pada periode (dibekukan saat lunas)
      * @param averageSettledInvoice {@code settledAmount / settledInvoices}, {@code 0} bila kosong
-     * @param refundedAmount       Σ koreksi tagihan ({@code Refund.scopeAmount}) pada periode
      * @param outstandingInvoices  snapshot: jumlah invoice belum lunas saat ini
      * @param outstandingAmount    snapshot: Σ sisa tagihan ({@code remaining_amount}) saat ini
      */
@@ -63,7 +57,6 @@ public record DashboardSummaryApiResponse(
         long settledInvoices,
         long settledAmount,
         long averageSettledInvoice,
-        long refundedAmount,
         long outstandingInvoices,
         long outstandingAmount
     ) {}

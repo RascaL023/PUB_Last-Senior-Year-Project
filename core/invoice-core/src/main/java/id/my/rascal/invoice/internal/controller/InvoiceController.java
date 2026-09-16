@@ -25,7 +25,6 @@ import id.my.rascal.common.template.SuccessTemplate;
 import id.my.rascal.invoice.internal.entity.InvoiceStatus;
 import id.my.rascal.invoice.internal.model.request.ApplyPaymentRequest;
 import id.my.rascal.invoice.internal.model.request.CreateInvoiceRequest;
-import id.my.rascal.invoice.internal.model.request.RefundRequest;
 import id.my.rascal.invoice.internal.model.response.InvoiceResponse;
 import id.my.rascal.invoice.internal.service.InvoiceQueryService;
 import id.my.rascal.invoice.internal.service.InvoiceService;
@@ -78,33 +77,6 @@ public class InvoiceController {
             HttpStatus.OK,
             "Invoice successfully voided",
             invoiceService.voidInvoice(id)
-        );
-    }
-
-    @PostMapping("/{id}/refunds")
-    @PreAuthorize("hasAnyAuthority('invoice.update', 'invoice.*')")
-    public ResponseEntity<SuccessTemplate<InvoiceResponse>> refund(
-        @PathVariable Long id,
-        @Valid @RequestBody RefundRequest request
-    ) {
-        validateId(id);
-        return ApiResponse.success(
-            HttpStatus.OK,
-            "Invoice items refunded",
-            invoiceService.refundItems(id, request)
-        );
-    }
-
-    @GetMapping("/{id}/refunds")
-    @PreAuthorize("hasAnyAuthority('invoice.read', 'invoice.*')")
-    public ResponseEntity<SuccessTemplate<java.util.List<id.my.rascal.invoice.internal.model.response.RefundResponse>>> listRefunds(
-        @PathVariable Long id
-    ) {
-        validateId(id);
-        return ApiResponse.success(
-            HttpStatus.OK,
-            "Refunds retrieved",
-            invoiceService.listRefunds(id)
         );
     }
 

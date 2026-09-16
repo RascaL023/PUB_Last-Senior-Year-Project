@@ -61,7 +61,4 @@ public class InvoiceItem {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    @Column(name = "refunded", nullable = false)
-    private Boolean refunded = false;
-
 }

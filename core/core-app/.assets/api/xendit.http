@@ -53,19 +53,8 @@ Content-Type: application/json
     "currency": "IDR"
 }
 
-### Webhook - REFUNDED (refund = fakta keluar tersendiri: cash.refunded + billing.refundedAmount; topMenus tetap bruto)
-POST {{baseUrl}}/payments/webhooks/xendit
-X-Callback-Token: {{xenditCallbackToken}}
-Content-Type: application/json
-
-{
-    "external_id": "INV-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-    "status": "REFUNDED",
-    "amount": 22000,
-    "payment_method": "QRIS",
-    "payment_channel": "QRIS",
-    "currency": "IDR"
-}
+### Webhook - REFUNDED: refund sudah dihapus dari model. Status ini jatuh ke FAILED;
+### transisinya ditolak flow policy, webhook di-ack tanpa efek (lihat PaymentApiImpl).
 
 ### Webhook - unknown status (maps to FAILED on payment)
 POST {{baseUrl}}/payments/webhooks/xendit

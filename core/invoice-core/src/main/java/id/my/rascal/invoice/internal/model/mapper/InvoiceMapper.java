@@ -99,8 +99,7 @@ public class InvoiceMapper {
             item.getDescription(),
             item.getQuantity(),
             item.getUnitPrice(),
-            item.getAmount(),
-            item.getRefunded()
+            item.getAmount()
         );
     }
 
@@ -112,8 +111,7 @@ public class InvoiceMapper {
             item.getDescription(),
             item.getQuantity(),
             item.getUnitPrice(),
-            item.getAmount(),
-            item.getRefunded()
+            item.getAmount()
         );
     }
 
@@ -125,8 +123,7 @@ public class InvoiceMapper {
             response.description(),
             response.quantity(),
             response.unitPrice(),
-            response.amount(),
-            response.refunded()
+            response.amount()
         );
     }
 

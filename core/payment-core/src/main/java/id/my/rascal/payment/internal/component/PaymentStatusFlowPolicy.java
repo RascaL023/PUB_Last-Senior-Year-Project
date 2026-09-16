@@ -22,18 +22,13 @@ public class PaymentStatusFlowPolicy {
                 if (oldStatus != PaymentStatus.PENDING)
                     reject("Only PENDING payment can become " + newStatus);
             }
-            case REFUNDED -> {
-                if (oldStatus != PaymentStatus.PAID)
-                    reject("Only PAID payment can be REFUNDED");
-            }
             default -> reject("Invalid payment status transition");
         }
     }
 
     public boolean isTerminal(PaymentStatus status) {
         return status == PaymentStatus.EXPIRED
-            || status == PaymentStatus.FAILED
-            || status == PaymentStatus.REFUNDED;
+            || status == PaymentStatus.FAILED;
     }
 
     private void reject(String message) {

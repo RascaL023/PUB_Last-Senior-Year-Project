@@ -13,7 +13,7 @@ independen dan siap di-extract menjadi microservice kapan saja.
 ```
 backend/
 ├── core/pom.xml             ← Parent POM (extends spring-boot-starter-parent)
-│                               Mengelola versi & daftar 18 module
+│                               Mengelola versi & daftar module
 │
 ├── core/common/             ← Shared response format, exception classes,
 │                               global exception handler, seed framework, utilities
@@ -27,13 +27,17 @@ backend/
 ├── core/menu-core/          ← Implementasi domain menu (CRUD, modifier, category,
 │                               admin search via Meilisearch read projection)
 │
-├── core/order-api/          ← Order contract (OrderApi interface + DTO records)
-│                               payment-core dan dining-core depend ke modul ini
+├── core/order-api/          ← Order contract (OrderApi interface, event + DTO records)
+│                               invoice-core dan dining-core depend ke modul ini
 ├── core/order-core/         ← Implementasi domain order (CRUD, reconcile, status flow)
 │
+├── core/invoice-api/        ← Invoice contract (InvoiceApi, InvoiceReportApi, domain events)
+├── core/invoice-core/       ← Implementasi billing aggregate (Invoice, InvoiceItem),
+│                               listener event Order/Dining/Payment — pemilik status settlement
+│
 ├── core/payment-api/        ← Payment contract (PaymentProcessor interface + DTOs)
-├── core/payment-core/       ← Implementasi domain payment (CRUD payment,
-│                               status flow, target-based referencing ke ORDER/DINE_IN)
+├── core/payment-core/       ← Implementasi domain payment (CRUD payment, status flow,
+│                               target pembayaran hanya INVOICE — settlement ke invoice)
 ├── core/payment-xendit/     ← Adapter Xendit (invoice + webhook, implementasi
 │                               PaymentProcessor untuk provider XENDIT)
 │
@@ -49,6 +53,10 @@ backend/
 │                               SearchIndexInitializer, SearchUnavailableException)
 ├── core/search-meilisearch/ ← Adapter Meilisearch (RestClient, bootstrap settings
 │                               saat ApplicationReadyEvent)
+│
+├── core/report-api/         ← Report contract (DashboardSummaryApiResponse untuk FE)
+├── core/report-core/        ← Pembaca langsung (tanpa tabel projection/listener):
+│                               agregasi lewat invoice/payment/order/dining/menu-api
 │
 └── core/core-app/           ← Entry point aplikasi (@SpringBootApplication)
                                 Hanya bootstrapping + konfigurasi global
@@ -99,6 +107,9 @@ backend/
 > Tidak ada modul `payment-methods` — kolom `payment_method` di entity `Payment`
 > hanyalah string denormalisasi, bukan relasi. Tidak ada dependensi langsung
 > antar `*-core` — selalu lewat `*-api`.
+>
+> Diagram di atas ilustratif; daftar dependensi yang dijaga adalah bagian
+> *Contoh Arah Dependensi yang Benar* di bawah (termasuk `invoice-core` & `report-core`).
 
 ### Aturan Dependensi
 
@@ -112,12 +123,15 @@ backend/
 ### Contoh Arah Dependensi yang Benar
 
 - `order-core` → `menu-api` (untuk snapshot menu) ✅
-- `payment-core` → `payment-api` + `order-api` + `dining-api` (resolusi target pembayaran) ✅
-- `payment-xendit` → `payment-api` + `order-api` + `dining-api` ✅
+- `payment-core` → `payment-api` + `invoice-api` (resolusi target pembayaran) ✅
+- `payment-xendit` → `payment-api` ✅
 - `payment-core` → `order-core` ❌ (tidak boleh langsung ke core lain)
+- `invoice-core` → `invoice-api` + `order-api` + `dining-api` + `payment-api` (listener event) ✅
 - `dining-core` → `dining-api` + `order-api` ✅
 - `menu-core` → `menu-api` + `image-api` (resolve URL gambar) + `search-api` (read projection) ✅
 - `image-core` / `image-imagekit` → `image-api` ✅
+- `report-core` → `report-api` + `invoice-api` + `payment-api` + `order-api` + `dining-api` + `menu-api`
+  (baca langsung lewat contract — tidak pernah akses tabel domain lain) ✅
 - `search-meilisearch` → `search-api` ✅
 - `menu-core` → `auth-api` ❌ (tidak perlu, menu tidak terkait auth)
 

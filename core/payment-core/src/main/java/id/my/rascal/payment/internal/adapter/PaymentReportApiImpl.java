@@ -23,10 +23,4 @@ public class PaymentReportApiImpl implements PaymentReportApi {
         return paymentReportRepository.sumAppliedSettledBetween(from, to);
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public long sumRefundedBetween(LocalDateTime from, LocalDateTime to) {
-        return paymentReportRepository.sumRefundedBetween(from, to);
-    }
-
 }

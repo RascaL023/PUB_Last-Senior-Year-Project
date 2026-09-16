@@ -16,10 +16,6 @@ ON invoices (paid_at);
 CREATE INDEX IF NOT EXISTS idx_invoices_status
 ON invoices (status);
 
--- Koreksi tagihan per periode.
-CREATE INDEX IF NOT EXISTS idx_refunds_created_at
-ON refunds (created_at);
-
 -- Baris tagihan: agregasi menu (per invoice) dan pencarian status billing per order.
 CREATE INDEX IF NOT EXISTS idx_invoice_items_invoice_id
 ON invoice_items (invoice_id);
@@ -31,9 +27,11 @@ ON invoice_items (order_id);
 CREATE INDEX IF NOT EXISTS idx_orders_created_at
 ON orders (created_at);
 
--- Basis kas: uang masuk (paid_at) dan uang keluar (refunded_at) per periode.
+-- Basis kas: uang masuk per periode (paid_at).
 CREATE INDEX IF NOT EXISTS idx_payments_paid_at
 ON payments (paid_at);
 
-CREATE INDEX IF NOT EXISTS idx_payments_refunded_at
-ON payments (refunded_at);
+-- ── Pembersihan DB lama (sekali saja, refund sudah dihapus dari model) ─────────
+-- DROP TABLE IF EXISTS refunds;
+-- ALTER TABLE payments DROP COLUMN IF EXISTS refunded_at;
+-- ALTER TABLE invoice_items DROP COLUMN IF EXISTS refunded;

@@ -6,16 +6,12 @@ import id.my.rascal.dining.api.DiningApi;
 import id.my.rascal.invoice.internal.entity.Invoice;
 import id.my.rascal.invoice.internal.entity.InvoiceItem;
 import id.my.rascal.invoice.internal.entity.InvoiceStatus;
-import id.my.rascal.invoice.internal.entity.Refund;
 import id.my.rascal.invoice.internal.model.mapper.InvoiceMapper;
 import id.my.rascal.invoice.internal.model.request.ApplyPaymentRequest;
 import id.my.rascal.invoice.internal.model.request.CreateInvoiceRequest;
 import id.my.rascal.invoice.internal.model.request.InvoiceItemRequest;
-import id.my.rascal.invoice.internal.model.request.RefundRequest;
 import id.my.rascal.invoice.internal.model.response.InvoiceResponse;
-import id.my.rascal.invoice.internal.model.response.RefundResponse;
 import id.my.rascal.invoice.internal.repository.InvoiceRepository;
-import id.my.rascal.invoice.internal.repository.RefundRepository;
 import id.my.rascal.invoice.internal.util.InvoiceNumberGenerator;
 import id.my.rascal.dining.api.event.DiningOrderAddedEvent;
 import id.my.rascal.order.api.event.OrderCancelledEvent;
@@ -32,7 +28,6 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -44,18 +39,15 @@ public class InvoiceService {
     private static final Logger logger = LoggerFactory.getLogger(InvoiceService.class);
 
     private final InvoiceRepository invoiceRepository;
-    private final RefundRepository refundRepository;
     private final InvoiceEventPublisherService invoiceEventPublisherService;
     private final DiningApi diningApi;
 
     public InvoiceService(
         InvoiceRepository invoiceRepository,
-        RefundRepository refundRepository,
         InvoiceEventPublisherService invoiceEventPublisherService,
         @Lazy DiningApi diningApi
     ) {
         this.invoiceRepository = invoiceRepository;
-        this.refundRepository = refundRepository;
         this.invoiceEventPublisherService = invoiceEventPublisherService;
         this.diningApi = diningApi;
     }
@@ -281,58 +273,6 @@ public class InvoiceService {
         Invoice saved = invoiceRepository.save(invoice);
         invoiceEventPublisherService.publishDeleted(saved);
     }
-
-    @Transactional(readOnly = true)
-    public List<RefundResponse> listRefunds(Long invoiceId) {
-        findActiveInvoice(invoiceId);
-        return refundRepository.findByInvoiceId(invoiceId).stream()
-            .map(r -> new RefundResponse(
-                r.getId(), r.getInvoiceId(), r.getPaymentId(), r.getScopeAmount(), r.getCashAmount(),
-                r.getItemIds() == null || r.getItemIds().isBlank() ? List.of()
-                    : Arrays.stream(r.getItemIds().split(",")).filter(s -> !s.isBlank()).map(Long::valueOf).toList(),
-                r.getCreatedAt(), r.getCreatedBy()
-            )).toList();
-    }
-
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public InvoiceResponse refundItems(Long invoiceId, RefundRequest request) {
-        Invoice invoice = findActiveInvoice(invoiceId);
-        if (request.orderItemIds() == null || request.orderItemIds().isEmpty())
-            throw new BadRequestException("orderItemIds must be provided");
-
-        List<InvoiceItem> targets = invoice.getItems().stream()
-            .filter(i -> request.orderItemIds().contains(i.getOrderItemId()))
-            .toList();
-        if (targets.size() != request.orderItemIds().size())
-            throw new BadRequestException("Some orderItemIds not found in invoice");
-        List<InvoiceItem> already = targets.stream().filter(i -> Boolean.TRUE.equals(i.getRefunded())).toList();
-        if (!already.isEmpty())
-            throw new BadRequestException("Some items already refunded: " + already.stream().map(InvoiceItem::getOrderItemId).toList());
-
-        int scope = targets.stream().mapToInt(InvoiceItem::getAmount).sum();
-        int totalNew = invoice.getTotalAmount() - scope;
-        int cash = Math.max(0, invoice.getPaidAmount() - totalNew);
-
-        invoice.applyRefund(scope, cash);
-        targets.forEach(i -> {
-            i.setRefunded(true);
-            i.setUpdatedAt(LocalDateTime.now());
-        });
-
-        Refund refund = new Refund();
-        refund.setInvoiceId(invoiceId);
-        refund.setPaymentId(request.paymentId());
-        refund.setScopeAmount(scope);
-        refund.setCashAmount(cash);
-        refund.setItemIds(request.orderItemIds().stream().map(String::valueOf).collect(Collectors.joining(",")));
-        refund.setCreatedAt(LocalDateTime.now());
-        refund.setCreatedBy(request.requestedBy());
-        refundRepository.save(refund);
-
-        Invoice saved = invoiceRepository.save(invoice);
-        return InvoiceMapper.toResponse(saved);
-    }
-
 
     private Invoice findActiveInvoice(Long id) {
         return invoiceRepository.findActiveById(id)

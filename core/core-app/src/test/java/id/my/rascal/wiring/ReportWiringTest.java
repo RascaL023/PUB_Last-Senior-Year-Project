@@ -62,8 +62,7 @@ import id.my.rascal.report.internal.service.ReportService;
  *   <li>basis <b>kas</b> ({@code sales.cash}) hanya terisi dari payment yang benar-benar
  *       dialokasikan ke tagihan ({@code applied_amount});</li>
  *   <li>basis <b>tagihan</b> ({@code sales.billing}) terisi saat invoice lunas, termasuk
- *       pelunasan manual tanpa payment record;</li>
- *   <li>refund menambah fakta keluar dan TIDAK menulis ulang angka periode sebelumnya.</li>
+ *       pelunasan manual tanpa payment record.</li>
  * </ul>
  */
 @SpringBootTest
@@ -143,8 +142,6 @@ class ReportWiringTest {
         assertEquals(ORDER_AMOUNT, billing.outstandingAmount());
 
         assertEquals(0, summary.sales().cash().received());
-        assertEquals(0, summary.sales().cash().refunded());
-        assertEquals(0, summary.sales().cash().net());
 
         assertTrue(summary.topMenus().isEmpty(), "invoice OPEN tidak masuk penjualan menu");
         assertEquals("OPEN", billingStatusOf(summary, orderId));
@@ -186,14 +183,11 @@ class ReportWiringTest {
 
         Cash cash = summary.sales().cash();
         assertEquals(CASH_PAYMENT_AMOUNT, cash.received());
-        assertEquals(0, cash.refunded());
-        assertEquals(CASH_PAYMENT_AMOUNT, cash.net());
 
         Billing billing = summary.sales().billing();
         assertEquals(1, billing.settledInvoices());
         assertEquals(ORDER_AMOUNT, billing.settledAmount());
         assertEquals(ORDER_AMOUNT, billing.averageSettledInvoice());
-        assertEquals(0, billing.refundedAmount());
         assertEquals(0, billing.outstandingInvoices());
         assertEquals(0, billing.outstandingAmount());
 
@@ -213,41 +207,12 @@ class ReportWiringTest {
 
     @Test
     @Order(5)
-    void refund_addsOutflowFactWithoutRewritingPastPeriod() {
-        paymentService.markRefunded(paymentId);
-
-        DashboardSummaryApiResponse summary = awaitSummary(
-            s -> s.sales().cash().refunded() == CASH_PAYMENT_AMOUNT,
-            "refund tercatat sebagai kas keluar"
-        );
-
-        Cash cash = summary.sales().cash();
-        // Fakta periode lampau tidak berubah: uang masuk tetap tercatat 30.000.
-        assertEquals(CASH_PAYMENT_AMOUNT, cash.received());
-        assertEquals(CASH_PAYMENT_AMOUNT, cash.refunded());
-        assertEquals(0, cash.net());
-
-        Billing billing = summary.sales().billing();
-        // Jurnal pelunasan tetap; koreksi tagihan muncul sebagai fakta refund sendiri.
-        assertEquals(1, billing.settledInvoices());
-        assertEquals(ORDER_AMOUNT, billing.settledAmount());
-        assertEquals(ORDER_AMOUNT, billing.refundedAmount());
-        // Invoice kembali OPEN dengan total 0 → tidak lagi dihitung sebagai piutang.
-        assertEquals(0, billing.outstandingInvoices());
-        assertEquals(0, billing.outstandingAmount());
-
-        // Penjualan menu bruto tidak dikoreksi (refund sudah terlihat di cash/billing refunded).
-        assertEquals(ORDER_AMOUNT, summary.topMenus().get(0).revenue());
-    }
-
-    @Test
-    @Order(6)
     void topMenuLabel_followsMenuMasterNotInvoiceSnapshot() {
         when(menuApi.getMenuSnapshots(any())).thenAnswer(invocation -> menuSnapshots(invocation.getArgument(0), "Nasi Goreng Spesial"));
 
         DashboardSummaryApiResponse summary = awaitSummary(
             s -> !s.topMenus().isEmpty(),
-            "menu sales masih ada setelah refund"
+            "menu sales masih ada"
         );
 
         TopMenuEntry topMenu = summary.topMenus().get(0);
@@ -257,7 +222,7 @@ class ReportWiringTest {
     }
 
     @Test
-    @Order(7)
+    @Order(6)
     void invalidPeriod_isRejected() {
         LocalDate tomorrow = LocalDate.now().plusDays(1);
         LocalDate today = LocalDate.now();

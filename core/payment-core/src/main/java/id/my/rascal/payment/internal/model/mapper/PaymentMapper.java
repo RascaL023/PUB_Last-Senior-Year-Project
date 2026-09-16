@@ -13,7 +13,6 @@ public class PaymentMapper {
             case PAID -> PaymentStatus.PAID;
             case FAILED -> PaymentStatus.FAILED;
             case EXPIRED -> PaymentStatus.EXPIRED;
-            case REFUNDED -> PaymentStatus.REFUNDED;
         };
     }
     

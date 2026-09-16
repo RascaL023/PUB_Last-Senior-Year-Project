@@ -4,7 +4,6 @@ public enum PaymentProcessorStatus {
     PENDING,
     PAID,
     FAILED,
-    EXPIRED,
-    REFUNDED;
+    EXPIRED;
 }
 

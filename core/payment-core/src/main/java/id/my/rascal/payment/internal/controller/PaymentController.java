@@ -24,7 +24,6 @@ import id.my.rascal.common.template.SuccessTemplate;
 import id.my.rascal.payment.internal.model.enums.PaymentProvider;
 import id.my.rascal.payment.internal.model.enums.PaymentStatus;
 import id.my.rascal.payment.internal.model.enums.PaymentTargetType;
-import id.my.rascal.payment.internal.model.request.PaymentRefundRequest;
 import id.my.rascal.payment.internal.model.request.PaymentRequest;
 import id.my.rascal.payment.internal.model.response.PaymentResponse;
 import id.my.rascal.payment.internal.service.PaymentService;
@@ -64,16 +63,6 @@ public class PaymentController {
     public ResponseEntity<SuccessTemplate<PaymentResponse>> fail(@PathVariable Long id) {
         validateId(id);
         return ApiResponse.success(HttpStatus.OK, "Payment successfully marked as failed", paymentService.markFailed(id));
-    }
-
-    @PostMapping("/{id}/refund")
-    @PreAuthorize("hasAnyAuthority('payment.update', 'payment.*')")
-    public ResponseEntity<SuccessTemplate<PaymentResponse>> refund(
-        @PathVariable Long id,
-        @RequestBody(required = false) PaymentRefundRequest request
-    ) {
-        validateId(id);
-        return ApiResponse.success(HttpStatus.OK, "Payment successfully marked as refunded", paymentService.markRefunded(id, request));
     }
 
     @GetMapping

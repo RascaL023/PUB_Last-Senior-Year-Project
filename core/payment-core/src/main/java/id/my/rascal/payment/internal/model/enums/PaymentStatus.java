@@ -14,8 +14,7 @@ public enum PaymentStatus {
     PENDING("PENDING"),
     PAID("PAID"),
     FAILED("FAILED"),
-    EXPIRED("EXPIRED"),
-    REFUNDED("REFUNDED");
+    EXPIRED("EXPIRED");
 
     private final String status;
 
@@ -37,7 +36,6 @@ public enum PaymentStatus {
             case "PAID" -> PAID;
             case "FAILED" -> FAILED;
             case "EXPIRED" -> EXPIRED;
-            case "REFUNDED" -> REFUNDED;
             default -> throw new BadRequestException( 
                 "Invalid payment status: '" + value + "'. Allowed: " + allowedValues()
             );

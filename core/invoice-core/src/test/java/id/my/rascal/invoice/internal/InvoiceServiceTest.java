@@ -53,7 +53,7 @@ class InvoiceServiceTest {
         diningApi = mock(id.my.rascal.dining.api.DiningApi.class);
         when(invoiceRepository.existsByInvoiceNumber(any())).thenReturn(false);
         when(invoiceRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
-        invoiceService = new InvoiceService(invoiceRepository, mock(id.my.rascal.invoice.internal.repository.RefundRepository.class), invoiceEventPublisherService, diningApi);
+        invoiceService = new InvoiceService(invoiceRepository, invoiceEventPublisherService, diningApi);
     }
 
     @Test
@@ -413,69 +413,6 @@ class InvoiceServiceTest {
         else invoice.markPartiallyPaid();
         invoice.setItems(new ArrayList<>());
         when(invoiceRepository.findActiveById(id)).thenReturn(Optional.of(invoice));
-    }
-
-    @Test
-    void refundItems_partiallyPaid_adjustsTotalAndCash() {
-        Invoice invoice = new Invoice();
-        invoice.setId(1L);
-        invoice.setInvoiceNumber("INV-01012026-ABCDEF");
-        invoice.setTotalAmount(115000);
-        invoice.setPaidAmount(100000);
-        invoice.setRemainingAmount(15000);
-        invoice.setIssuedAt(LocalDateTime.now());
-        invoice.setCreatedAt(LocalDateTime.now());
-        invoice.markPartiallyPaid();
-        invoice.setItems(new ArrayList<>(List.of(
-            itemOf(invoice, 1L, 1L, "Item1", 1, 25000, 25000),
-            itemOf(invoice, 1L, 2L, "Item2", 1, 30000, 30000),
-            itemOf(invoice, 1L, 3L, "Item3", 1, 60000, 60000)
-        )));
-        when(invoiceRepository.findActiveById(1L)).thenReturn(Optional.of(invoice));
-
-        InvoiceResponse res = invoiceService.refundItems(1L, new id.my.rascal.invoice.internal.model.request.RefundRequest(null, List.of(2L), null));
-
-        assertEquals(85000, res.totalAmount());
-        assertEquals(85000, res.paidAmount());
-        assertEquals(0, res.remainingAmount());
-        assertEquals(InvoiceStatus.PAID, res.status());
-        assertTrue(res.items().stream().filter(i -> i.orderItemId().equals(2L)).findFirst().get().refunded());
-    }
-
-    @Test
-    void refundItems_unpaid_adjustsTotalOnly() {
-        Invoice invoice = new Invoice();
-        invoice.setId(2L);
-        invoice.setInvoiceNumber("INV-01012026-ABCDEF2");
-        invoice.setTotalAmount(80000);
-        invoice.setPaidAmount(0);
-        invoice.setRemainingAmount(80000);
-        invoice.setIssuedAt(LocalDateTime.now());
-        invoice.setCreatedAt(LocalDateTime.now());
-        invoice.markOpen();
-        invoice.setItems(new ArrayList<>(List.of(
-            itemOf(invoice, 1L, 10L, "A", 1, 50000, 50000),
-            itemOf(invoice, 1L, 11L, "B", 1, 20000, 20000),
-            itemOf(invoice, 1L, 12L, "C", 1, 10000, 10000)
-        )));
-        when(invoiceRepository.findActiveById(2L)).thenReturn(Optional.of(invoice));
-
-        InvoiceResponse res = invoiceService.refundItems(2L, new id.my.rascal.invoice.internal.model.request.RefundRequest(null, List.of(12L), null));
-
-        assertEquals(70000, res.totalAmount());
-        assertEquals(0, res.paidAmount());
-        assertEquals(70000, res.remainingAmount());
-        assertEquals(InvoiceStatus.OPEN, res.status());
-    }
-
-    @Test
-    void refundItems_alreadyRefunded_rejected() {
-        Invoice invoice = persistedDiningInvoice(null, 1L, 1L, 50000);
-        invoice.getItems().get(0).setRefunded(true);
-        when(invoiceRepository.findActiveById(900L)).thenReturn(Optional.of(invoice));
-
-        assertThrows(BadRequestException.class,
-            () -> invoiceService.refundItems(900L, new id.my.rascal.invoice.internal.model.request.RefundRequest(null, List.of(1L), null)));
     }
 
     @Test

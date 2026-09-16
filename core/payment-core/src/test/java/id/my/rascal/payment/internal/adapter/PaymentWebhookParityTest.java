@@ -16,7 +16,6 @@ import org.springframework.context.ApplicationEventPublisher;
 
 import id.my.rascal.payment.api.PaymentApiWebhookRequest;
 import id.my.rascal.payment.api.PaymentProcessorStatus;
-import id.my.rascal.payment.api.event.PaymentRefundedEvent;
 import id.my.rascal.payment.api.event.PaymentSettledEvent;
 import id.my.rascal.payment.internal.component.PaymentEffect;
 import id.my.rascal.payment.internal.component.PaymentStatusFlowPolicy;
@@ -104,22 +103,20 @@ class PaymentWebhookParityTest {
     }
 
     @Test
-    void webhookRefundedFromPaid_transitionsAndPublishes() {
+    void webhookInvalidTransitionOnPaidPayment_ackedWithoutEffect() {
+        // Refund sudah dihapus dari model: webhook REFUNDED dari Xendit di-map ke FAILED,
+        // lalu flow policy menolak transisi PAID → FAILED dan webhook di-ack tanpa efek.
         Payment paid = pendingPayment();
         paid.setStatus(PaymentStatus.PAID);
         when(paymentRepository.findByExternalId("INV-abc")).thenReturn(Optional.of(paid));
 
         handler.handleWebhookRequest(new PaymentApiWebhookRequest(
-            "INV-abc", PaymentProcessorStatus.REFUNDED, 58000, "CASH", "INTERNAL_CASH", "IDR"
+            "INV-abc", PaymentProcessorStatus.FAILED, 58000, "CASH", "INTERNAL_CASH", "IDR"
         ), "{}");
 
-        ArgumentCaptor<Payment> saved = ArgumentCaptor.forClass(Payment.class);
-        verify(paymentRepository).save(saved.capture());
-        assertEquals(PaymentStatus.REFUNDED, saved.getValue().getStatus());
-
-        ArgumentCaptor<PaymentRefundedEvent> event = ArgumentCaptor.forClass(PaymentRefundedEvent.class);
-        verify(eventPublisher).publishEvent(event.capture());
-        assertEquals(5L, event.getValue().paymentId());
+        verify(paymentRepository, never()).save(any());
+        verify(eventPublisher, never()).publishEvent(any());
+        assertEquals(PaymentStatus.PAID, paid.getStatus());
     }
 
     @Test

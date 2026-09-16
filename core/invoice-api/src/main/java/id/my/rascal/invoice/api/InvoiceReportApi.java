@@ -11,8 +11,7 @@ import java.util.Map;
  * <p>Dua kelompok angka yang sengaja dipisah supaya tidak tercampur:
  * <ul>
  *   <li><b>Fakta pelunasan (jurnal)</b> — dihitung dari {@code paidAt}/{@code settledAmount} yang
- *       dibekukan saat invoice lunas. Refund TIDAK menulis ulang fakta ini; refund dicatat
- *       sebagai fakta sendiri ({@link #billingMetrics} {@code refundedAmount}).</li>
+ *       dibekukan saat invoice lunas; angka periode lampau tidak berubah sendiri.</li>
  *   <li><b>Snapshot keadaan sekarang</b> — {@code outstandingInvoices}/{@code outstandingAmount}
  *       (piutang berjalan), bukan filter periode.</li>
  * </ul>
@@ -25,9 +24,8 @@ public interface InvoiceReportApi {
     BillingMetrics billingMetrics(LocalDateTime from, LocalDateTime to);
 
     /**
-     * Penjualan menu <b>bruto</b> dari invoice yang dilunasi pada periode: seluruh baris invoice
-     * (termasuk yang belakangan di-refund) sehingga totalnya bisa direkonsiliasi dengan
-     * {@link BillingMetrics#settledAmount()}.
+     * Penjualan menu dari invoice yang dilunasi pada periode: seluruh baris invoice sehingga
+     * totalnya bisa direkonsiliasi dengan {@link BillingMetrics#settledAmount()}.
      */
     List<MenuSalesRow> topMenuSales(LocalDateTime from, LocalDateTime to, int limit);
 
@@ -40,14 +38,12 @@ public interface InvoiceReportApi {
     /**
      * @param settledInvoices jumlah invoice yang dilunasi pada periode (berdasarkan {@code paidAt})
      * @param settledAmount   Σ nilai tagihan saat dilunasi pada periode ({@code settledAmount})
-     * @param refundedAmount  Σ koreksi tagihan ({@code Refund.scopeAmount}) pada periode
      * @param outstandingInvoices jumlah invoice yang belum lunas sekarang ({@code OPEN}/{@code PARTIALLY_PAID})
      * @param outstandingAmount   Σ sisa tagihan ({@code remainingAmount}) saat ini
      */
     record BillingMetrics(
         long settledInvoices,
         long settledAmount,
-        long refundedAmount,
         long outstandingInvoices,
         long outstandingAmount
     ) {

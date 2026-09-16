@@ -35,19 +35,6 @@ public class InvoiceReportRepository {
             .getSingleResult();
     }
 
-    /** Σ koreksi tagihan (refund baris invoice) pada periode. */
-    public long sumRefundedBetween(LocalDateTime from, LocalDateTime to) {
-        Number sum = entityManager
-            .createQuery("""
-                select coalesce(sum(r.scopeAmount), 0) from Refund r
-                where r.createdAt >= :from and r.createdAt < :to
-                """, Number.class)
-            .setParameter("from", from)
-            .setParameter("to", to)
-            .getSingleResult();
-        return sum == null ? 0L : sum.longValue();
-    }
-
     /** [0] = jumlah invoice belum lunas sekarang, [1] = Σ remaining_amount. */
     public Object[] findOutstandingFacts() {
         return entityManager

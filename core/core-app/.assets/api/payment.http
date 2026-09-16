@@ -1,11 +1,11 @@
 ###### PAYMENTS — modul payment saat ini (PaymentController) ######
 ### Base: {{baseUrl}}/payments — auth: Bearer {{token}}
-### Hanya 6 route aktif di bawah. Webhook Xendit ada di xendit.http.
-### Alur: PENDING ──(INTERNAL langsung PAID / webhook Xendit)──> PAID ──refund──> REFUNDED
+### Hanya 5 route aktif di bawah. Webhook Xendit ada di xendit.http.
+### Alur: PENDING ──(INTERNAL langsung PAID / webhook Xendit)──> PAID (terminal)
 ###         PENDING ──expire──> EXPIRED | PENDING ──fail──> FAILED
 ### Payment PAID menarget INVOICE → nominal diteruskan ke invoice via PaymentSettledEvent.
 ### Field response penting: amount (uang masuk), appliedAmount (nempel ke tagihan),
-### excessAmount (parkir/kembalian), paidAt, refundedAt.
+### excessAmount (parkir/kembalian), paidAt.
 
 ### ========================================
 ### CREATE — jalur kasir yang benar (masuk sales.cash dashboard)
@@ -70,7 +70,7 @@ GET {{baseUrl}}/payments/1
 Authorization: Bearer {{token}}
 
 ### Search active or GetAll
-### filter: keyword, targetType (INVOICE), targetId, status (PENDING|PAID|EXPIRED|FAILED|REFUNDED),
+### filter: keyword, targetType (INVOICE), targetId, status (PENDING|PAID|EXPIRED|FAILED),
 ### paymentProvider (INTERNAL|XENDIT); default sort createdAt,desc
 GET {{baseUrl}}/payments?status=PENDING
 Authorization: Bearer {{token}}
@@ -85,7 +85,7 @@ Authorization: Bearer {{token}}
 
 
 ### ========================================
-### TRANSISI STATUS MANUAL (hanya expire / fail / refund)
+### TRANSISI STATUS MANUAL (hanya expire / fail — PAID terminal)
 ### ========================================
 
 ### Mark as expired (valid: PENDING → EXPIRED)
@@ -95,20 +95,6 @@ Authorization: Bearer {{token}}
 ### Mark as failed (valid: PENDING → FAILED)
 POST {{baseUrl}}/payments/1/fail
 Authorization: Bearer {{token}}
-
-### Refund — TANPA body: full refund (semua item invoice yang belum refunded)
-### Pintu refund kasir: invoice menyesuaikan total/paid/remaining via refundItems.
-POST {{baseUrl}}/payments/1/refund
-Authorization: Bearer {{token}}
-
-### Refund — DENGAN body: parsial per item (hanya item yang belum refunded)
-POST {{baseUrl}}/payments/1/refund
-Authorization: Bearer {{token}}
-Content-Type: application/json
-
-{
-    "orderItemIds": [2]
-}
 
 
 ### ========================================
@@ -121,8 +107,4 @@ Authorization: Bearer {{token}}
 
 ### Expire - invalid: bukan PENDING lagi (400)
 POST {{baseUrl}}/payments/1/expire
-Authorization: Bearer {{token}}
-
-### Refund - invalid: belum PAID (400)
-POST {{baseUrl}}/payments/1/refund
 Authorization: Bearer {{token}}

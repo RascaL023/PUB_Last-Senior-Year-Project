@@ -1,8 +1,9 @@
 ###### SHADOW-PROBLEM — endpoint yang jelek/buruk secara kode saat ini ######
 ### JANGAN dipakai untuk flow normal. File ini untuk membuktikan temuan audit
-### branch shadow (lihat AUDIT-SHADOW-KODE.md, kode B1-B16) sebelum diperbaiki.
+### branch shadow (lihat AUDIT-SHADOW-KODE.md) sebelum diperbaiki.
 ### Tiap blok menjelaskan KENAPA JELEK + lokasi kode sumber.
-### Urutan coba yang disarankan: B2 → B1 → B8/B4 → B5/B6/B7 → B12 → rute mati.
+### Urutan coba yang disarankan: B2 → B5/B7 → B12 → rute mati.
+### (B1/B4/B6/B8 sudah tertutup: refund dihapus dari model.)
 
 
 ### ========================================
@@ -27,83 +28,14 @@ Authorization: Bearer {{token}}
 
 
 ### ========================================
-### B1 (TINGGI) — Refund parsial: kas dicatat penuh, tagihan dikoreksi sebagian
-### Lokasi: payment-core PaymentService.markRefunded + PaymentEventPublisherService.publishRefunded
-###   (refundedAmount = payment.getAmount() penuh) vs invoice Refund.scopeAmount (parsial)
-### Efek: sales.cash.refunded > sales.billing.refundedAmount untuk satu kejadian yang sama.
-### ========================================
-
-### B1: refund parsial 1 item dari payment yang menutup 2+ item
-POST {{baseUrl}}/payments/1/refund
-Authorization: Bearer {{token}}
-Content-Type: application/json
-
-{
-    "orderItemIds": [2]
-}
-
-### B1: bandingkan dua basis refund di dashboard (cash.refunded vs billing.refundedAmount)
-GET {{baseUrl}}/reports/dashboard/summary
-Authorization: Bearer {{token}}
-
-
-### ========================================
-### B8 (SEDANG) — Refund penuh menyisakan invoice OPEN dengan total 0, order boleh diubah lagi
-### Lokasi: invoice-core Invoice.applyRefund → markOpen, hasAppliedPayment
-### Seharusnya: invoice yang seluruh barisnya direfund = VOID, bukan OPEN total 0.
-### ========================================
-
-### B8: refund full (tanpa body) atas invoice 1 item
-POST {{baseUrl}}/payments/1/refund
-Authorization: Bearer {{token}}
-
-### B8: invoice-nya — perhatikan status OPEN dengan totalAmount 0
-GET {{baseUrl}}/invoices/1
-Authorization: Bearer {{token}}
-
-### B8: order-nya masih bisa diubah (seharusnya ditolak karena uang pernah masuk)
-PATCH {{baseUrl}}/orders/1
-Authorization: Bearer {{token}}
-Content-Type: application/json
-
-{
-    "notes": "seharusnya invoice VOID, bukan OPEN 0"
-}
-
-
-### ========================================
-### B4 (SEDANG) — Fakta pelunasan bergeser: lunas → refund → lunas lagi pindah periode
-### Lokasi: invoice-core Invoice.markPaid (selalu menimpa paid_at/settled_amount)
-### Dashboard periode lama kehilangan faktanya. Belum ada test siklus ini.
-### ========================================
-
-### B4: lunasi ulang invoice yang tadi di-refund penuh (pakai jalur kasir yang benar)
-POST {{baseUrl}}/payments
-Authorization: Bearer {{token}}
-Content-Type: application/json
-
-{
-    "targetType": "INVOICE",
-    "targetId": 1,
-    "paymentProvider": "INTERNAL",
-    "paymentDetail": "re-pay setelah refund"
-}
-
-### B4: cek paid_at/settledAmount invoice — menimpa fakta pelunasan sebelumnya
-GET {{baseUrl}}/invoices/1
-Authorization: Bearer {{token}}
-
-
-### ========================================
-### B5/B6/B7 (SEDANG) — Angka dashboard yang mudah disalahbaca
+### B5/B7 (SEDANG) — Angka dashboard yang mudah disalahbaca
 ### B5: recentActivity.totalPrice = total ORDER, billingStatus = status INVOICE (dua objek satu baris)
-### B6: topMenus = BRUTO (refund tidak mengurangi qty/revenue menu)
 ### B7: outstandingInvoices/Amount = SNAPSHOT hari ini, tetangganya per periode
-### Lokasi: report-core ReportServiceImpl + InvoiceReportRepository.findMenuSalesBetween
+### Lokasi: report-core ReportServiceImpl
 ### ========================================
 
-### B5/B6/B7: tarik dashboard lalu baca dengan curiga —
-### recentActivity[].totalPrice vs billingStatus, topMenus vs refundedAmount, outstanding vs periode
+### B5/B7: tarik dashboard lalu baca dengan curiga —
+### recentActivity[].totalPrice vs billingStatus, outstanding vs angka periode
 GET {{baseUrl}}/reports/dashboard/summary
 Authorization: Bearer {{token}}
 
@@ -145,3 +77,16 @@ Content-Type: application/json
 ### MATI: DELETE /payments/{id}
 DELETE {{baseUrl}}/payments/1
 Authorization: Bearer {{token}}
+
+### MATI: POST /payments/{id}/refund (refund dihapus dari model — 404/405)
+POST {{baseUrl}}/payments/1/refund
+Authorization: Bearer {{token}}
+
+### MATI: POST /invoices/{id}/refunds (refund dihapus dari model — 404/405)
+POST {{baseUrl}}/invoices/1/refunds
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "orderItemIds": [2]
+}

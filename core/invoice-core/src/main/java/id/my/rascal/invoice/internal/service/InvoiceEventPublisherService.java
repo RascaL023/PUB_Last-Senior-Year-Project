@@ -52,7 +52,6 @@ public class InvoiceEventPublisherService {
 
     private static List<InvoicePaidEvent.ItemLine> toItemLines(Invoice invoice) {
         return invoice.getItems().stream()
-            .filter(item -> !Boolean.TRUE.equals(item.getRefunded()))
             .map(item -> new InvoicePaidEvent.ItemLine(
                 item.getMenuId(),
                 item.getDescription(),

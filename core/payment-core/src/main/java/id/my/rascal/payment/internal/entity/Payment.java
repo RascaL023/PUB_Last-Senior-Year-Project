@@ -75,11 +75,6 @@ public class Payment {
     @Column(name = "paid_at")
     private LocalDateTime paidAt;
 
-    // Waktu refund (fakta jurnal). Report membucket refund dari kolom ini,
-    // bukan dari updated_at yang bisa berubah karena perubahan lain.
-    @Column(name = "refunded_at")
-    private LocalDateTime refundedAt;
-
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 

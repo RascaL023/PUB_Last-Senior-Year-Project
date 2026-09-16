@@ -8,7 +8,6 @@ import org.springframework.stereotype.Service;
 import id.my.rascal.invoice.api.InvoiceApi;
 import id.my.rascal.invoice.api.InvoiceApiResponse;
 import id.my.rascal.invoice.internal.model.mapper.InvoiceMapper;
-import id.my.rascal.invoice.internal.model.request.RefundRequest;
 import id.my.rascal.invoice.internal.service.InvoiceQueryService;
 import id.my.rascal.invoice.internal.service.InvoiceService;
 
@@ -44,11 +43,6 @@ public class InvoiceApiImpl implements InvoiceApi {
     @Override
     public InvoiceApiResponse applyPayment(Long invoiceId, Integer amount) {
         return InvoiceMapper.toApiResponse(invoiceService.applyPayment(invoiceId, amount));
-    }
-
-    @Override
-    public InvoiceApiResponse refundItems(Long invoiceId, List<Long> orderItemIds, Long paymentId) {
-        return InvoiceMapper.toApiResponse(invoiceService.refundItems(invoiceId, new RefundRequest(paymentId, orderItemIds, null)));
     }
 
     @Override

@@ -71,15 +71,13 @@ public class ReportServiceImpl implements ReportService {
 
         BillingMetrics billing = invoiceReportApi.billingMetrics(start, end);
         long cashReceived = paymentReportApi.sumAppliedSettledBetween(start, end);
-        long cashRefunded = paymentReportApi.sumRefundedBetween(start, end);
 
         Sales sales = new Sales(
-            new Cash(cashReceived, cashRefunded, cashReceived - cashRefunded),
+            new Cash(cashReceived),
             new Billing(
                 billing.settledInvoices(),
                 billing.settledAmount(),
                 billing.averageSettledInvoice(),
-                billing.refundedAmount(),
                 billing.outstandingInvoices(),
                 billing.outstandingAmount()
             )

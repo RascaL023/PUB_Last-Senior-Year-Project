@@ -5,7 +5,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
-import id.my.rascal.payment.api.event.PaymentRefundedEvent;
 import id.my.rascal.payment.api.event.PaymentSettledEvent;
 import id.my.rascal.payment.internal.entity.Payment;
 
@@ -31,19 +30,6 @@ public class PaymentEventPublisherService {
             payment.getPaidAt()
         ));
         logger.info("Published payment event: settled paymentId={} targetType={} targetId={}",
-            payment.getId(), payment.getTargetType(), payment.getTargetId());
-    }
-
-    public void publishRefunded(Payment payment) {
-        eventPublisher.publishEvent(new PaymentRefundedEvent(
-            payment.getId(),
-            payment.getTargetType() == null ? null : payment.getTargetType().name(),
-            payment.getTargetId(),
-            payment.getAmount(),
-            payment.getExternalId(),
-            payment.getRefundedAt() != null ? payment.getRefundedAt() : payment.getUpdatedAt()
-        ));
-        logger.info("Published payment event: refunded paymentId={} targetType={} targetId={}",
             payment.getId(), payment.getTargetType(), payment.getTargetId());
     }
 

@@ -247,7 +247,7 @@ public class OrderService {
 
     private void ensureNoAppliedPayment(Order order) {
         if (invoiceApi.hasAppliedPayment(order.getId()))
-            throw new BadRequestException("Order already has an applied payment — use refund first");
+            throw new BadRequestException("Order already has an applied payment");
     }
 
     private void applyCustomer(Order order, Long customerId, String customerName) {

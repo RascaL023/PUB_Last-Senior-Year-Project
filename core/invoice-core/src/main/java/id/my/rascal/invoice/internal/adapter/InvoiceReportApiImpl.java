@@ -36,7 +36,6 @@ public class InvoiceReportApiImpl implements InvoiceReportApi {
         return new BillingMetrics(
             toLong(settlement[0]),
             toLong(settlement[1]),
-            invoiceReportRepository.sumRefundedBetween(from, to),
             toLong(outstanding[0]),
             toLong(outstanding[1])
         );

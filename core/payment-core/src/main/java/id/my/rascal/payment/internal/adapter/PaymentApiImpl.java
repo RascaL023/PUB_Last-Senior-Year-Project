@@ -84,14 +84,10 @@ public class PaymentApiImpl implements PaymentApi {
         payment.setRawWebhook(raw);
         payment.setPaymentMethodName(payloadRequest.paymentMethod());
         payment.setPaymentChannel(payloadRequest.paymentChannel());
-        if (paymentPayloadStatus == PaymentStatus.REFUNDED && payment.getRefundedAt() == null)
-            payment.setRefundedAt(LocalDateTime.now());
         payment.setUpdatedAt(LocalDateTime.now());
         Payment saved = paymentRepository.save(payment);
         if (saved.getStatus() == PaymentStatus.PAID)
             paymentEventPublisherService.publishSettled(saved, saved.getAmount());
-        else if (saved.getStatus() == PaymentStatus.REFUNDED)
-            paymentEventPublisherService.publishRefunded(saved);
     }
 
     @Override

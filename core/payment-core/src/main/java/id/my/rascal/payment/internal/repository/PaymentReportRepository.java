@@ -28,16 +28,4 @@ public class PaymentReportRepository {
         return sum == null ? 0L : sum.longValue();
     }
 
-    public long sumRefundedBetween(LocalDateTime from, LocalDateTime to) {
-        Number sum = entityManager
-            .createQuery("""
-                select coalesce(sum(p.amount), 0) from Payment p
-                where p.refundedAt >= :from and p.refundedAt < :to
-                """, Number.class)
-            .setParameter("from", from)
-            .setParameter("to", to)
-            .getSingleResult();
-        return sum == null ? 0L : sum.longValue();
-    }
-
 }

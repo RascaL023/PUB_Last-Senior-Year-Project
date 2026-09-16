@@ -69,30 +69,8 @@ Authorization: Bearer {{token}}
 
 
 ### ========================================
-### REFUND PER ITEM (jalur admin/koreksi buku)
-### CATATAN: endpoint ini TIDAK mengubah status payment.
-### Jalur kasir yang benar: POST /payments/{id}/refund (payment-centric, sinkron dua arah).
-### ========================================
-
-### Refund items — baris ditandai refunded, total/paid/remaining invoice menyesuaikan
-POST {{baseUrl}}/invoices/1/refunds
-Authorization: Bearer {{token}}
-Content-Type: application/json
-
-{
-    "paymentId": 1,
-    "orderItemIds": [2],
-    "requestedBy": 1
-}
-
-### List refunds pada invoice
-GET {{baseUrl}}/invoices/1/refunds
-Authorization: Bearer {{token}}
-
-
-### ========================================
 ### VALIDATION
-### ========================================
+### ====================================
 
 ### Not found (404)
 GET {{baseUrl}}/invoices/999
@@ -116,11 +94,3 @@ Content-Type: application/json
     "amount": 5000
 }
 
-### Refund items — invalid: item sudah pernah refunded (400 "Some items already refunded")
-POST {{baseUrl}}/invoices/1/refunds
-Authorization: Bearer {{token}}
-Content-Type: application/json
-
-{
-    "orderItemIds": [2]
-}

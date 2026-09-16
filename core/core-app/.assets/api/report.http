@@ -1,9 +1,9 @@
 ###### REPORTS (authority: report.read — ADMIN & CASHIER) ######
 ### Dashboard summary - default (today, Asia/Jakarta)
 ### Report membaca langsung dari fakta domain (tanpa tabel projection):
-###   sales.cash.*    ← payment: applied_amount (uang masuk ke tagihan) & amount (refund)
-###   sales.billing.* ← invoice: settled_amount saat lunas, refund scope, piutang berjalan
-###   topMenus        ← baris invoice dari invoice yang lunas (bruto, sejalan dengan settledAmount)
+###   sales.cash.*    ← payment: applied_amount (uang masuk ke tagihan)
+###   sales.billing.* ← invoice: settled_amount saat lunas, piutang berjalan
+###   topMenus        ← baris invoice dari invoice yang lunas (sejalan dengan settledAmount)
 ###   operations      ← dining & order
 ###   recentActivity  ← order terbaru + billingStatus dari invoice aktif
 ### Pelunasan manual (POST /invoices/{id}/payments) hanya menambah basis billing, bukan kas.
