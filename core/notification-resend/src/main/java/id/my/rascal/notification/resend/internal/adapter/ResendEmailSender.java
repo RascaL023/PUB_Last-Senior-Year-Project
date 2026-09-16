@@ -1,8 +1,12 @@
 package id.my.rascal.notification.resend.internal.adapter;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpHeaders;
@@ -23,6 +27,7 @@ import id.my.rascal.notification.resend.internal.config.ResendProperties;
 @Component
 public class ResendEmailSender implements EmailSenderApi {
 
+    private static final Logger log = LoggerFactory.getLogger(ResendEmailSender.class);
     private static final String EMAIL_ENDPOINT = "/emails";
     private static final String IDEMPOTENCY_KEY_HEADER = "Idempotency-Key";
     private final RestClient client;
@@ -43,7 +48,7 @@ public class ResendEmailSender implements EmailSenderApi {
     public EmailSendResultApi sendEmail(SendEmailRequestApi request) {
         try {
             String from = buildFrom();
-            var body = new java.util.HashMap<String, Object>();
+            var body = new HashMap<String, Object>();
             body.put("from", from);
             body.put("to", List.of(request.to()));
             body.put("subject", request.subject());
@@ -67,9 +72,10 @@ public class ResendEmailSender implements EmailSenderApi {
             String emailId = node.has("id") ? node.get("id").asText() : null;
             return new EmailSendResultApi(emailId);
         } catch (RestClientResponseException e) {
-            String errorBody = e.getResponseBodyAsString();
-            throw new NotificationException("Email sending failed: " + e.getStatusCode() + " - " + errorBody);
+            log.error("Resend send failed: status={}, body={}", e.getStatusCode(), e.getResponseBodyAsString());
+            throw new NotificationException("Email sending failed with status " + e.getStatusCode(), e);
         } catch (IOException e) {
+            log.error("Failed to process Resend email request", e);
             throw new NotificationException("Failed to process email request", e);
         }
     }
