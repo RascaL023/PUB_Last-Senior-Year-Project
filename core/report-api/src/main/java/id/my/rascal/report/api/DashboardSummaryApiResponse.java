@@ -31,7 +31,8 @@ public record DashboardSummaryApiResponse(
         long settledAmount,
         long averageSettledInvoice,
         long outstandingInvoices,
-        long outstandingAmount
+        long outstandingAmount,
+        LocalDateTime outstandingAsOf
     ) {}
 
     public record Operations(

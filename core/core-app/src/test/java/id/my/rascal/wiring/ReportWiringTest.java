@@ -132,6 +132,8 @@ class ReportWiringTest {
         assertEquals(0, billing.settledInvoices());
         assertEquals(0, billing.settledAmount());
         assertEquals(ORDER_AMOUNT, billing.outstandingAmount());
+        // B7: piutang itu snapshot — wajib bawa penanda waktunya sendiri.
+        assertNotNull(billing.outstandingAsOf(), "outstandingAsOf harus terisi");
 
         assertEquals(0, summary.sales().cash().received());
 
@@ -154,6 +156,7 @@ class ReportWiringTest {
         assertEquals(0, billing.settledInvoices());
         assertEquals(0, billing.settledAmount());
         assertEquals(ORDER_AMOUNT - MANUAL_PARTIAL_AMOUNT, billing.outstandingAmount());
+        assertNotNull(billing.outstandingAsOf(), "outstandingAsOf harus terisi");
         assertTrue(summary.topMenus().isEmpty(), "pembayaran parsial bukan penjualan lunas");
         assertEquals("PARTIALLY_PAID", billingStatusOf(summary, orderId));
 

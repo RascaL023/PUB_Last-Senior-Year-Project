@@ -1242,7 +1242,7 @@ Ketentuan periode:
 | `sales.billing.settledInvoices` | Invoice | Jumlah invoice yang dilunasi pada periode (berdasarkan `paid_at`). Status sekarang tidak mengubah fakta ini. |
 | `sales.billing.settledAmount` | Invoice | Σ `settled_amount` = nilai tagihan saat dilunasi (dibekukan saat itu). |
 | `sales.billing.averageSettledInvoice` | Invoice | `settledAmount ÷ settledInvoices`; `0` bila belum ada invoice lunas. |
-| `sales.billing.outstandingInvoices` / `outstandingAmount` | Invoice | **Snapshot saat ini** (bukan filter periode): invoice `OPEN`/`PARTIALLY_PAID` dengan sisa > 0, dan Σ sisanya (piutang berjalan). |
+| `sales.billing.outstandingInvoices` / `outstandingAmount` | Invoice | **Snapshot saat ini** pada `outstandingAsOf` (bukan filter periode): invoice `OPEN`/`PARTIALLY_PAID` dengan sisa > 0, dan Σ sisanya (piutang berjalan). Piutang itu pos neraca, bukan arus periode. |
 | `operations` | Dining / Order | `openDinings` (dining `OPEN`), `occupiedTables`/`availableTables` (`dining_tables`), `ordersInProgress` (order `CREATED`/`CONFIRMED`/`PREPARING`). |
 | `topMenus` | Invoice | Penjualan menu dari invoice yang lunas pada periode; totalnya sejalan dengan `settledAmount`. `menuId` `null` = baris tagihan manual. Nama diambil dari master menu, fallback deskripsi tagihan. |
 | `recentActivity` | Order + Invoice | 10 order terbaru (`created_at` DESC, tanpa filter periode); `billingStatus` dari invoice aktif yang memuat order tersebut (`OPEN`/`PARTIALLY_PAID`/`PAID`/`VOID`, atau `null` bila tidak ada invoice aktif). |
@@ -1269,7 +1269,8 @@ Catatan penting:
         "settledAmount": 50000,
         "averageSettledInvoice": 50000,
         "outstandingInvoices": 2,
-        "outstandingAmount": 45000
+        "outstandingAmount": 45000,
+        "outstandingAsOf": "2026-09-06T14:30:00"
       }
     },
     "operations": { "openDinings": 2, "occupiedTables": 2, "availableTables": 8, "ordersInProgress": 4 },

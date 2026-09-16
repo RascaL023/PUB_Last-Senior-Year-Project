@@ -54,7 +54,8 @@ public class ReportServiceImpl implements ReportService {
 
     @Override
     public DashboardSummaryApiResponse getDashboardSummary(LocalDate from, LocalDate to) {
-        LocalDate today = LocalDate.now(JAKARTA);
+        LocalDateTime nowLocalLocation = LocalDateTime.now(JAKARTA);
+        LocalDate today = nowLocalLocation.toLocalDate();
         LocalDate fromDate = from == null ? today : from;
         LocalDate toDate = to == null ? today : to;
 
@@ -76,7 +77,8 @@ public class ReportServiceImpl implements ReportService {
                 billing.settledAmount(),
                 billing.averageSettledInvoice(),
                 billing.outstandingInvoices(),
-                billing.outstandingAmount()
+                billing.outstandingAmount(),
+                nowLocalLocation
             )
         );
 
