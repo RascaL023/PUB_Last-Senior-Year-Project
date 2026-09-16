@@ -32,6 +32,7 @@ public class PasswordResetService {
     private final UserAuthRepository userAuthRepository;
     private final PasswordResetTokenRepository tokenRepository;
     private final UserAuthService userAuthService;
+    private final AuthService authService;
     private final EmailSenderApi emailSender;
     private final PasswordEncoder passwordEncoder;
     private final String redirectBaseUrl;
@@ -41,6 +42,7 @@ public class PasswordResetService {
         UserAuthRepository userAuthRepository,
         PasswordResetTokenRepository tokenRepository,
         UserAuthService userAuthService,
+        AuthService authService,
         EmailSenderApi emailSender,
         PasswordEncoder passwordEncoder,
         @Value("${app.dev-base-url:https://dev.rascal.my.id}") String redirectBaseUrl,
@@ -49,6 +51,7 @@ public class PasswordResetService {
         this.userAuthRepository = userAuthRepository;
         this.tokenRepository = tokenRepository;
         this.userAuthService = userAuthService;
+        this.authService = authService;
         this.emailSender = emailSender;
         this.passwordEncoder = passwordEncoder;
         this.redirectBaseUrl = redirectBaseUrl;
@@ -167,6 +170,7 @@ public class PasswordResetService {
 
         UserAuth user = validToken.getUserAuth();
         userAuthService.updatePassword(user.getId(), request.newPassword());
+        authService.logoutAll(user.getId());
         tokenRepository.deleteByUserAuthId(user.getId());
 
         return new ResetPasswordResponse("Password has been reset");
