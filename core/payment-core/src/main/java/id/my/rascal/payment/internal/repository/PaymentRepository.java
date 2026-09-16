@@ -23,10 +23,6 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     @Query("select p from Payment p where p.deletedAt is null and p.id = :id")
     Optional<Payment> findActiveById(@Param("id") Long id);
 
-    /**
-     * Satu payment PENDING aktif per invoice: mencegah dua QRIS/VA menagih tagihan yang sama
-     * sekaligus (settle ganda masuk jalur replay-skip dan menghasilkan applied_amount = 0).
-     */
     @Query("""
         select count(p) > 0 from Payment p
         where p.deletedAt is null

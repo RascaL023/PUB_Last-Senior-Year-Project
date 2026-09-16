@@ -103,8 +103,6 @@ public class XenditService {
     }
     
     private PaymentProcessorStatus resolveStatus(String status) {
-        // "REFUNDED" tidak lagi ada di model (refund dihapus dari MVP): webhook refund
-        // jatuh ke FAILED, flow policy menolak transisinya, dan webhook di-ack tanpa efek.
         return switch (status.toUpperCase()) {
             case "PAID", "SUCCESS" -> PaymentProcessorStatus.PAID;
             case "EXPIRED" -> PaymentProcessorStatus.EXPIRED;

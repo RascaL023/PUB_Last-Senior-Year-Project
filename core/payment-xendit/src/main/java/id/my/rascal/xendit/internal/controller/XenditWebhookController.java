@@ -37,7 +37,7 @@ public class XenditWebhookController {
             // Deterministik: payload valid-tapi-tak-dapat-diproses → ack agar Xendit berhenti retry.
             return ResponseEntity.ok().build();
         } catch (Exception e) {
-            // Need to be retried
+            // Need to be retried, idk when :v
             return ResponseEntity.internalServerError().build();
         }
 

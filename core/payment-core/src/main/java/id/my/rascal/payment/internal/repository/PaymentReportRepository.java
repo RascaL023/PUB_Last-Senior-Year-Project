@@ -6,7 +6,6 @@ import org.springframework.stereotype.Repository;
 
 import jakarta.persistence.EntityManager;
 
-// Read only — agregasi untuk report-core lewat PaymentReportApi.
 @Repository
 public class PaymentReportRepository {
 

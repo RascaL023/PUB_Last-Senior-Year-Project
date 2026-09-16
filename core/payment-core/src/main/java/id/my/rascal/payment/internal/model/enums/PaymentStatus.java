@@ -44,8 +44,8 @@ public enum PaymentStatus {
 
     private static String allowedValues() {
         return Arrays.stream(values())
-                .map(Enum::name)
-                .collect(Collectors.joining(", "));
+            .map(Enum::name)
+            .collect(Collectors.joining(", "));
     }
 
 }

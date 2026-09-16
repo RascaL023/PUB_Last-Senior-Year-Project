@@ -24,7 +24,6 @@ public class Payment {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Payment selalu menarget satu invoice — tidak ada lagi target generik.
     @Column(name = "invoice_id", nullable = false)
     private Long invoiceId;
 
@@ -64,7 +63,6 @@ public class Payment {
     @Lob @Column(name = "raw_webhook")
     private String rawWebhook;
 
-    // Snapshot nomor invoice saat payment dibuat (untuk pencarian/tampilan).
     @Column(name = "invoice_number")
     private String invoiceNumber;
 

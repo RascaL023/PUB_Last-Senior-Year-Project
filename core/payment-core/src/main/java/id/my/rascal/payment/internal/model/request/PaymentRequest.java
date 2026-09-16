@@ -16,13 +16,6 @@ public record PaymentRequest(
     @Size(max = 255, message = "Payment detail cannot exceed 255 characters")
     String paymentDetail,
 
-    /**
-     * Nominal yang ditagihkan (partial pay). Opsional:
-     * <ul>
-     *   <li>{@code null} / absent → lunasi seluruh sisa tagihan ({@code remainingAmount});</li>
-     *   <li>terisi → harus ≥ 1 dan ≤ sisa tagihan; lebih dari sisa ditolak (bukan diparkir).</li>
-     * </ul>
-     */
     @Min(value = 1, message = "Amount must be greater than 0")
     Integer amount
 

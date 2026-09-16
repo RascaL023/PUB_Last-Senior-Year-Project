@@ -163,11 +163,6 @@ public class PaymentService {
         return toResponse(paymentRepository.save(payment));
     }
 
-    /**
-     * Snapshot tagihan untuk pembuatan payment: sisa tagihan + nomor invoice.
-     * B2: pelunasan invoice HANYA terjadi lewat PaymentSettledEvent (listener invoice);
-     * tidak ada lagi penulisan paid_at/settled_amount di luar jalur payment.
-     */
     private ResolvedTarget resolveInvoice(Long invoiceId) {
         InvoiceApiResponse invoice = invoiceApi.getInvoice(invoiceId);
         return new ResolvedTarget(invoice.remainingAmount(), invoice.invoiceNumber());
