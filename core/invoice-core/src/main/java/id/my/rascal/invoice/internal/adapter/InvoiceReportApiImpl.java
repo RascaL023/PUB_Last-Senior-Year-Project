@@ -12,13 +12,14 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import id.my.rascal.invoice.api.InvoiceReportApi;
+import id.my.rascal.invoice.internal.entity.InvoiceStatus;
 import id.my.rascal.invoice.internal.repository.InvoiceReportRepository;
 import id.my.rascal.invoice.internal.repository.InvoiceReportRepository.MenuSalesAggregate;
 
 @Component
 public class InvoiceReportApiImpl implements InvoiceReportApi {
 
-    private static final String VOID = id.my.rascal.invoice.internal.entity.InvoiceStatus.VOID.name();
+    private static final String VOID = InvoiceStatus.VOID.name();
 
     private final InvoiceReportRepository invoiceReportRepository;
 
@@ -43,14 +44,11 @@ public class InvoiceReportApiImpl implements InvoiceReportApi {
     @Override
     @Transactional(readOnly = true)
     public List<MenuSalesRow> topMenuSales(LocalDateTime from, LocalDateTime to, int limit) {
-        // SQL sudah membatasi baris (B16); di sini hanya menggabungkan baris yang
-        // deskripsinya berbeda tapi menuId-nya sama, lalu memotong hasil akhir.
         Map<Long, MenuSalesRow> byMenuId = new LinkedHashMap<>();
         List<MenuSalesRow> withoutMenuId = new ArrayList<>();
 
         for (MenuSalesAggregate row : invoiceReportRepository.findMenuSalesBetween(from, to, limit)) {
             if (row.menuId() == null) {
-                // Baris invoice manual: tidak ada identitas menu, tetap ditampilkan per deskripsi.
                 withoutMenuId.add(new MenuSalesRow(null, row.description(), row.qty(), row.revenue()));
                 continue;
             }
@@ -74,8 +72,6 @@ public class InvoiceReportApiImpl implements InvoiceReportApi {
         for (var row : invoiceReportRepository.findStatusByOrderIds(orderIds)) {
             String status = row.status().name();
 
-            // Satu order ideally hanya muncul di satu invoice aktif. Bila ada lebih dari satu,
-            // status VOID tidak boleh menutupi invoice yang masih berjalan.
             String current = statusByOrderId.get(row.orderId());
             if (current == null || VOID.equals(current))
                 statusByOrderId.put(row.orderId(), status);

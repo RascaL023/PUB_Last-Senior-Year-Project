@@ -38,8 +38,6 @@ public class InvoiceItem {
     @Column(name = "order_id")
     private Long orderId;
 
-    // Snapshot menu asal baris ini — dipakai report untuk proyeksi menu harian.
-    // Bisa null untuk baris invoice manual yang tidak berasal dari order item.
     @Column(name = "menu_id")
     private Long menuId;
 

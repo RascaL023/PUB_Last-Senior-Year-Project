@@ -9,20 +9,16 @@ import id.my.rascal.invoice.api.InvoiceApi;
 import id.my.rascal.invoice.api.InvoiceApiResponse;
 import id.my.rascal.invoice.internal.model.mapper.InvoiceMapper;
 import id.my.rascal.invoice.internal.service.InvoiceQueryService;
-import id.my.rascal.invoice.internal.service.InvoiceService;
 
 @Service
 public class InvoiceApiImpl implements InvoiceApi {
 
     private final InvoiceQueryService invoiceQueryService;
-    private final InvoiceService invoiceService;
 
     public InvoiceApiImpl(
-        InvoiceQueryService invoiceQueryService,
-        InvoiceService invoiceService
+        InvoiceQueryService invoiceQueryService
     ) {
         this.invoiceQueryService = invoiceQueryService;
-        this.invoiceService = invoiceService;
     }
 
     @Override

@@ -37,7 +37,6 @@ public class InvoiceController {
     private final InvoiceQueryService invoiceQueryService;
     private final String DEFAULT_GET_SUCCESS_MESSAGE = "Invoice successfully retrieved";
     private final String DEFAULT_CREATE_SUCCESS_MESSAGE = "Invoice successfully created";
-    private final String DEFAULT_UPDATE_SUCCESS_MESSAGE = "Invoice successfully updated";
 
     public InvoiceController(InvoiceService invoiceService, InvoiceQueryService invoiceQueryService) {
         this.invoiceService = invoiceService;

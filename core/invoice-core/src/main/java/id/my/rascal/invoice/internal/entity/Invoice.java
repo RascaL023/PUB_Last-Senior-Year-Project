@@ -50,14 +50,9 @@ public class Invoice {
     @Column(name = "issued_at", nullable = false)
     private LocalDateTime issuedAt;
 
-    // ── Fakta jurnal (append-only) ─────────────────────────────────────────────
-    // Diisi setiap kali invoice mencapai PAID, dan TIDAK dihapus saat void.
-    // Report memakai fakta ini supaya angka periode lampau tidak berubah sendiri.
     @Column(name = "paid_at")
     private LocalDateTime paidAt;
 
-    // Nilai tagihan pada saat pelunasan (dibekukan), supaya perubahan totalAmount
-    // belakangan tidak menggeser angka periode saat pelunasan.
     @Column(name = "settled_amount")
     private Integer settledAmount;
 
