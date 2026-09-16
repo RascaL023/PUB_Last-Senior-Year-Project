@@ -1,6 +1,7 @@
 package id.my.rascal.payment.internal.service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 import org.slf4j.Logger;
@@ -66,6 +67,7 @@ public class PaymentService {
 
     @Transactional
     public PaymentResponse create(PaymentRequest request) {
+        validateCreatePayment(request.targetType(), request.targetId());
         ResolvedTarget target = resolveTarget(request.targetType(), request.targetId());
         String externalId = "INV-" + UUID.randomUUID();
 
@@ -142,11 +144,13 @@ public class PaymentService {
     @Transactional
     public PaymentResponse markRefunded(Long id) {
         Payment payment = findActive(id);
-        paymentStatusFlowPolicy.validateFlow(payment.getStatus(), PaymentStatus.REFUNDED);
-        payment.setStatus(PaymentStatus.REFUNDED);
-        payment.setUpdatedAt(LocalDateTime.now());
-        Payment saved = paymentRepository.save(payment);
+        PaymentStatus targetStatus = PaymentStatus.REFUNDED;
 
+        paymentStatusFlowPolicy.validateFlow(payment.getStatus(), targetStatus);
+        payment.setStatus(targetStatus);
+        payment.setUpdatedAt(LocalDateTime.now());
+
+        Payment saved = paymentRepository.save(payment);
         eventPublisher.publishEvent(new PaymentRefundedEvent(
             saved.getId(),
             saved.getAmount(),
@@ -162,6 +166,18 @@ public class PaymentService {
         payment.setStatus(target);
         payment.setUpdatedAt(LocalDateTime.now());
         return toResponse(paymentRepository.save(payment));
+    }
+
+    private void validateCreatePayment(PaymentTargetType targetType, Long targetId) {
+        List<PaymentStatus> excludedStatuses = List.of(PaymentStatus.PAID, PaymentStatus.PENDING);
+        List<Payment> existPayments = paymentRepository.findActiveByTargetTypeAndTargetIdAndStatuses(
+            targetType, 
+            targetId,
+            excludedStatuses
+        );
+
+        if (existPayments != null && existPayments.size() > 0) 
+            throw new BadRequestException("Payment already created");
     }
 
     private ResolvedTarget resolveTarget(PaymentTargetType type, Long targetId) {

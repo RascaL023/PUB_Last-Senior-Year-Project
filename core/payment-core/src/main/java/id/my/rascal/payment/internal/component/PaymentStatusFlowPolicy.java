@@ -32,8 +32,7 @@ public class PaymentStatusFlowPolicy {
     }
 
     private boolean isTerminal(PaymentStatus status) {
-        return status == PaymentStatus.PAID
-            || status == PaymentStatus.EXPIRED
+        return status == PaymentStatus.EXPIRED
             || status == PaymentStatus.FAILED
             || status == PaymentStatus.REFUNDED;
     }
@@ -41,4 +40,5 @@ public class PaymentStatusFlowPolicy {
     private void reject(String message) {
         throw new BadRequestException(message);
     }
+
 }

@@ -12,6 +12,7 @@ import id.my.rascal.payment.internal.model.enums.PaymentProvider;
 import id.my.rascal.payment.internal.model.enums.PaymentStatus;
 import id.my.rascal.payment.internal.model.enums.PaymentTargetType;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -43,6 +44,19 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
         @Param("status") PaymentStatus status,
         @Param("paymentProvider") PaymentProvider paymentProvider,
         Pageable pageable
+    );
+
+    @Query("""
+        select p from Payment p
+        where p.deletedAt is null
+          and (p.targetType = :targetType)
+          and (p.targetId = :targetId)
+          and (p.status in :statuses)
+    """)
+    List<Payment> findActiveByTargetTypeAndTargetIdAndStatuses(
+        @Param("targetType") PaymentTargetType targetType, 
+        @Param("targetId") Long targetId,
+        @Param("statuses") List<PaymentStatus> paymentStatus
     );
 
 }
