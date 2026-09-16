@@ -43,7 +43,9 @@ public class InvoicePaymentEventListener {
         InvoiceResponse invoice = invoiceQueryService.findActiveInvoiceById(event.invoiceId());
 
         if (invoice.status() == InvoiceStatus.PAID && invoice.paidAmount() >= event.settledAmount()) {
-            logger.warn("Skipping replayed payment settlement: paymentId={} invoiceId={}",
+            // B3-lite: replay yang melompati pembaruan applied_amount adalah gejala inkonsistensi
+            // kas-vs-tagihan — naikkan ke ERROR supaya terlihat di pemantauan log sederhana.
+            logger.error("Skipping replayed payment settlement: paymentId={} invoiceId={}",
                 event.paymentId(), event.invoiceId());
             return;
         }

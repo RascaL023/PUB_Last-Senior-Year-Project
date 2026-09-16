@@ -480,5 +480,5 @@ Tidak ada perubahan kode bisnis yang diperlukan.
 | Entry point | `core/core-app/.../CoreAppApplication.java` |
 
 Dokumen pendamping: `API_CONTRACT.md` (spesifikasi endpoint),
-`API_CONTRACT_EN.md` (versi presisi untuk agent), `SEARCH.md` (read projection),
+`SEARCH.md` (read projection),
 `AUTH.md` (token lifecycle), `DOCKER-SETUP.md` (cara menjalankan).

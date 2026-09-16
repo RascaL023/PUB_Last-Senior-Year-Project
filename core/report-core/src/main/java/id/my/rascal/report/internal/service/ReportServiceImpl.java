@@ -65,6 +65,9 @@ public class ReportServiceImpl implements ReportService {
 
         if (toDate.isBefore(fromDate))
             throw new BadRequestException("'to' date must not be before 'from' date");
+        // B12: periode masa depan bukan "tidak ada penjualan" — tolak biar tidak disalahbaca.
+        if (fromDate.isAfter(today))
+            throw new BadRequestException("'from' date must not be in the future");
 
         LocalDateTime start = startOfDayInServerZone(fromDate);
         LocalDateTime end = startOfDayInServerZone(toDate.plusDays(1));
@@ -156,7 +159,7 @@ public class ReportServiceImpl implements ReportService {
                 order.orderNumber(),
                 order.status(),
                 billingStatusByOrderId.get(order.orderId()),
-                order.totalPrice(),
+                order.orderTotalPrice(),
                 order.createdAt()
             ))
             .toList();

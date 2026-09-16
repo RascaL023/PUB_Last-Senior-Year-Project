@@ -1277,7 +1277,7 @@ Catatan penting:
       { "menuId": 1, "name": "Nasi Goreng", "qty": 5, "revenue": 50000 }
     ],
     "recentActivity": [
-      { "orderId": 12, "orderNumber": "ORD-20260906-001", "status": "COMPLETED", "billingStatus": "PAID", "totalPrice": 45000, "createdAt": "2026-09-06T14:30:00" }
+      { "orderId": 12, "orderNumber": "ORD-20260906-001", "status": "COMPLETED", "billingStatus": "PAID", "orderTotalPrice": 45000, "createdAt": "2026-09-06T14:30:00" }
     ]
   },
   "meta": { "timestamp": "2026-09-06T07:00:00Z" }

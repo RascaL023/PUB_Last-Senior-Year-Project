@@ -101,7 +101,7 @@ sehingga gate-nya hanya authority tunggal itu (ADMIN & CASHIER).
 | `DELETE /auths/authorities/{id}` | `authority.delete` / `authority.*` |
 | Menu V1/V2: `POST /` | `menu.create` / `menu.*` |
 | Menu V1: `GET /`, `GET /{id}` | Public — permitAll di SecurityConfig, tanpa auth |
-| Menu V2: `GET /`, `GET /{id}` | `menu.read` / `menu.*` |
+| Menu V2: `GET /`, `GET /{id}` | Public — permitAll di SecurityConfig, tanpa auth |
 | Menu V1/V2: `PUT /{id}`, `PATCH /{id}/restore` | `menu.update` / `menu.*` |
 | Menu V1/V2: `DELETE /{id}` | `menu.delete` / `menu.*` |
 | Admin menu: `GET /search`, `GET /{id}` | `menu.read` / `menu.*` |
@@ -122,7 +122,7 @@ sehingga gate-nya hanya authority tunggal itu (ADMIN & CASHIER).
 | Order: `DELETE /{id}` | `order.delete` / `order.*` |
 | Payment: `POST /` | `payment.create` / `payment.*` |
 | Payment: `GET /`, `GET /{id}` | `payment.read` / `payment.*` |
-| Payment: `POST /{id}/expire` / `/fail` / `/refund` | `payment.update` / `payment.*` |
+| Payment: `POST /{id}/expire` / `/fail` | `payment.update` / `payment.*` |
 | Dining: `POST /` | `dining.create` / `dining.*` |
 | Dining: `GET /`, `GET /{id}` | `dining.read` / `dining.*` |
 | Dining: `POST /{id}/orders`, `POST /{id}/close` | `dining.update` / `dining.*` |

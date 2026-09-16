@@ -84,13 +84,16 @@ public record DashboardSummaryApiResponse(
      * Aktivitas terbaru tetap berbasis order (unit operasional), tetapi status billing-nya
      * berasal dari invoice aktif: {@code OPEN}/{@code PARTIALLY_PAID}/{@code PAID}/{@code VOID},
      * atau {@code null} bila order tidak punya invoice aktif.
+     *
+     * <p>B5: {@code orderTotalPrice} = total <b>order</b>; jangan tertukar dengan nilai tagihan
+     * invoice ({@code billingStatus} hanya status, nominal tagihan ada di {@code /invoices/{id}}).
      */
     public record RecentActivityEntry(
         Long orderId,
         String orderNumber,
         String status,
         String billingStatus,
-        long totalPrice,
+        long orderTotalPrice,
         LocalDateTime createdAt
     ) {}
 

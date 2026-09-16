@@ -23,14 +23,13 @@ Content-Type: application/json
 
 
 ### ========================================
-### B5/B7 (SEDANG) — Angka dashboard yang mudah disalahbaca
-### B5: recentActivity.totalPrice = total ORDER, billingStatus = status INVOICE (dua objek satu baris)
-### B7: outstandingInvoices/Amount = SNAPSHOT hari ini, tetangganya per periode
+### B5 (SELESAI): field direname jadi orderTotalPrice = total ORDER; billingStatus tetap status INVOICE.
+### B7 (SEDANG): outstandingInvoices/Amount = SNAPSHOT hari ini, tetangganya per periode
 ### Lokasi: report-core ReportServiceImpl
 ### ========================================
 
-### B5/B7: tarik dashboard lalu baca dengan curiga —
-### recentActivity[].totalPrice vs billingStatus, outstanding vs angka periode
+### B7: tarik dashboard lalu baca dengan curiga —
+### recentActivity[].orderTotalPrice vs billingStatus, outstanding vs angka periode
 GET {{baseUrl}}/reports/dashboard/summary
 Authorization: Bearer {{token}}
 

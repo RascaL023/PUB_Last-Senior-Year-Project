@@ -17,11 +17,15 @@ public interface OrderReportApi {
     /** Order terbaru (tanpa filter periode) untuk kartu "aktivitas terbaru". */
     List<RecentActivityEntry> recentActivity(int limit);
 
+    /**
+     * @param orderTotalPrice total <b>order</b> (bukan total tagihan invoice) — B5: penamaan
+     *                        eksplisit agar tidak tertukar dengan nilai invoice di FE.
+     */
     record RecentActivityEntry(
         Long orderId,
         String orderNumber,
         String status,
-        int totalPrice,
+        int orderTotalPrice,
         LocalDateTime createdAt
     ) {}
 

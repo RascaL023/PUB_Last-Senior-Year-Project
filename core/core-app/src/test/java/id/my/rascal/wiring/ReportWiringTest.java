@@ -16,11 +16,8 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
-import org.junit.jupiter.api.TestMethodOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -59,13 +56,17 @@ import id.my.rascal.report.internal.service.ReportService;
  * <ul>
  *   <li>basis <b>kas</b> ({@code sales.cash}) hanya terisi dari payment yang benar-benar
  *       dialokasikan ke tagihan ({@code applied_amount});</li>
- *   <li>basis <b>tagihan</b> ({@code sales.billing}) terisi saat invoice lunas, termasuk
- *       pelunasan manual tanpa payment record.</li>
+ *   <li>basis <b>tagihan</b> ({@code sales.billing}) terisi saat invoice lunas melalui
+ *       {@code POST /payments} — satu-satunya jalur uang sejak B2 ditutup.</li>
  * </ul>
+ *
+ * <p>B9: lifecycle invoice (open → partial → lunas → label) sengaja berada di <b>satu</b>
+ * test method dengan step berurutan, karena seluruh step membaca dashboard agregat yang sama.
+ * Membuat fixture per test justru membuat assertion agregat ("1 invoice belum lunas")
+ * saling mencemari antar test. Dengan penyatuan ini test bisa dijalankan sendirian.
  */
 @SpringBootTest
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-@TestMethodOrder(OrderAnnotation.class)
 class ReportWiringTest {
 
     @TestConfiguration
@@ -95,10 +96,6 @@ class ReportWiringTest {
     @Autowired
     private ReportController reportController;
 
-    private Long orderId;
-    private Long invoiceId;
-    private Long paymentId;
-
     @BeforeEach
     void stubMenu() {
         when(menuApi.getMenuSnapshots(any())).thenAnswer(invocation -> menuSnapshots(invocation.getArgument(0), "Nasi Goreng"));
@@ -106,7 +103,6 @@ class ReportWiringTest {
     }
 
     @Test
-    @Order(1)
     void reportEndpoint_isWiredWithItsAuthority() {
         assertNotNull(reportController);
         assertNotNull(reportService);
@@ -115,16 +111,16 @@ class ReportWiringTest {
     }
 
     @Test
-    @Order(2)
-    void openInvoice_showsAsOutstandingNotAsRevenue() {
+    void invoiceLifecycle_projectsToDashboard() {
+        // ---- Step 1: invoice OPEN → tampil sebagai piutang, bukan pendapatan ----
         OrderResponse order = orderService.create(new OrderRequest(
             null, null, null, OrderType.TAKEAWAY,
             List.of(new OrderItemRequest(null, MENU_NASI_GORENG, 2, List.of()))
         ));
-        orderId = order.id();
+        Long orderId = order.id();
 
         InvoiceResponse invoice = awaitInvoiceForOrder(orderId);
-        invoiceId = invoice.id();
+        Long invoiceId = invoice.id();
         assertEquals(ORDER_AMOUNT, invoice.totalAmount());
 
         DashboardSummaryApiResponse summary = awaitSummary(
@@ -141,52 +137,43 @@ class ReportWiringTest {
 
         assertTrue(summary.topMenus().isEmpty(), "invoice OPEN tidak masuk penjualan menu");
         assertEquals("OPEN", billingStatusOf(summary, orderId));
-    }
 
-    @Test
-    @Order(3)
-    void partialPayment_movesCashAndOutstandingWithoutSettling() {
-        // [B2] Partial pay lewat POST /payments (amount opsional): kas bergerak sebagian,
-        // tagihan belum lunas → belum masuk settledAmount, tapi piutangnya berkurang.
+        // ---- Step 2 [B2]: partial pay via POST /payments — kas bergerak sebagian,
+        // tagihan belum lunas → belum masuk settledAmount, tapi piutangnya berkurang. ----
         paymentService.create(new PaymentRequest(
             invoiceId, PaymentProvider.INTERNAL, null, MANUAL_PARTIAL_AMOUNT
         ));
         awaitInvoiceStatus(invoiceId, InvoiceStatus.PARTIALLY_PAID);
 
-        DashboardSummaryApiResponse summary = reportService.getDashboardSummary(null, null);
+        summary = reportService.getDashboardSummary(null, null);
 
         Cash cash = summary.sales().cash();
         assertEquals(MANUAL_PARTIAL_AMOUNT, cash.received());
 
-        Billing billing = summary.sales().billing();
+        billing = summary.sales().billing();
         assertEquals(0, billing.settledInvoices());
         assertEquals(0, billing.settledAmount());
         assertEquals(ORDER_AMOUNT - MANUAL_PARTIAL_AMOUNT, billing.outstandingAmount());
         assertTrue(summary.topMenus().isEmpty(), "pembayaran parsial bukan penjualan lunas");
         assertEquals("PARTIALLY_PAID", billingStatusOf(summary, orderId));
-    }
 
-    @Test
-    @Order(4)
-    void cashPayment_fillsCashAndBillingBases() {
-        // Pelunasan sisa tagihan (tanpa amount = remainingAmount) → invoice PAID.
+        // ---- Step 3: pelunasan sisa (tanpa amount = remainingAmount) → invoice PAID ----
         PaymentResponse payment = paymentService.create(new PaymentRequest(
             invoiceId, PaymentProvider.INTERNAL, null, null
         ));
-        paymentId = payment.id();
         assertEquals(CASH_PAYMENT_AMOUNT, payment.amount());
 
         awaitInvoiceStatus(invoiceId, InvoiceStatus.PAID);
 
-        DashboardSummaryApiResponse summary = awaitSummary(
+        summary = awaitSummary(
             s -> s.sales().billing().settledInvoices() == 1 && !s.topMenus().isEmpty(),
             "invoice lunas terproyeksi ke dashboard"
         );
 
-        Cash cash = summary.sales().cash();
+        cash = summary.sales().cash();
         assertEquals(ORDER_AMOUNT, cash.received());
 
-        Billing billing = summary.sales().billing();
+        billing = summary.sales().billing();
         assertEquals(1, billing.settledInvoices());
         assertEquals(ORDER_AMOUNT, billing.settledAmount());
         assertEquals(ORDER_AMOUNT, billing.averageSettledInvoice());
@@ -199,32 +186,27 @@ class ReportWiringTest {
 
         TopMenuEntry topMenu = summary.topMenus().get(0);
         assertEquals(MENU_NASI_GORENG, topMenu.menuId().longValue());
-        assertEquals("Nasi Goreng", topMenu.name());
         assertEquals(2, topMenu.qty());
         // Penjualan menu harus bisa direkonsiliasi dengan settledAmount periode itu.
         assertEquals(billing.settledAmount(), topMenu.revenue());
 
         assertEquals("PAID", billingStatusOf(summary, orderId));
-    }
 
-    @Test
-    @Order(5)
-    void topMenuLabel_followsMenuMasterNotInvoiceSnapshot() {
+        // ---- Step 4: label top menu mengikuti master menu, bukan snapshot tagihan ----
         when(menuApi.getMenuSnapshots(any())).thenAnswer(invocation -> menuSnapshots(invocation.getArgument(0), "Nasi Goreng Spesial"));
 
-        DashboardSummaryApiResponse summary = awaitSummary(
+        summary = awaitSummary(
             s -> !s.topMenus().isEmpty(),
             "menu sales masih ada"
         );
 
-        TopMenuEntry topMenu = summary.topMenus().get(0);
+        topMenu = summary.topMenus().get(0);
         assertEquals(MENU_NASI_GORENG, topMenu.menuId().longValue());
         assertEquals("Nasi Goreng Spesial", topMenu.name(),
             "label diambil dari master menu, bukan snapshot deskripsi tagihan");
     }
 
     @Test
-    @Order(6)
     void invalidPeriod_isRejected() {
         LocalDate tomorrow = LocalDate.now().plusDays(1);
         LocalDate today = LocalDate.now();

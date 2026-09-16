@@ -34,7 +34,7 @@ Content-Type: application/json
 {
     "invoiceId": 1,
     "paymentProvider": "XENDIT",
-    "paymentDetail": "QRIS meja 3"
+    "paymentDetail": "Test XENDIT"
 }
 
 ### Create - partial pay: amount opsional, harus ≤ sisa tagihan (400 "Payment amount exceeds remaining amount" bila lebih)
