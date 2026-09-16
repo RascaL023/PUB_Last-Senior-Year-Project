@@ -2,6 +2,7 @@ package id.my.rascal.auth.internal.repository;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -15,6 +16,8 @@ import id.my.rascal.auth.internal.entity.PasswordResetToken;
 public interface PasswordResetTokenRepository extends JpaRepository<PasswordResetToken, Long> {
 
     List<PasswordResetToken> findByExpiresAtAfterAndRevokedAtIsNull(Instant now);
+    
+    Optional<PasswordResetToken> findFirstByUserAuthId(Long userId);
 
     @Modifying
     @Query("""
@@ -22,4 +25,5 @@ public interface PasswordResetTokenRepository extends JpaRepository<PasswordRese
         where t.userAuth.id = :userId
     """)
     void deleteByUserAuthId(@Param("userId") Long userId);
+
 }

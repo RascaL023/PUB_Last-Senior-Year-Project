@@ -1,9 +1,9 @@
 package id.my.rascal.auth.internal.service;
 
 import java.time.Instant;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -71,7 +71,7 @@ public class PasswordResetService {
             resetToken.setCreatedAt(Instant.now());
             tokenRepository.save(resetToken);
 
-            String resetLink = redirectBaseUrl + "/reset-password?token=" + rawToken;
+            String resetLink = redirectBaseUrl + "/reset-password?token=" + user.getId() + "_" + rawToken;
             
             String htmlContent = """
                 <!DOCTYPE html>
@@ -127,37 +127,49 @@ public class PasswordResetService {
                 © 2026 Rascal. All rights reserved.
                 """.formatted(resetLink, tokenExpiryMinutes);
                 
-            try {
-                emailSender.sendEmail(new SendEmailRequestApi(
-                    request.email(),
-                    "Reset Your Password",
-                    htmlContent,
-                    textContent,
-                    Map.of("Idempotency-Key", UUID.randomUUID().toString())
-                ));
-            } catch (NotificationException e) {
-                log.error("Failed to send reset email to {}: {}", request.email(), e.getMessage());
-            }
+            CompletableFuture.runAsync(() -> {
+                try {
+                    emailSender.sendEmail(new SendEmailRequestApi(
+                        request.email(),
+                        "Reset Your Password",
+                        htmlContent,
+                        textContent,
+                        Map.of("Idempotency-Key", UUID.randomUUID().toString())
+                    ));
+                } catch (NotificationException e) {
+                    log.error("Failed to send reset email to {}: {}", request.email(), e.getMessage());
+                }
+            });
         }
+
         return new ForgotPasswordResponse("If the email is registered, a reset link has been sent");
     }
 
     @Transactional
     public ResetPasswordResponse resetPassword(ResetPasswordRequest request) {
-        List<PasswordResetToken> activeTokens = tokenRepository.findByExpiresAtAfterAndRevokedAtIsNull(Instant.now());
-        PasswordResetToken validToken = null;
-        for (PasswordResetToken token : activeTokens) {
-            if (passwordEncoder.matches(request.token(), token.getTokenHash())) {
-                validToken = token;
-                break;
-            }
-        }
-        if (validToken == null) {
+        String reqToken = request.token();
+        if (reqToken == null || !reqToken.contains("_"))
+            throw new BadRequestException("Invalid or expired reset token format");
+        
+        String[] parts = reqToken.split("_", 2);
+        Long userId;
+        try { userId = Long.parseLong(parts[0]); } 
+        catch (NumberFormatException e) { throw new BadRequestException("Invalid or expired reset token format"); }
+        String rawToken = parts[1];
+
+        PasswordResetToken validToken = tokenRepository.findFirstByUserAuthId(userId)
+            .filter(t -> t.getExpiresAt().isAfter(Instant.now()) && t.getRevokedAt() == null)
+            .filter(t -> passwordEncoder.matches(rawToken, t.getTokenHash()))
+            .orElse(null);
+
+        if (validToken == null)
             throw new BadRequestException("Invalid or expired reset token");
-        }
+
         UserAuth user = validToken.getUserAuth();
         userAuthService.updatePassword(user.getId(), request.newPassword());
         tokenRepository.deleteByUserAuthId(user.getId());
+
         return new ResetPasswordResponse("Password has been reset");
     }
+
 }
