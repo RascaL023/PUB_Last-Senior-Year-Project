@@ -37,8 +37,6 @@ public class DevEmployeeSeeder implements Seeder {
         admin.setName("Admin Employee");
         admin.setEmail("admin@rascal.id");
         admin.setPhone("081234567890");
-        admin.setPosition("Manager");
-        admin.setDepartment("Management");
         admin.setStatus(EmployeeStatus.ACTIVE);
         admin.markActive();
         admin.setCreatedAt(now);
@@ -47,8 +45,6 @@ public class DevEmployeeSeeder implements Seeder {
         cashier.setName("Kasir Employee");
         cashier.setEmail("kasir@rascal.id");
         cashier.setPhone("081234567891");
-        cashier.setPosition("Cashier");
-        cashier.setDepartment("Finance");
         cashier.setStatus(EmployeeStatus.ACTIVE);
         cashier.markActive();
         cashier.setCreatedAt(now);

@@ -6,11 +6,10 @@ import id.my.rascal.employee.internal.model.enums.EmployeeStatus;
 
 public record EmployeeResponse(
     Long id,
+    Long userAuthId,
     String name,
     String email,
     String phone,
-    String position,
-    String department,
     EmployeeStatus status,
     LocalDateTime createdAt,
     LocalDateTime updatedAt,

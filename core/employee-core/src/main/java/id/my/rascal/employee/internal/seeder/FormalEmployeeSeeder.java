@@ -36,8 +36,6 @@ public class FormalEmployeeSeeder implements Seeder {
         admin.setName("Admin Employee");
         admin.setEmail("admin@rascal.id");
         admin.setPhone("081234567890");
-        admin.setPosition("Manager");
-        admin.setDepartment("Management");
         admin.setStatus(EmployeeStatus.ACTIVE);
         admin.markActive();
         admin.setCreatedAt(now);

@@ -17,9 +17,7 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
     @Query("""
         select e from Employee e
         where (:keyword is null or lower(e.name) like lower(concat('%', cast(:keyword as string), '%'))
-            or lower(e.email) like lower(concat('%', cast(:keyword as string), '%'))
-            or lower(e.position) like lower(concat('%', cast(:keyword as string), '%'))
-            or lower(e.department) like lower(concat('%', cast(:keyword as string), '%')))
+            or lower(e.email) like lower(concat('%', cast(:keyword as string), '%')))
         order by e.name
     """)
     Page<Employee> findByKeyword(@Param("keyword") String keyword, Pageable pageable);

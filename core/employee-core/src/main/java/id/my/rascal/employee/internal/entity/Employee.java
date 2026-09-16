@@ -23,6 +23,9 @@ public class Employee {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "user_auth_id", unique = true)
+    private Long userAuthId;
+
     @Column(name = "name", nullable = false)
     private String name;
 
@@ -31,12 +34,6 @@ public class Employee {
 
     @Column(name = "phone")
     private String phone;
-
-    @Column(name = "position")
-    private String position;
-
-    @Column(name = "department")
-    private String department;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
