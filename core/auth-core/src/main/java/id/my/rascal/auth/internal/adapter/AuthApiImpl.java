@@ -1,6 +1,9 @@
 package id.my.rascal.auth.internal.adapter;
 
+import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -55,7 +58,7 @@ public class AuthApiImpl implements AuthApi {
             throw new BadRequestException("Email is required");
         if (request.password() == null || request.password().length() < 8)
             throw new BadRequestException("Password must be at least 8 characters");
-        if (userAuthRepository.findActiveByEmail(request.email()).isPresent())
+        if (userAuthRepository.existsByEmailAndDeletedAtIsNull(request.email()))
             throw new ConflictException("Email already exists: " + request.email());
 
         Role role = roleRepository.findByName(request.roleName())
@@ -65,8 +68,8 @@ public class AuthApiImpl implements AuthApi {
         UserAuth userAuth = new UserAuth();
         userAuth.setEmail(request.email());
         userAuth.setHashedPassword(passwordEncoder.encode(request.password()));
-        userAuth.setCreatedAt(java.time.LocalDateTime.now());
-        userAuth.setRoles(new java.util.HashSet<>(java.util.Set.of(role)));
+        userAuth.setCreatedAt(LocalDateTime.now());
+        userAuth.setRoles(new HashSet<>(Set.of(role)));
 
         userAuth = userAuthRepository.save(userAuth);
         return new UserAuthApiResponse(userAuth.getId(), userAuth.getEmail());

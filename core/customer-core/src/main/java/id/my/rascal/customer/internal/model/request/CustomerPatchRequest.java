@@ -8,9 +8,6 @@ public record CustomerPatchRequest(
     @Size(min = 3, max = 50, message = "Name must be 3-50 characters")
     String name,
 
-    @Size(max = 255, message = "Email must be at most 255 characters")
-    String email,
-
     @Size(max = 20, message = "Phone must be at most 20 characters")
     String phone,
 
@@ -19,17 +16,12 @@ public record CustomerPatchRequest(
 ) {
     public boolean isEmptyPatch() {
         return name == null 
-            && email == null 
             && phone == null 
             && notes == null;
     }
 
     public Optional<String> nameOpt() {
         return Optional.ofNullable(name);
-    }
-
-    public Optional<String> emailOpt() {
-        return Optional.ofNullable(email);
     }
 
     public Optional<String> phoneOpt() {

@@ -7,35 +7,54 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import id.my.rascal.auth.api.AuthApi;
+import id.my.rascal.auth.api.CreateAccountRequest;
+import id.my.rascal.auth.api.UserAuthApiResponse;
 import id.my.rascal.common.exception.BadRequestException;
 import id.my.rascal.common.util.StringUtil;
 import id.my.rascal.customer.internal.entity.Customer;
 import id.my.rascal.customer.internal.model.mapper.CustomerMapper;
 import id.my.rascal.customer.internal.model.request.CustomerPatchRequest;
 import id.my.rascal.customer.internal.model.request.CustomerPutRequest;
-import id.my.rascal.customer.internal.model.request.CustomerRequest;
+import id.my.rascal.customer.internal.model.request.CustomerRegisterRequest;
 import id.my.rascal.customer.internal.model.response.CustomerResponse;
 import id.my.rascal.customer.internal.repository.CustomerRepository;
-import id.my.rascal.customer.internal.service.CustomerQueryService;
 
 @Service
 public class CustomerService {
 
+    private static final String CUSTOMER_ROLE = "CUSTOMER_BASE";
+
     private final CustomerRepository customerRepository;
     private final CustomerQueryService customerQueryService;
+    private final AuthApi authApi;
 
-    public CustomerService(CustomerRepository customerRepository, CustomerQueryService customerQueryService) {
+    public CustomerService(
+        CustomerRepository customerRepository, 
+        CustomerQueryService customerQueryService, 
+        AuthApi authApi
+    ) {
         this.customerRepository = customerRepository;
         this.customerQueryService = customerQueryService;
+        this.authApi = authApi;
     }
 
     @Transactional
-    public CustomerResponse create(CustomerRequest request) {
+    public CustomerResponse register(CustomerRegisterRequest request) {
+        String email = requireEmail(request.email());
+
+        UserAuthApiResponse auth = authApi.createAccount(
+            new CreateAccountRequest(
+                email, 
+                request.password(), CUSTOMER_ROLE
+            )
+        );
+
         Customer customer = new Customer();
+        customer.setUserAuthId(auth.id());
         customer.setName(requireName(request.name()));
-        customer.setEmail(normalizeNullable(request.email()));
+        customer.setEmail(email);
         customer.setPhone(normalizePhone(request.phone()));
-        customer.setNotes(normalizeNullable(request.notes()));
         customer.setCreatedAt(LocalDateTime.now());
 
         return CustomerMapper.toResponse(customerRepository.save(customer));
@@ -46,7 +65,6 @@ public class CustomerService {
         Customer customer = customerQueryService.findById(id);
 
         customer.setName(requireName(request.name()));
-        customer.setEmail(normalizeNullable(request.email()));
         customer.setPhone(normalizePhone(request.phone()));
         customer.setNotes(normalizeNullable(request.notes()));
         customer.setUpdatedAt(LocalDateTime.now());
@@ -59,7 +77,6 @@ public class CustomerService {
         Customer customer = customerQueryService.findById(id);
 
         request.nameOpt().ifPresent(name -> customer.setName(requireName(name)));
-        request.emailOpt().ifPresent(email -> customer.setEmail(normalizeNullable(email)));
         request.phoneOpt().ifPresent(phone -> customer.setPhone(normalizePhone(phone)));
         request.notesOpt().ifPresent(notes -> customer.setNotes(normalizeNullable(notes)));
         customer.setUpdatedAt(LocalDateTime.now());
@@ -88,6 +105,12 @@ public class CustomerService {
         if (StringUtil.safeIsBlank(name) || name.trim().length() < 3)
             throw new BadRequestException("Name must be 3-50 characters");
         return StringUtil.normalizeSpaces(name);
+    }
+
+    private String requireEmail(String email) {
+        if (StringUtil.safeIsBlank(email))
+            throw new BadRequestException("Email is required");
+        return StringUtil.normalizeSpaces(email).trim().toLowerCase();
     }
 
     private String normalizeNullable(String value) {

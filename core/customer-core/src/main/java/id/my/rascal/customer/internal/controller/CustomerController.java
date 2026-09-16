@@ -26,7 +26,7 @@ import id.my.rascal.common.template.SuccessPagedTemplate;
 import id.my.rascal.common.template.SuccessTemplate;
 import id.my.rascal.customer.internal.model.request.CustomerPatchRequest;
 import id.my.rascal.customer.internal.model.request.CustomerPutRequest;
-import id.my.rascal.customer.internal.model.request.CustomerRequest;
+import id.my.rascal.customer.internal.model.request.CustomerRegisterRequest;
 import id.my.rascal.customer.internal.model.response.CustomerResponse;
 import id.my.rascal.customer.internal.service.CustomerService;
 import jakarta.validation.Valid;
@@ -41,15 +41,14 @@ public class CustomerController {
         this.customerService = customerService;
     }
 
-    @PostMapping
-    // @PreAuthorize("hasAnyAuthority('customer.create', 'customer.*')")
-    public ResponseEntity<SuccessTemplate<CustomerResponse>> create(
-        @Valid @RequestBody CustomerRequest request
+    @PostMapping("/register")
+    public ResponseEntity<SuccessTemplate<CustomerResponse>> register(
+        @Valid @RequestBody CustomerRegisterRequest request
     ) {
         return ApiResponse.success(
             HttpStatus.CREATED,
-            "Customer successfully created",
-            customerService.create(request)
+            "Customer successfully registered",
+            customerService.register(request)
         );
     }
 

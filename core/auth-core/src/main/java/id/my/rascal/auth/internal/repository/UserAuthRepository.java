@@ -15,7 +15,10 @@ import java.util.Optional;
 
 @Repository
 public interface UserAuthRepository extends JpaRepository<UserAuth, Long> {
+
     Optional<UserAuth> findByEmail(String email);
+
+    boolean existsByEmailAndDeletedAtIsNull(String email);
 
     @Query("""
         select distinct u from UserAuth u
