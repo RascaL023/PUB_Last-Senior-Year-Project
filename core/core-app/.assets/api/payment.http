@@ -3,9 +3,9 @@
 ### Hanya 5 route aktif di bawah. Webhook Xendit ada di xendit.http.
 ### Alur: PENDING ──(INTERNAL langsung PAID / webhook Xendit)──> PAID (terminal)
 ###         PENDING ──expire──> EXPIRED | PENDING ──fail──> FAILED
-### Payment PAID menarget INVOICE → nominal diteruskan ke invoice via PaymentSettledEvent.
-### Field response penting: amount (uang masuk), appliedAmount (nempel ke tagihan),
-### excessAmount (parkir/kembalian), paidAt.
+### Payment selalu menarget satu invoice (invoiceId) → nominal diteruskan via PaymentSettledEvent.
+### Field response penting: invoiceId/invoiceNumber, amount (uang masuk),
+### appliedAmount (nempel ke tagihan), excessAmount (parkir/kembalian), paidAt.
 
 ### ========================================
 ### CREATE — jalur kasir yang benar (masuk sales.cash dashboard)
@@ -17,8 +17,7 @@ Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-    "targetType": "INVOICE",
-    "targetId": 1,
+    "invoiceId": 1,
     "paymentProvider": "INTERNAL",
     "paymentDetail": "CASH-001"
 }
@@ -30,22 +29,9 @@ Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-    "targetType": "INVOICE",
-    "targetId": 1,
+    "invoiceId": 1,
     "paymentProvider": "XENDIT",
     "paymentDetail": "QRIS meja 3"
-}
-
-### Create - invalid: targetType selain INVOICE ditolak (400 "Unsupported payment target")
-POST {{baseUrl}}/payments
-Authorization: Bearer {{token}}
-Content-Type: application/json
-
-{
-    "targetType": "ORDER",
-    "targetId": 1,
-    "paymentProvider": "XENDIT",
-    "paymentDetail": "jalur legacy, sudah dihapus"
 }
 
 ### Create - invalid: invoice sudah lunas (400 "Invoice already paid")
@@ -54,8 +40,7 @@ Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-    "targetType": "INVOICE",
-    "targetId": 1,
+    "invoiceId": 1,
     "paymentProvider": "INTERNAL",
     "paymentDetail": "double pay"
 }
@@ -70,13 +55,13 @@ GET {{baseUrl}}/payments/1
 Authorization: Bearer {{token}}
 
 ### Search active or GetAll
-### filter: keyword, targetType (INVOICE), targetId, status (PENDING|PAID|EXPIRED|FAILED),
+### filter: keyword, invoiceId, status (PENDING|PAID|EXPIRED|FAILED),
 ### paymentProvider (INTERNAL|XENDIT); default sort createdAt,desc
 GET {{baseUrl}}/payments?status=PENDING
 Authorization: Bearer {{token}}
 
 ### Search - by invoice (cek semua payment satu tagihan)
-GET {{baseUrl}}/payments?targetType=INVOICE&targetId=1
+GET {{baseUrl}}/payments?invoiceId=1
 Authorization: Bearer {{token}}
 
 ### Search - pagination

@@ -21,7 +21,6 @@ import id.my.rascal.payment.internal.component.PaymentEffect;
 import id.my.rascal.payment.internal.component.PaymentStatusFlowPolicy;
 import id.my.rascal.payment.internal.entity.Payment;
 import id.my.rascal.payment.internal.model.enums.PaymentStatus;
-import id.my.rascal.payment.internal.model.enums.PaymentTargetType;
 import id.my.rascal.payment.internal.repository.PaymentRepository;
 import id.my.rascal.payment.internal.service.PaymentEventPublisherService;
 
@@ -48,8 +47,7 @@ class PaymentWebhookParityTest {
     private Payment pendingPayment() {
         Payment payment = new Payment();
         payment.setId(5L);
-        payment.setTargetType(PaymentTargetType.INVOICE);
-        payment.setTargetId(900L);
+        payment.setInvoiceId(900L);
         payment.setStatus(PaymentStatus.PENDING);
         payment.setAmount(58000);
         payment.setExternalId("INV-abc");
@@ -68,8 +66,7 @@ class PaymentWebhookParityTest {
         verify(eventPublisher).publishEvent(event.capture());
 
         assertEquals(5L, event.getValue().paymentId());
-        assertEquals(900L, event.getValue().targetId());
-        assertEquals("INVOICE", event.getValue().targetType());
+        assertEquals(900L, event.getValue().invoiceId());
         assertEquals(58000, event.getValue().settledAmount());
     }
 

@@ -43,7 +43,6 @@ import id.my.rascal.order.internal.model.request.OrderRequest;
 import id.my.rascal.order.internal.model.response.OrderResponse;
 import id.my.rascal.order.internal.service.OrderService;
 import id.my.rascal.payment.internal.model.enums.PaymentProvider;
-import id.my.rascal.payment.internal.model.enums.PaymentTargetType;
 import id.my.rascal.payment.internal.model.request.PaymentRequest;
 import id.my.rascal.payment.internal.model.response.PaymentResponse;
 import id.my.rascal.payment.internal.service.PaymentService;
@@ -169,7 +168,7 @@ class ReportWiringTest {
     @Order(4)
     void cashPayment_fillsCashAndBillingBases() {
         PaymentResponse payment = paymentService.create(new PaymentRequest(
-            PaymentTargetType.INVOICE, invoiceId, PaymentProvider.INTERNAL, null
+            invoiceId, PaymentProvider.INTERNAL, null
         ));
         paymentId = payment.id();
         assertEquals(CASH_PAYMENT_AMOUNT, payment.amount());

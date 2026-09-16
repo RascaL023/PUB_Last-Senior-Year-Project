@@ -41,7 +41,7 @@ class InvoicePaymentEventListenerTest {
         when(invoiceQueryService.findActiveInvoiceById(900L)).thenReturn(openInvoice(900L, 58000, 0));
 
         listener.onPaymentSettled(new PaymentSettledEvent(
-            5L, "INVOICE", 900L, 58000, "INV-abc", LocalDateTime.now()
+            5L, 900L, 58000, "INV-abc", LocalDateTime.now()
         ));
 
         verify(invoiceService).applyPayment(Long.valueOf(900L), Integer.valueOf(58000));
@@ -55,7 +55,7 @@ class InvoicePaymentEventListenerTest {
         when(invoiceQueryService.findActiveInvoiceById(900L)).thenReturn(openInvoice(900L, 58000, 40000));
 
         listener.onPaymentSettled(new PaymentSettledEvent(
-            5L, "INVOICE", 900L, 58000, "INV-abc", LocalDateTime.now()
+            5L, 900L, 58000, "INV-abc", LocalDateTime.now()
         ));
 
         verify(invoiceService).applyPayment(Long.valueOf(900L), Integer.valueOf(18000));
@@ -77,7 +77,7 @@ class InvoicePaymentEventListenerTest {
         when(invoiceQueryService.findActiveInvoiceById(900L)).thenReturn(voided);
 
         listener.onPaymentSettled(new PaymentSettledEvent(
-            5L, "INVOICE", 900L, 58000, "INV-abc", LocalDateTime.now()
+            5L, 900L, 58000, "INV-abc", LocalDateTime.now()
         ));
 
         verify(invoiceService, never()).applyPayment(anyLong(), anyInt());
@@ -89,26 +89,11 @@ class InvoicePaymentEventListenerTest {
     }
 
     @Test
-    void legacyTarget_isIgnored() {
-        listener.onPaymentSettled(new PaymentSettledEvent(
-            5L, "ORDER", 101L, 58000, "INV-abc", LocalDateTime.now()
-        ));
-
-        verify(invoiceService, never()).applyPayment(anyLong(), anyInt());
-        verify(invoiceQueryService, never()).findActiveInvoiceById(anyLong());
-        verify(paymentApi, never()).confirmSplit(
-            org.mockito.ArgumentMatchers.anyLong(),
-            org.mockito.ArgumentMatchers.anyInt(),
-            org.mockito.ArgumentMatchers.anyInt()
-        );
-    }
-
-    @Test
     void replayedSettlement_isSkipped() {
         when(invoiceQueryService.findActiveInvoiceById(900L)).thenReturn(paidInvoice(900L, 58000));
 
         listener.onPaymentSettled(new PaymentSettledEvent(
-            5L, "INVOICE", 900L, 58000, "INV-abc", LocalDateTime.now()
+            5L, 900L, 58000, "INV-abc", LocalDateTime.now()
         ));
 
         verify(invoiceService, never()).applyPayment(anyLong(), anyInt());

@@ -22,7 +22,7 @@ Content-Type: application/json
     "amount": 20000
 }
 
-### B2: cek invoice-nya (status berubah, tapi tidak ada Payment record baru di GET /payments?targetId=1)
+### B2: cek invoice-nya (status berubah, tapi tidak ada Payment record baru di GET /payments?invoiceId=1)
 GET {{baseUrl}}/invoices/1
 Authorization: Bearer {{token}}
 
@@ -61,8 +61,7 @@ Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-    "targetType": "INVOICE",
-    "targetId": 1
+    "invoiceId": 1
 }
 
 ### MATI: PATCH /payments/{id}

@@ -54,7 +54,6 @@ import id.my.rascal.payment.api.PaymentProcessorStatus;
 import id.my.rascal.payment.internal.entity.Payment;
 import id.my.rascal.payment.internal.model.enums.PaymentProvider;
 import id.my.rascal.payment.internal.model.enums.PaymentStatus;
-import id.my.rascal.payment.internal.model.enums.PaymentTargetType;
 import id.my.rascal.payment.internal.model.request.PaymentRequest;
 import id.my.rascal.payment.internal.repository.PaymentRepository;
 import id.my.rascal.payment.internal.service.PaymentService;
@@ -193,7 +192,7 @@ class BillingWiringTest {
     @Test
     @Order(5)
     void cashPayment_settlesInvoiceAndRecordsSplit() {
-        paymentService.create(new PaymentRequest(PaymentTargetType.INVOICE, diningInvoiceId, PaymentProvider.INTERNAL, null));
+        paymentService.create(new PaymentRequest(diningInvoiceId, PaymentProvider.INTERNAL, null));
 
         InvoiceApiResponse invoice = awaitInvoiceStatus(diningInvoiceId, "PAID");
 
@@ -239,8 +238,7 @@ class BillingWiringTest {
         InvoiceApiResponse invoice = awaitInvoiceForOrder(order.id());
 
         Payment payment = new Payment();
-        payment.setTargetType(PaymentTargetType.INVOICE);
-        payment.setTargetId(invoice.id());
+        payment.setInvoiceId(invoice.id());
         payment.setStatus(PaymentStatus.PENDING);
         payment.setAmount(8000);
         payment.setPaymentProvider(PaymentProvider.XENDIT);

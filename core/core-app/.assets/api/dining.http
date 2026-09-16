@@ -106,8 +106,7 @@ Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-    "targetType": "INVOICE",
-    "targetId": 1,
+    "invoiceId": 1,
     "paymentProvider": "INTERNAL",
     "paymentDetail": "Testing cash"
 }
@@ -246,8 +245,7 @@ Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-    "targetType": "INVOICE",
-    "targetId": 2,
+    "invoiceId": 2,
     "paymentProvider": "INTERNAL",
     "paymentDetail": "CASH-002"
 }

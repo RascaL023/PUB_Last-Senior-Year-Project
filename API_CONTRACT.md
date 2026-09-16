@@ -923,7 +923,7 @@ Pada contoh di atas, baris `id: 1` di-update, baris baru (`menuId: 2`) ditambahk
 | `status` | `CREATED`, `CONFIRMED`, `PREPARING`, `READY`, `COMPLETED`, `CANCELLED` (query juga menerima alias `CREATE`, `PREPARE`, `COMPLETE`, `CANCEL`) |
 | `type` | `DINE_IN`, `TAKEAWAY` |
 
-> `paidStatus` (`UNPAID`/`PAID`) sudah dihapus dari Order. Settlement finansial dimiliki Invoice (`OPEN`/`PARTIALLY_PAID`/`PAID`/`VOID`); payment hanya menarget `INVOICE` — jalur legacy langsung ke `ORDER`/`DINE_IN` sudah dihapus dan ditolak backend (`400 Unsupported payment target`). Refund tidak ada di model (dihapus untuk MVP): payment yang `PAID` bersifat final.
+> `paidStatus` (`UNPAID`/`PAID`) sudah dihapus dari Order. Settlement finansial dimiliki Invoice (`OPEN`/`PARTIALLY_PAID`/`PAID`/`VOID`). Payment **selalu** menarget invoice — field `targetType`/`targetId` sudah diganti `invoiceId` (model target generik dihapus). Refund tidak ada di model (dihapus untuk MVP): payment yang `PAID` bersifat final.
 
 ---
 
@@ -941,7 +941,7 @@ Membutuhkan login, kecuali webhook.
     └──fail──> [FAILED]     (terminal)
 ```
 
-Status `PAID` dicapai lewat webhook Xendit atau langsung saat create dengan provider `INTERNAL` (tunai/CASH). Payment yang `PAID` dan menarget `INVOICE` otomatis meneruskan nominalnya ke invoice (`OPEN` → `PARTIALLY_PAID` → `PAID`). Endpoint yang aktif untuk mengubah status secara manual hanya `expire` dan `fail`.
+Status `PAID` dicapai lewat webhook Xendit atau langsung saat create dengan provider `INTERNAL` (tunai/CASH). Payment yang `PAID` otomatis meneruskan nominalnya ke invoice-nya (`OPEN` → `PARTIALLY_PAID` → `PAID`). Endpoint yang aktif untuk mengubah status secara manual hanya `expire` dan `fail`.
 
 | Dari | Ke | Syarat |
 |---|---|---|
@@ -955,7 +955,7 @@ Status `PAID` dicapai lewat webhook Xendit atau langsung saat create dengan prov
 | Method | Path | Keterangan |
 |---|---|---|
 | `POST /` | Create payment | Response `201` |
-| `GET /` | List payments | Filter `keyword`, `targetType`, `targetId`, `status`, `paymentProvider`; default `sort=createdAt,desc` |
+| `GET /` | List payments | Filter `keyword`, `invoiceId`, `status`, `paymentProvider`; default `sort=createdAt,desc` |
 | `GET /{id}` | Get by ID | |
 | `POST /{id}/expire` | Mark as EXPIRED | Dari PENDING |
 | `POST /{id}/fail` | Mark as FAILED | Dari PENDING |
@@ -968,23 +968,21 @@ Endpoint berikut di-comment di source code dan tidak boleh dipakai: `POST /{id}/
 
 ```json
 {
-  "targetType": "INVOICE",
-  "targetId": 1,
+  "invoiceId": 1,
   "paymentProvider": "XENDIT",
   "paymentDetail": "BCA Virtual Account"
 }
 ```
 
-Ada 4 field: `targetType` (hanya `INVOICE` — satu-satunya nilai yang didukung; nilai lain ditolak `400`), `targetId` (minimal 1; nominal yang ditagihkan = sisa belum bayar / `remainingAmount`), `paymentProvider` (`INTERNAL` yang berarti tunai/CASH, atau `XENDIT`), dan `paymentDetail` opsional (maksimal 255 karakter). Field seperti `externalId` dan `invoiceUrl` diisi oleh backend, bukan oleh frontend.
+Ada 3 field: `invoiceId` (wajib, minimal 1 — payment selalu menarget invoice; nominal yang ditagihkan = sisa belum bayar / `remainingAmount`), `paymentProvider` (`INTERNAL` yang berarti tunai/CASH, atau `XENDIT`), dan `paymentDetail` opsional (maksimal 255 karakter). Field seperti `externalId` dan `invoiceUrl` diisi oleh backend, bukan oleh frontend.
 
 #### PaymentResponse
 
 ```json
 {
   "id": 1,
-  "targetType": "INVOICE",
-  "targetId": 1,
-  "targetReference": "INV-20260823-0001",
+  "invoiceId": 1,
+  "invoiceNumber": "INV-20260823-0001",
   "paymentProvider": "XENDIT",
   "paymentMethodName": "BCA Virtual Account",
   "externalId": "INV-20260830-001",
@@ -1408,7 +1406,7 @@ POST   /api/v1/orders/{id}/cancel
 
 PAYMENTS (pay/PUT/PATCH/DELETE = DISABLED)
 POST   /api/v1/payments
-GET    /api/v1/payments?page=&size=&keyword=&targetType=&targetId=&status=&paymentProvider=
+GET    /api/v1/payments?page=&size=&keyword=&invoiceId=&status=&paymentProvider=
 GET    /api/v1/payments/{id}
 POST   /api/v1/payments/{id}/expire
 POST   /api/v1/payments/{id}/fail

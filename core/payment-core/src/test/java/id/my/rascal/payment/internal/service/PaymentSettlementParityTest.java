@@ -25,7 +25,6 @@ import id.my.rascal.payment.internal.component.PaymentEffect;
 import id.my.rascal.payment.internal.component.PaymentProcessorResolver;
 import id.my.rascal.payment.internal.component.PaymentStatusFlowPolicy;
 import id.my.rascal.payment.internal.model.enums.PaymentProvider;
-import id.my.rascal.payment.internal.model.enums.PaymentTargetType;
 import id.my.rascal.payment.internal.model.request.PaymentRequest;
 import id.my.rascal.payment.internal.repository.PaymentRepository;
 
@@ -63,13 +62,12 @@ class PaymentSettlementParityTest {
             LocalDateTime.now(), LocalDateTime.now(), List.of()
         ));
 
-        paymentService.create(new PaymentRequest(PaymentTargetType.INVOICE, 900L, PaymentProvider.INTERNAL, null));
+        paymentService.create(new PaymentRequest(900L, PaymentProvider.INTERNAL, null));
 
         ArgumentCaptor<PaymentSettledEvent> event = ArgumentCaptor.forClass(PaymentSettledEvent.class);
         verify(eventPublisher).publishEvent(event.capture());
 
-        assertEquals(900L, event.getValue().targetId());
-        assertEquals("INVOICE", event.getValue().targetType());
+        assertEquals(900L, event.getValue().invoiceId());
         assertEquals(58000, event.getValue().settledAmount());
     }
 
@@ -84,7 +82,7 @@ class PaymentSettlementParityTest {
 
         org.junit.jupiter.api.Assertions.assertThrows(
             id.my.rascal.common.exception.BadRequestException.class,
-            () -> paymentService.create(new PaymentRequest(PaymentTargetType.INVOICE, 900L, PaymentProvider.INTERNAL, null))
+            () -> paymentService.create(new PaymentRequest(900L, PaymentProvider.INTERNAL, null))
         );
     }
 

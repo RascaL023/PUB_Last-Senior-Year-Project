@@ -31,7 +31,16 @@ ON orders (created_at);
 CREATE INDEX IF NOT EXISTS idx_payments_paid_at
 ON payments (paid_at);
 
+-- Pencarian payment per tagihan (filter invoiceId di list payments).
+CREATE INDEX IF NOT EXISTS idx_payments_invoice_id
+ON payments (invoice_id);
+
 -- ── Pembersihan DB lama (sekali saja, refund sudah dihapus dari model) ─────────
 -- DROP TABLE IF EXISTS refunds;
 -- ALTER TABLE payments DROP COLUMN IF EXISTS refunded_at;
 -- ALTER TABLE invoice_items DROP COLUMN IF EXISTS refunded;
+--
+-- ── Pembersihan DB lama (target generik payment sudah diganti invoice_id) ──────
+-- ALTER TABLE payments DROP COLUMN IF EXISTS target_type;
+-- ALTER TABLE payments DROP COLUMN IF EXISTS target_id;
+-- ALTER TABLE payments RENAME COLUMN target_reference TO invoice_number;

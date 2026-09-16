@@ -23,7 +23,6 @@ import id.my.rascal.common.template.SuccessPagedTemplate;
 import id.my.rascal.common.template.SuccessTemplate;
 import id.my.rascal.payment.internal.model.enums.PaymentProvider;
 import id.my.rascal.payment.internal.model.enums.PaymentStatus;
-import id.my.rascal.payment.internal.model.enums.PaymentTargetType;
 import id.my.rascal.payment.internal.model.request.PaymentRequest;
 import id.my.rascal.payment.internal.model.response.PaymentResponse;
 import id.my.rascal.payment.internal.service.PaymentService;
@@ -69,18 +68,16 @@ public class PaymentController {
     @PreAuthorize("hasAnyAuthority('payment.read', 'payment.*')")
     public ResponseEntity<SuccessPagedTemplate<List<PaymentResponse>>> getAll(
         @RequestParam(required = false) String keyword,
-        @RequestParam(required = false) String targetType,
-        @RequestParam(required = false) Long targetId,
+        @RequestParam(required = false) Long invoiceId,
         @RequestParam(required = false) String status,
         @RequestParam(required = false) String paymentProvider,
         @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
         Page<PaymentResponse> page = paymentService.search(
-            keyword, 
-            PaymentTargetType.fromString(targetType), 
-            targetId, 
-            PaymentStatus.fromString(status), 
-            PaymentProvider.fromString(paymentProvider), 
+            keyword,
+            invoiceId,
+            PaymentStatus.fromString(status),
+            PaymentProvider.fromString(paymentProvider),
             pageable
         );
 

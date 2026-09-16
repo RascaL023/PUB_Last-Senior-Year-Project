@@ -13,7 +13,6 @@ import org.springframework.context.ApplicationEventPublisher;
 import id.my.rascal.payment.api.event.PaymentSettledEvent;
 import id.my.rascal.payment.internal.entity.Payment;
 import id.my.rascal.payment.internal.model.enums.PaymentStatus;
-import id.my.rascal.payment.internal.model.enums.PaymentTargetType;
 
 class PaymentEventPublisherServiceTest {
 
@@ -24,8 +23,7 @@ class PaymentEventPublisherServiceTest {
 
         Payment payment = new Payment();
         payment.setId(5L);
-        payment.setTargetType(PaymentTargetType.INVOICE);
-        payment.setTargetId(900L);
+        payment.setInvoiceId(900L);
         payment.setStatus(PaymentStatus.PAID);
         payment.setExternalId("INV-abc");
         payment.setPaidAt(LocalDateTime.now());
@@ -36,8 +34,7 @@ class PaymentEventPublisherServiceTest {
         verify(eventPublisher).publishEvent(captor.capture());
         PaymentSettledEvent event = captor.getValue();
         assertEquals(5L, event.paymentId());
-        assertEquals("INVOICE", event.targetType());
-        assertEquals(900L, event.targetId());
+        assertEquals(900L, event.invoiceId());
         assertEquals(58000, event.settledAmount());
         assertEquals("INV-abc", event.externalId());
     }

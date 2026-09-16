@@ -10,7 +10,6 @@ import org.springframework.stereotype.Repository;
 import id.my.rascal.payment.internal.entity.Payment;
 import id.my.rascal.payment.internal.model.enums.PaymentProvider;
 import id.my.rascal.payment.internal.model.enums.PaymentStatus;
-import id.my.rascal.payment.internal.model.enums.PaymentTargetType;
 
 import java.util.Optional;
 
@@ -28,18 +27,16 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
         select p from Payment p
         where p.deletedAt is null
           and (:keyword is null or
-               lower(p.targetReference) like lower(concat('%', cast(:keyword as string), '%'))
+               lower(p.invoiceNumber) like lower(concat('%', cast(:keyword as string), '%'))
                or (p.paymentDetail is not null and lower(p.paymentDetail) like lower(concat('%', cast(:keyword as string), '%'))))
-          and (:targetType is null or p.targetType = :targetType)
-          and (:targetId is null or p.targetId = :targetId)
+          and (:invoiceId is null or p.invoiceId = :invoiceId)
           and (:status is null or p.status = :status)
           and (:paymentProvider is null or p.paymentProvider = :paymentProvider)
         order by p.createdAt desc
     """)
     Page<Payment> searchActive(
         @Param("keyword") String keyword,
-        @Param("targetType") PaymentTargetType targetType,
-        @Param("targetId") Long targetId,
+        @Param("invoiceId") Long invoiceId,
         @Param("status") PaymentStatus status,
         @Param("paymentProvider") PaymentProvider paymentProvider,
         Pageable pageable

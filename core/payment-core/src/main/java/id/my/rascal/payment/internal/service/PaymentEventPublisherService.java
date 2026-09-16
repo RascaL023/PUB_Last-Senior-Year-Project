@@ -23,14 +23,13 @@ public class PaymentEventPublisherService {
     public void publishSettled(Payment payment, Integer settledAmount) {
         eventPublisher.publishEvent(new PaymentSettledEvent(
             payment.getId(),
-            payment.getTargetType() == null ? null : payment.getTargetType().name(),
-            payment.getTargetId(),
+            payment.getInvoiceId(),
             settledAmount,
             payment.getExternalId(),
             payment.getPaidAt()
         ));
-        logger.info("Published payment event: settled paymentId={} targetType={} targetId={}",
-            payment.getId(), payment.getTargetType(), payment.getTargetId());
+        logger.info("Published payment event: settled paymentId={} invoiceId={}",
+            payment.getId(), payment.getInvoiceId());
     }
 
 }

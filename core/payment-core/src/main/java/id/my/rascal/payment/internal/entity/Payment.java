@@ -15,7 +15,6 @@ import lombok.Getter;
 import lombok.Setter;
 import id.my.rascal.payment.internal.model.enums.PaymentProvider;
 import id.my.rascal.payment.internal.model.enums.PaymentStatus;
-import id.my.rascal.payment.internal.model.enums.PaymentTargetType;
 
 @Entity
 @Getter @Setter
@@ -25,12 +24,9 @@ public class Payment {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "target_type", nullable = false)
-    private PaymentTargetType targetType;
-
-    @Column(name = "target_id", nullable = false)
-    private Long targetId;
+    // Payment selalu menarget satu invoice — tidak ada lagi target generik.
+    @Column(name = "invoice_id", nullable = false)
+    private Long invoiceId;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
@@ -68,8 +64,9 @@ public class Payment {
     @Lob @Column(name = "raw_webhook")
     private String rawWebhook;
 
-    @Column(name = "target_reference")
-    private String targetReference;
+    // Snapshot nomor invoice saat payment dibuat (untuk pencarian/tampilan).
+    @Column(name = "invoice_number")
+    private String invoiceNumber;
 
 
     @Column(name = "paid_at")

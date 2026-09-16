@@ -4,13 +4,11 @@ import java.time.LocalDateTime;
 
 import id.my.rascal.payment.internal.model.enums.PaymentProvider;
 import id.my.rascal.payment.internal.model.enums.PaymentStatus;
-import id.my.rascal.payment.internal.model.enums.PaymentTargetType;
 
 public record PaymentResponse(
     Long id,
-    PaymentTargetType targetType,
-    Long targetId,
-    String targetReference,
+    Long invoiceId,
+    String invoiceNumber,
     PaymentProvider paymentProvider,
     String paymentMethodName,
     String externalId,

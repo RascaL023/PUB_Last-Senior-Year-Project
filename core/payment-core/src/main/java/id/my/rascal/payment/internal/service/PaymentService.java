@@ -25,7 +25,6 @@ import id.my.rascal.payment.internal.component.PaymentProcessorResolver;
 import id.my.rascal.payment.internal.component.PaymentStatusFlowPolicy;
 import id.my.rascal.payment.internal.model.enums.PaymentProvider;
 import id.my.rascal.payment.internal.model.enums.PaymentStatus;
-import id.my.rascal.payment.internal.model.enums.PaymentTargetType;
 import id.my.rascal.payment.internal.model.mapper.PaymentMapper;
 import id.my.rascal.payment.internal.model.request.PaymentRequest;
 import id.my.rascal.payment.internal.model.response.PaymentResponse;
@@ -62,13 +61,7 @@ public class PaymentService {
     }
 
     public PaymentResponse create(PaymentRequest request) {
-        if (request.targetType() != PaymentTargetType.INVOICE)
-            throw new BadRequestException(
-                "Unsupported payment target: " + request.targetType() + 
-                ". Payment hanya dapat menarget INVOICE"
-            );
-
-        ResolvedTarget target = resolveInvoice(request.targetId());
+        ResolvedTarget target = resolveInvoice(request.invoiceId());
         if (target.amount() == null || target.amount() <= 0) throw new BadRequestException("Invoice already paid");
         String externalId = "INV-" + UUID.randomUUID();
 
@@ -107,9 +100,8 @@ public class PaymentService {
         payment.setPaymentProvider(PaymentProvider.valueOf(processor.paymentProvider()));
         payment.setPaymentMethodName(processorResponse.paymentMethodName());
         payment.setPaymentChannel(processorResponse.paymentChannel());
-        payment.setTargetType(request.targetType());
-        payment.setTargetId(request.targetId());
-        payment.setTargetReference(target.reference());
+        payment.setInvoiceId(request.invoiceId());
+        payment.setInvoiceNumber(target.reference());
         payment.setAmount(target.amount());
         payment.setPaymentDetail(request.paymentDetail());
         payment.setExternalId(externalId);
@@ -135,14 +127,13 @@ public class PaymentService {
     @Transactional(readOnly = true)
     public Page<PaymentResponse> search(
         String keyword,
-        PaymentTargetType targetType,
-        Long targetId,
+        Long invoiceId,
         PaymentStatus status,
         PaymentProvider paymentProvider,
         Pageable pageable
     ) {
         return paymentRepository
-            .searchActive(keyword, targetType, targetId, status, paymentProvider, pageable)
+            .searchActive(keyword, invoiceId, status, paymentProvider, pageable)
             .map(this::toResponse);
     }
 
@@ -164,8 +155,8 @@ public class PaymentService {
         return toResponse(paymentRepository.save(payment));
     }
 
-    private ResolvedTarget resolveInvoice(Long targetId) {
-        InvoiceApiResponse invoice = invoiceApi.getInvoice(targetId);
+    private ResolvedTarget resolveInvoice(Long invoiceId) {
+        InvoiceApiResponse invoice = invoiceApi.getInvoice(invoiceId);
         return new ResolvedTarget(invoice.remainingAmount(), invoice.invoiceNumber());
     }
 
@@ -177,9 +168,8 @@ public class PaymentService {
     private PaymentResponse toResponse(Payment payment) {
         return new PaymentResponse(
             payment.getId(),
-            payment.getTargetType(),
-            payment.getTargetId(),
-            payment.getTargetReference(),
+            payment.getInvoiceId(),
+            payment.getInvoiceNumber(),
             payment.getPaymentProvider(),
             payment.getPaymentMethodName(),
             payment.getExternalId(),
