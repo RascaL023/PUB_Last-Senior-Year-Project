@@ -69,7 +69,7 @@ public class PaymentApiImpl implements PaymentApi {
             } catch (BadRequestException e) {
                 log.warn("Stale/inapplicable webhook, acknowledged: paymentId={} current={} incoming={} externalId={} reason={}",
                     payment.getId(), paymentStatus, paymentPayloadStatus, payloadRequest.externalId(), e.getMessage());
-                return; // ack agar Xendit berhenti
+                return;
             }
         }
 

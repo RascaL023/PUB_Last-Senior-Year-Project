@@ -229,17 +229,12 @@ public class InvoiceService {
         invoiceRepository.save(invoice);
     }
 
-    /**
-     * B2: satu-satunya pemanggil method ini adalah InvoicePaymentEventListener (settlement dari
-     * payment). Tidak ada lagi jalur HTTP untuk mencatat uang langsung di invoice.
-     */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public InvoiceResponse applyPayment(Long id, Integer amount) {
         Invoice invoice = findActiveInvoice(id);
         invoice.applyPayment(amount);
         Invoice saved = invoiceRepository.save(invoice);
-        // Hanya pelunasan penuh yang dipublikasikan: report memakai event ini sebagai
-        // pemicu proyeksi menu harian, jadi pembayaran parsial tidak boleh memicunya.
+
         if (saved.getStatus() == InvoiceStatus.PAID)
             invoiceEventPublisherService.publishPaid(saved);
         return InvoiceMapper.toResponse(saved);

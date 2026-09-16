@@ -55,7 +55,7 @@ public class XenditService {
             payload = objectMapper.readValue(rawPayload, XenditWebhookPayloadResponse.class);
         } catch (JsonProcessingException ex) {
             logger.error("Xendit payload unparseable, acknowledged without effect: {}", ex.getMessage());
-            return; // deterministik-buruk: ack agar Xendit berhenti retry
+            return; // bad ack Xendit
         }
         paymentApi.handleWebhookRequest(toWebhookRequest(payload), rawPayload);
     }

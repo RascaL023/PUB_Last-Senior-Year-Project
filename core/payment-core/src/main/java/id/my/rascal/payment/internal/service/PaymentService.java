@@ -61,7 +61,6 @@ public class PaymentService {
     }
 
     public PaymentResponse create(PaymentRequest request) {
-        // B2: POST /payments adalah satu-satunya jalur uang. Partial pay lewat `amount` opsional.
         if (paymentRepository.existsActivePendingByInvoiceId(request.invoiceId()))
             throw new BadRequestException("Invoice already has an active pending payment");
 
@@ -109,7 +108,7 @@ public class PaymentService {
         payment.setPaymentChannel(processorResponse.paymentChannel());
         payment.setInvoiceId(request.invoiceId());
         payment.setInvoiceNumber(target.reference());
-        // amount request sudah divalidasi di create() (≤ sisa tagihan); absen = sisa penuh.
+
         payment.setAmount(request.amount() != null ? request.amount() : target.amount());
         payment.setPaymentDetail(request.paymentDetail());
         payment.setExternalId(externalId);

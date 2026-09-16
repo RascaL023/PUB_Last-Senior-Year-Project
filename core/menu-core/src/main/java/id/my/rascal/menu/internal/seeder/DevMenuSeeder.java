@@ -72,15 +72,10 @@ public class DevMenuSeeder implements Seeder {
             menu.setModifierTypes(modifiers);
 
             Menu saved = menuRepository.save(menu);
-            // Keep the Meilisearch read projection in sync with newly seeded data.
             menuSearchService.indexMenu(saved);
         }
 
-        // Re-index every menu already in the DB. The loop above only inserts when a
-        // name is missing (DB idempotency), so if the DB was seeded on a previous run
-        // while the Meilisearch index is empty/reset, no document would ever be added.
-        // Upserting by primary key is idempotent, so re-running seeds stays safe and
-        // the index always mirrors PostgreSQL after a seed boot.
+        // Hard sync!
         menuRepository.findAll().forEach(menuSearchService::indexMenu);
     }
 
