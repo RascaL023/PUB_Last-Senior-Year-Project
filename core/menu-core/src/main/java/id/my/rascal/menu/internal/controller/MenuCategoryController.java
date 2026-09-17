@@ -53,7 +53,6 @@ public class MenuCategoryController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyAuthority('menu-category.read', 'menu-category.*')")
     public ResponseEntity<SuccessPagedTemplate<List<MenuCategoryResponse>>> getAll(
         @RequestParam(required = false) String name,
         @PageableDefault(size = 10, sort = "displayName", direction = Sort.Direction.ASC) Pageable pageable
@@ -73,7 +72,6 @@ public class MenuCategoryController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('menu-category.read', 'menu-category.*')")
     public ResponseEntity<SuccessTemplate<MenuCategoryResponse>> getById(@PathVariable("id") Long id) {
         return ApiResponse.success(
             HttpStatus.OK, 

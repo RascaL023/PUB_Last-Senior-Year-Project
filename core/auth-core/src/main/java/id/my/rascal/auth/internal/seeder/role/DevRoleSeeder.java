@@ -38,7 +38,7 @@ public class DevRoleSeeder implements Seeder {
                 "menu-category.read",
                 "menu-modifier.read",
                 "image.read",
-                "dining.read",
+                "dining.read", "dining.create", "dining.update",
                 "table.read",
                 "report.read"
             )

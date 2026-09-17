@@ -49,6 +49,8 @@ id:
         - /api/v1/customers/register
         - /api/v1/menus
         - /api/v1/menus/{id}
+        - /api/v1/menus/categories
+        - /api/v1/menus/categories/{id}
 logging.level.id.rascal.filter: ${SECURITY_FILTER_LOG_LEVEL:WARN}
 
 imagekit:
