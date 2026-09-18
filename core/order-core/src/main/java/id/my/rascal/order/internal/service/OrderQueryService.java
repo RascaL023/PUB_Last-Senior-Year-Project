@@ -68,11 +68,15 @@ public class OrderQueryService {
     @Transactional(readOnly = true)
     public Page<OrderResponse> searchActive(
         String keyword,
-        OrderStatus status,
+        Collection<OrderStatus> statuses,
         Pageable pageable
     ) {
+        Collection<OrderStatus> effectiveStatuses = (statuses == null || statuses.isEmpty())
+            ? List.of(OrderStatus.values())
+            : statuses;
+
         return orderRepository
-            .searchActive(StringUtil.normalizeSearch(keyword), status, pageable)
+            .searchActive(StringUtil.normalizeSearch(keyword), effectiveStatuses, pageable)
             .map(OrderMapper::toResponse);
     }
 

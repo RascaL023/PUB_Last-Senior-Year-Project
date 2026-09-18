@@ -27,6 +27,18 @@ Authorization: Bearer {{token}}
 GET {{baseUrl}}/tables?page=0&size=2&sort=tableNumber,asc
 Authorization: Bearer {{token}}
 
+### WAITER floor view — meja kosong (siap ditempati)
+GET {{baseUrl}}/tables?status=AVAILABLE&size=100
+Authorization: Bearer {{token}}
+
+### WAITER floor view — meja terisi
+GET {{baseUrl}}/tables?status=OCCUPIED&size=100
+Authorization: Bearer {{token}}
+
+### Invalid table status (400: "Invalid table status: 'DIRTY'. Allowed: AVAILABLE, OCCUPIED")
+GET {{baseUrl}}/tables?status=DIRTY
+Authorization: Bearer {{token}}
+
 ### Update table (PUT)
 PUT {{baseUrl}}/tables/1
 Authorization: Bearer {{token}}
@@ -431,6 +443,18 @@ Authorization: Bearer {{token}}
 
 ### Get dinings with pagination
 GET {{baseUrl}}/dinings?page=0&size=5&sort=createdAt,desc
+Authorization: Bearer {{token}}
+
+### WAITER floor view — sesi yang masih berjalan (meja terisi)
+GET {{baseUrl}}/dinings?status=OPEN&size=100
+Authorization: Bearer {{token}}
+
+### Riwayat sesi yang sudah ditutup
+GET {{baseUrl}}/dinings?status=CLOSED&size=20
+Authorization: Bearer {{token}}
+
+### Invalid dining status (400: "Invalid dining status: 'PAID'. Allowed: OPEN, CLOSED")
+GET {{baseUrl}}/dinings?status=PAID
 Authorization: Bearer {{token}}
 
 

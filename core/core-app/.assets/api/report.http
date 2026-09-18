@@ -1,12 +1,16 @@
-###### REPORTS (authority: report.read — ADMIN & CASHIER) ######
+###### REPORTS (authority: report.read — hanya ADMIN & CASHIER; WAITER/KITCHEN -> 403) ######
 ### Dashboard summary - default (today, Asia/Jakarta)
-### Report membaca langsung dari fakta domain (tanpa tabel projection):
-###   sales.cash.*    ← payment: applied_amount (uang masuk ke tagihan)
-###   sales.billing.* ← invoice: settled_amount saat lunas, piutang berjalan
+### Report membaca langsung dari fakta domain (tanpa tabel projection / listener event):
+###   sales.cash.*    ← payment: applied_amount (uang masuk ke tagihan, SEMUA kanal: CASH/QRIS/XENDIT)
+###   sales.billing.* ← invoice: settled_amount saat lunas, piutang berjalan (snapshot, bukan periode)
 ###   topMenus        ← baris invoice dari invoice yang lunas (sejalan dengan settledAmount)
 ###   operations      ← dining & order
-###   recentActivity  ← order terbaru + billingStatus dari invoice aktif
+###   recentActivity  ← 10 order terbaru LINTAS PERIODE + billingStatus dari invoice yang memuat order
 ### Satu-satunya jalur uang adalah POST /payments (B2 ditutup) — kas & billing bergerak dari jalur yang sama.
+### Parameter: from & to opsional (YYYY-MM-DD, default hari ini WIB), inklusif.
+### Validasi: to < from -> 400; from di masa depan -> 400; to di masa depan boleh.
+### Format waktu: semua timestamp = LocalDateTime tanpa offset, wall clock Asia/Jakarta (WIB).
+###   FE harus parse sebagai '+07:00' (new Date(value + '+07:00')), bukan new Date(value).
 GET {{baseUrl}}/reports/dashboard/summary
 Authorization: Bearer {{token}}
 
@@ -18,13 +22,34 @@ Authorization: Bearer {{token}}
 GET {{baseUrl}}/reports/dashboard/summary?from=2026-09-07&to=2026-09-07
 Authorization: Bearer {{token}}
 
-### Dashboard summary - month to date
+### Dashboard summary - month to date (hanya 'from'; 'to' default = hari ini)
 GET {{baseUrl}}/reports/dashboard/summary?from=2026-09-01
 Authorization: Bearer {{token}}
 
-### Dashboard summary - invalid ('to' before 'from') (400)
+### Dashboard summary - only 'to' ('from' default = hari ini; 200 walau to di masa depan)
+GET {{baseUrl}}/reports/dashboard/summary?to=2026-12-31
+Authorization: Bearer {{token}}
+
+### Dashboard summary - range tanpa data (200, angka 0 dan array kosong)
+GET {{baseUrl}}/reports/dashboard/summary?from=2000-01-01&to=2000-01-02
+Authorization: Bearer {{token}}
+
+### Dashboard summary - invalid ('to' before 'from') (400: "'to' date must not be before 'from' date")
 GET {{baseUrl}}/reports/dashboard/summary?from=2026-09-07&to=2026-09-01
 Authorization: Bearer {{token}}
+
+### Dashboard summary - invalid ('from' in the future) (400: "'from' date must not be in the future")
+GET {{baseUrl}}/reports/dashboard/summary?from=2099-01-01&to=2099-01-02
+Authorization: Bearer {{token}}
+
+### Dashboard summary - invalid ('from' not a date) (400)
+GET {{baseUrl}}/reports/dashboard/summary?from=not-a-date
+Authorization: Bearer {{token}}
+
+### Dashboard summary - forbidden (403: akun tanpa report.read, mis. WAITER/KITCHEN)
+GET {{baseUrl}}/reports/dashboard/summary
+Authorization: Bearer {{token}}
+# ganti {{token}} dengan access token akun waiter/kitchen
 
 ### Dashboard summary - no auth (401)
 GET {{baseUrl}}/reports/dashboard/summary

@@ -6,6 +6,7 @@ import id.my.rascal.common.exception.BadRequestException;
 import id.my.rascal.common.util.StringUtil;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -50,6 +51,18 @@ public enum OrderStatus {
                 "Invalid order status: '" + value + "'. Allowed: " + allowedValues()
             );
         };
+    }
+
+    public static List<OrderStatus> fromStrings(List<String> values) {
+        if (values == null || values.isEmpty()) return null;
+
+        List<OrderStatus> statuses = values.stream()
+            .filter(value -> !StringUtil.safeIsBlank(value))
+            .map(OrderStatus::fromString)
+            .distinct()
+            .toList();
+
+        return statuses.isEmpty() ? null : statuses;
     }
 
     private static String allowedValues() {

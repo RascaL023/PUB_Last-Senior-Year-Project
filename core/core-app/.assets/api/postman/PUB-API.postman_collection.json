@@ -1,0 +1,4519 @@
+{
+  "info": {
+    "name": "PUB API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://dev.rascal.my.id/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "baseUrlV2",
+      "value": "http://localhost:8081/api/v2",
+      "type": "string"
+    },
+    {
+      "key": "customerToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "guestCode",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "guestToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "xenditCallbackToken",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "AUTH",
+          "item": [
+            {
+              "name": "Login",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/auths/login"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"email\": \"admin@rascal.id\",\n    \"password\": \"admin123\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Logout",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Cookie",
+                    "value": "{{refreshToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/auths/logout"
+                }
+              }
+            },
+            {
+              "name": "Refresh",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Cookie",
+                    "value": "{{refreshToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/auths/refresh"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTHORITIES",
+          "item": [
+            {
+              "name": "Get by ID",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/auths/authorities/1"
+                }
+              }
+            },
+            {
+              "name": "Search active or GetAll",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/auths/authorities"
+                }
+              }
+            },
+            {
+              "name": "Delete",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/auths/authorities/1"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "ROLES",
+          "item": [
+            {
+              "name": "Create",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/auths/roles"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"name\": \"ADMIN\",\n    \"authorityIds\": [1]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Update role (PUT)",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/auths/roles/1"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"name\": \"ADMIN\",\n    \"authorityIds\": [1]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Patch role (partial)",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/auths/roles/1"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"name\": \"ADMIN\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Get By ID",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/auths/roles/1"
+                }
+              }
+            },
+            {
+              "name": "Search active or GetAll",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/auths/roles"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "USERS",
+          "item": [
+            {
+              "name": "Create",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/auths/users"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"email\": \"faiqemilzzz@gmail.com\",\n    \"password\": \"asdqwe123\",\n    \"roleIds\": [1]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Get by ID",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/auths/users/1"
+                }
+              }
+            },
+            {
+              "name": "Search active or GetAll",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/auths/users?email=admin",
+                  "query": [
+                    {
+                      "key": "email",
+                      "value": "admin"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Update user (PUT)",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/auths/users/1"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"email\": \"faiqemilzzz@gmail.com\",\n    \"password\": \"newPassword123\",\n    \"roleIds\": [1]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "description": "email, password, dan roleIds wajib"
+            },
+            {
+              "name": "Update user (PATCH)",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/auths/users/1"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"roleIds\": [1]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Delete",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/auths/users/1"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "PASSWORD RESET",
+          "item": [
+            {
+              "name": "Forgot Password",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/auths/forgot-password"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"email\": \"admin@rascal.id\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Reset Password (token format: {userId}_{rawToken} from email link, successful reset revokes all sessions)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/auths/reset-password"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"token\": \"{USER_ID}_{YOUR_RESET_TOKEN}\",\n    \"newPassword\": \"newpassword123\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Customer",
+      "item": [
+        {
+          "name": "CUSTOMER SELF-SERVICE",
+          "item": [
+            {
+              "name": "Register (public, creates auth account + customer profile)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/customers/register"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"name\": \"Budi Santoso\",\n    \"email\": \"budi@example.com\",\n    \"password\": \"password123\",\n    \"phone\": \"081234567890\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "description": "Setelah register: login di auth.http dengan email/password ini untuk dapat\naccessToken customer (CUSTOMER_BASE) — dipakai untuk /my/dinings (dining.http §L3)."
+            },
+            {
+              "name": "Get My Profile",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/customers/me"
+                }
+              }
+            },
+            {
+              "name": "Update My Profile",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/customers/me"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"name\": \"Budi Santoso\",\n    \"phone\": \"081234567890\",\n    \"notes\": \"Alergi kacang\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "CUSTOMER STAFF (cashier/admin)",
+          "item": [
+            {
+              "name": "Create Guest (no login account)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/customers"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"name\": \"Tamu Walk-in\",\n    \"email\": \"tamu@example.com\",\n    \"phone\": \"081234567891\",\n    \"notes\": \"Dine-in meja 5\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Search active or GetAll",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/customers?keyword=budi",
+                  "query": [
+                    {
+                      "key": "keyword",
+                      "value": "budi"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Get by ID",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/customers/1"
+                }
+              },
+              "description": "id ini yang dipakai sebagai customerId di orders.http / dining.http (harus ada, 404 bila tidak)"
+            },
+            {
+              "name": "Update",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/customers/1"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"name\": \"Budi Santoso\",\n    \"phone\": \"081234567890\",\n    \"notes\": \"Member gold\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Patch",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/customers/1"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"phone\": \"081234567899\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Delete (also soft-deletes linked auth account)",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/customers/1"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Dining",
+      "item": [
+        {
+          "name": "Tables",
+          "item": [
+            {
+              "name": "Create Table 1",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/tables"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"tableNumber\": \"T1\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Get table by ID",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/tables/1"
+                }
+              }
+            },
+            {
+              "name": "Get all tables",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/tables"
+                }
+              }
+            },
+            {
+              "name": "Search tables with keyword",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/tables?keyword=VIP",
+                  "query": [
+                    {
+                      "key": "keyword",
+                      "value": "VIP"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Search tables with pagination",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/tables?page=0&size=2&sort=tableNumber,asc",
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "0"
+                    },
+                    {
+                      "key": "size",
+                      "value": "2"
+                    },
+                    {
+                      "key": "sort",
+                      "value": "tableNumber,asc"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "WAITER floor view",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/tables?status=AVAILABLE&size=100",
+                  "query": [
+                    {
+                      "key": "status",
+                      "value": "AVAILABLE"
+                    },
+                    {
+                      "key": "size",
+                      "value": "100"
+                    }
+                  ]
+                }
+              },
+              "description": "meja kosong (siap ditempati)"
+            },
+            {
+              "name": "WAITER floor view — meja terisi",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/tables?status=OCCUPIED&size=100",
+                  "query": [
+                    {
+                      "key": "status",
+                      "value": "OCCUPIED"
+                    },
+                    {
+                      "key": "size",
+                      "value": "100"
+                    }
+                  ]
+                }
+              },
+              "description": "meja terisi"
+            },
+            {
+              "name": "Invalid table status (400: \"Invalid table status: 'DIRTY'. Allowed: AVAILABLE, OCCUPIED\")",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/tables?status=DIRTY",
+                  "query": [
+                    {
+                      "key": "status",
+                      "value": "DIRTY"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Update table (PUT)",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/tables/1"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"tableNumber\": \"T1-Updated\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Patch table (partial)",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/tables/1"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"tableNumber\": \"T1-Main\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Delete table",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/tables/1"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Dinings — E2E Happy Path (dibayar via invoice)",
+          "item": [
+            {
+              "name": "Step 1: Open dining on table 1",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/dinings"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"tableId\": 1\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "description": "Response POST /dinings menyertakan guestToken (opaque) + guestCode (6 digit).\nCopy guestToken ke {{guestToken}} dan guestCode ke {{guestCode}} di environment\nuntuk dipakai di endpoint publik /guest/dinings dan /my/dinings (bawah).\ncustomerId opsional; bila diisi HARUS ada di customers (404 bila tidak)."
+            },
+            {
+              "name": "Step 2: Add order to dining 1 (order DINE_IN dibuat via dining — satu-satunya jalur sah)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/dinings/1/orders"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"customerId\": 1,\n    \"customerName\": \"Asep\",\n    \"notes\": \"Less sugar\",\n    \"items\": [\n        {\n            \"menuId\": 2,\n            \"quantity\": 1,\n            \"modifiers\": [\n                {  \"modifierOptionId\": 20 },\n                {  \"modifierOptionId\": 13 }\n            ]\n        }\n    ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Step 3: Confirm → (DINE_IN tidak butuh pembayaran untuk confirm)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/orders/1/confirm"
+                }
+              }
+            },
+            {
+              "name": "Step 4: Prepare",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/orders/1/prepare"
+                }
+              }
+            },
+            {
+              "name": "Step 5: Ready",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/orders/1/ready"
+                }
+              }
+            },
+            {
+              "name": "Step 6: Inspect invoice dining (invoice dining terbit otomatis saat order pertama masuk)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/invoices?diningId=1",
+                  "query": [
+                    {
+                      "key": "diningId",
+                      "value": "1"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Step 7: Bayar invoice",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/payments"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"invoiceId\": 1,\n    \"paymentProvider\": \"INTERNAL\",\n    \"paymentDetail\": \"Testing cash\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "description": "cash (langsung PAID; applied/excess tercatat otomatis)"
+            },
+            {
+              "name": "Step 8: Complete order",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/orders/2/complete"
+                }
+              }
+            },
+            {
+              "name": "Step 9: Close dining",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/dinings/1/close"
+                }
+              },
+              "description": "guard: semua order COMPLETED/CANCELLED dan invoice PAID/VOID"
+            }
+          ]
+        },
+        {
+          "name": "E2E FLOW — Happy Path Multiple Orders (satu invoice, dua order)",
+          "item": [
+            {
+              "name": "Open dining on table 3",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/dinings"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"tableId\": 3\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Add order #1 to dining 2",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/dinings/2/orders"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"customerId\": 1,\n    \"customerName\": \"Budi\",\n    \"notes\": \"Extra hot\",\n    \"items\": [\n        {\n            \"menuId\": 1,\n            \"quantity\": 1,\n            \"modifiers\": [\n                { \"modifierOptionId\": 1 }\n            ]\n        }\n    ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Confirm order 2",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/orders/2/confirm"
+                }
+              }
+            },
+            {
+              "name": "Prepare order 2",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/orders/2/prepare"
+                }
+              }
+            },
+            {
+              "name": "Ready order 2",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/orders/2/ready"
+                }
+              }
+            },
+            {
+              "name": "Complete order 2",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/orders/2/complete"
+                }
+              }
+            },
+            {
+              "name": "Add order #2 (additional) to dining 2",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/dinings/2/orders"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"customerId\": 1,\n    \"customerName\": \"Budi\",\n    \"notes\": \"Ice please\",\n    \"items\": [\n        {\n            \"menuId\": 2,\n            \"quantity\": 1,\n            \"modifiers\": [\n                { \"modifierOptionId\": 6 }\n            ]\n        },\n        {\n            \"menuId\": 1,\n            \"quantity\": 3,\n            \"modifiers\": [\n                { \"modifierOptionId\": 2 }\n            ]\n        }\n    ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "description": "invoice dining yang sama otomatis nambah baris"
+            },
+            {
+              "name": "Confirm order 3",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/orders/3/confirm"
+                }
+              }
+            },
+            {
+              "name": "Prepare order 3",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/orders/3/prepare"
+                }
+              }
+            },
+            {
+              "name": "Ready order 3",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/orders/3/ready"
+                }
+              }
+            },
+            {
+              "name": "Complete order 3",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/orders/3/complete"
+                }
+              }
+            },
+            {
+              "name": "Update order 3 (tambah item sebelum dibayar)",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/orders/3"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"items\": [\n        {\n            \"id\": 3,\n            \"menuId\": 1,\n            \"quantity\": 3,\n            \"modifiers\": [\n                { \"id\": 5, \"modifierOptionId\": 2 }\n            ]\n        },\n        {\n            \"menuId\": 2,\n            \"quantity\": 1,\n            \"modifiers\": []\n        }\n    ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "description": "invoice dining ikut tersinkron"
+            },
+            {
+              "name": "Bayar invoice dining 2 (lihat invoiceId dari GET /invoices?diningId=2)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/invoices?diningId=2",
+                  "query": [
+                    {
+                      "key": "diningId",
+                      "value": "2"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Bayar invoice",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/payments"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"invoiceId\": 2,\n    \"paymentProvider\": \"INTERNAL\",\n    \"paymentDetail\": \"CASH-002\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Close dining 2",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/dinings/2/close"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "E2E FLOW — Confirm Without Payment",
+          "item": [
+            {
+              "name": "Open dining on table 4",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/dinings"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"tableId\": 4\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Add order to dining 3",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/dinings/3/orders"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"customerId\": 1,\n    \"customerName\": \"Dina\",\n    \"notes\": \"No sugar\",\n    \"items\": [\n        {\n            \"menuId\": 2,\n            \"quantity\": 1,\n            \"modifiers\": [\n                { \"modifierOptionId\": 6 }\n            ]\n        }\n    ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Confirm order",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/orders/4/confirm"
+                }
+              },
+              "description": "succeeds without payment (DINE_IN)"
+            },
+            {
+              "name": "Close dining",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/dinings/3/close"
+                }
+              },
+              "description": "invalid: invoice dining masih OPEN (400 \"Tagihan belum lunas\")"
+            },
+            {
+              "name": "Jalur darurat: void invoice → baru close bisa jalan",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/invoices/3/void"
+                }
+              },
+              "description": "(void hanya boleh untuk invoice OPEN tanpa pembayaran)"
+            }
+          ]
+        },
+        {
+          "name": "VALIDATION — Table",
+          "item": [
+            {
+              "name": "Table not found (404)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/dinings"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"tableId\": 999\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Table already occupied (400 \"Table is already occupied\")",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/dinings"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"tableId\": 1\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "tableId missing (400)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/dinings"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{}### ========================================",
+                  "options": {
+                    "raw": {
+                      "language": "text"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "VALIDATION — Dining",
+          "item": [
+            {
+              "name": "Add order to closed dining (400 \"Cannot add order to a closed dining\")",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/dinings/1/orders"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"customerId\": 1,\n    \"customerName\": \"Test\",\n    \"notes\": \"Should fail\",\n    \"items\": [\n        {\n            \"menuId\": 1,\n            \"quantity\": 1,\n            \"modifiers\": [\n                { \"modifierOptionId\": 1 }\n            ]\n        }\n    ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Add order - invalid: customerId tidak ada di customers (404 \"Customer not found with id: N\")",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/dinings/2/orders"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"customerId\": 9999,\n    \"customerName\": \"Test\",\n    \"items\": [\n        { \"menuId\": 1, \"quantity\": 1, \"modifiers\": [] }\n    ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Add order",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/dinings/2/orders"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"customerId\": 1,\n    \"customerName\": \"Test\",\n    \"notes\": \"Should fail\",\n    \"items\": [\n        { \"menuId\": 1, \"quantity\": 1, \"modifiers\": [] }\n    ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "description": "\"Sesi ini sudah lunas (INV-...). Tutup sesi atau minta tagihan baru ke kasir\"\ninvalid: invoice sesi sudah lunas (400, pesan PAID)"
+            },
+            {
+              "name": "Add order — invalid: tagihan sesi sudah di-void (400, pesan VOID — beda dengan PAID)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/dinings/3/orders"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"customerId\": 1,\n    \"customerName\": \"Test\",\n    \"notes\": \"Should fail\",\n    \"items\": [\n        { \"menuId\": 1, \"quantity\": 1, \"modifiers\": [] }\n    ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "description": "\"Tagihan sesi ini sudah di-void (INV-...). Tutup sesi atau minta tagihan baru ke kasir\"\ninvalid: tagihan sesi sudah di-void (400, pesan VOID — beda dengan PAID)"
+            },
+            {
+              "name": "Close dining already closed (400 \"Dining is not open\")",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/dinings/1/close"
+                }
+              }
+            },
+            {
+              "name": "Close dining not found (404)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/dinings/999/close"
+                }
+              }
+            },
+            {
+              "name": "Close dining",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/dinings/3/close"
+                }
+              },
+              "description": "(contoh: dining 3 masih punya invoice OPEN — lihat flow \"Confirm Without Payment\")\ninvalid: invoice belum lunas (400 \"Tagihan belum lunas (...). Selesaikan pembayaran dulu\")"
+            },
+            {
+              "name": "Get dining not found (404)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/dinings/999"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET / INSPECT",
+          "item": [
+            {
+              "name": "Get dining by ID",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/dinings/2"
+                }
+              }
+            },
+            {
+              "name": "Get all dinings",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/dinings"
+                }
+              }
+            },
+            {
+              "name": "Get dinings with pagination",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/dinings?page=0&size=5&sort=createdAt,desc",
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "0"
+                    },
+                    {
+                      "key": "size",
+                      "value": "5"
+                    },
+                    {
+                      "key": "sort",
+                      "value": "createdAt,desc"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "WAITER floor view",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/dinings?status=OPEN&size=100",
+                  "query": [
+                    {
+                      "key": "status",
+                      "value": "OPEN"
+                    },
+                    {
+                      "key": "size",
+                      "value": "100"
+                    }
+                  ]
+                }
+              },
+              "description": "sesi yang masih berjalan (meja terisi)"
+            },
+            {
+              "name": "Riwayat sesi yang sudah ditutup",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/dinings?status=CLOSED&size=20",
+                  "query": [
+                    {
+                      "key": "status",
+                      "value": "CLOSED"
+                    },
+                    {
+                      "key": "size",
+                      "value": "20"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Invalid dining status (400: \"Invalid dining status: 'PAID'. Allowed: OPEN, CLOSED\")",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/dinings?status=PAID",
+                  "query": [
+                    {
+                      "key": "status",
+                      "value": "PAID"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "TABLE STATE VERIFICATION",
+          "item": [
+            {
+              "name": "Table should be AVAILABLE (after dining closed)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/tables/2"
+                }
+              }
+            },
+            {
+              "name": "Table should be OCCUPIED (dining 3 still open)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/tables/4"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "GUEST DINING — PUBLIK (tanpa login; identifikasi via guestToken)",
+          "item": [
+            {
+              "name": "Guest: lihat status sesi (dipakai juga untuk polling FE tamu)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/guest/dinings/{{guestToken}}"
+                }
+              },
+              "description": "invoiceStatus: null | OPEN | PARTIALLY_PAID | PAID | VOID"
+            },
+            {
+              "name": "Guest: resolve via kode 6 digit (fallback QR gagal scan; hanya sesi OPEN)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/guest/dinings/by-code/{{guestCode}}"
+                }
+              }
+            },
+            {
+              "name": "Guest: tambah order (TANPA customerId — identitas tidak pernah diterima dari body publik)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/guest/dinings/{{guestToken}}/orders"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"customerName\": \"Tamu Meja 1\",\n    \"notes\": \"Extra es\",\n    \"items\": [\n        { \"menuId\": 1, \"quantity\": 2, \"modifiers\": [{ \"modifierOptionId\": 13 }] }\n    ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Guest - invalid: token salah (404 generik \"Session not found\")",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/guest/dinings/wrongtoken123"
+                }
+              }
+            },
+            {
+              "name": "Guest - invalid: sesi sudah CLOSED (400)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/guest/dinings/{{guestToken}}/orders"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"items\": [\n        { \"menuId\": 1, \"quantity\": 1, \"modifiers\": [] }\n    ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Guest - invalid: tagihan sesi sudah lunas (400 \"Sesi ini sudah lunas (INV-...)\")",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/guest/dinings/{{guestToken}}/orders"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"items\": [\n        { \"menuId\": 1, \"quantity\": 1, \"modifiers\": [] }\n    ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "MY DINING — MEMBER LOGIN (identitas dari JWT; API_CONTRACT.md §L3)",
+          "item": [
+            {
+              "name": "Member: lihat status sesi (payload sama dengan guest)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{customerToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/my/dinings/{{guestToken}}"
+                }
+              }
+            },
+            {
+              "name": "Member: tambah order",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{customerToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/my/dinings/{{guestToken}}/orders"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"customerName\": \"\",\n    \"notes\": \"Dari member\",\n    \"items\": [\n        { \"menuId\": 2, \"quantity\": 1, \"modifiers\": [] }\n    ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "description": "customerName kosong → nama profil; terisi → override (mis. \"Budi +1\")\ncustomerId otomatis dari profil member"
+            },
+            {
+              "name": "Member - invalid: akun tanpa profil customer (403 \"Customer profile not found for this account\")",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/my/dinings/{{guestToken}}/orders"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"items\": [\n        { \"menuId\": 2, \"quantity\": 1, \"modifiers\": [] }\n    ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "description": "(mis. login pakai akun staf admin@rascal.id — tidak punya profil member)"
+            },
+            {
+              "name": "Member - invalid: tanpa token (401 standar — beda fail-mode dari jalur guest publik)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/my/dinings/{{guestToken}}/orders"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"items\": [\n        { \"menuId\": 2, \"quantity\": 1, \"modifiers\": [] }\n    ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Employee",
+      "item": [
+        {
+          "name": "EMPLOYEES — modul employee (EmployeeController)",
+          "item": [
+            {
+              "name": "Create",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/employees"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"name\": \"Andi Kasir\",\n    \"email\": \"andi@rascal.id\",\n    \"phone\": \"081234567890\",\n    \"position\": \"Cashier\",\n    \"department\": \"Front of House\",\n    \"status\": \"ACTIVE\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "description": "Base: {{baseUrl}}/employees\nData karyawan operasional (name 3-100 char, email format valid).\nGET list & GET by ID cukup login (tanpa authority khusus);\nwrite butuh employee.create / employee.update / employee.delete.\nauthority employee.create"
+            },
+            {
+              "name": "Search active or GetAll (cukup login)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/employees?keyword=andi",
+                  "query": [
+                    {
+                      "key": "keyword",
+                      "value": "andi"
+                    }
+                  ]
+                }
+              },
+              "description": "filter: keyword; pagination standar page=&size="
+            },
+            {
+              "name": "Search - pagination",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/employees?page=0&size=5",
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "0"
+                    },
+                    {
+                      "key": "size",
+                      "value": "5"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Get by ID (cukup login)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/employees/1"
+                }
+              }
+            },
+            {
+              "name": "Full update (PUT)",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/employees/1"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"name\": \"Andi Kasir\",\n    \"email\": \"andi@rascal.id\",\n    \"phone\": \"081234567890\",\n    \"position\": \"Senior Cashier\",\n    \"department\": \"Front of House\",\n    \"status\": \"ACTIVE\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "description": "authority employee.update, semua field wajib seperti create"
+            },
+            {
+              "name": "Partial update (PATCH)",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/employees/1"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"position\": \"Senior Cashier\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "description": "authority employee.update"
+            },
+            {
+              "name": "Restore soft-deleted",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/employees/1/restore"
+                }
+              },
+              "description": "authority employee.update"
+            },
+            {
+              "name": "Delete (soft delete)",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/employees/1"
+                }
+              },
+              "description": "authority employee.delete, response 204"
+            },
+            {
+              "name": "Activate",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/employees/1/activate"
+                }
+              },
+              "description": "authority employee.update"
+            },
+            {
+              "name": "Suspend",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/employees/1/suspend"
+                }
+              },
+              "description": "authority employee.update"
+            }
+          ]
+        },
+        {
+          "name": "VALIDATION",
+          "item": [
+            {
+              "name": "Get by ID - not found (404)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/employees/999"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Invoice",
+      "item": [
+        {
+          "name": "INVOICES",
+          "item": [
+            {
+              "name": "Search active or GetAll",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/invoices?keyword=INV&status=OPEN&orderId=1",
+                  "query": [
+                    {
+                      "key": "keyword",
+                      "value": "INV"
+                    },
+                    {
+                      "key": "status",
+                      "value": "OPEN"
+                    },
+                    {
+                      "key": "orderId",
+                      "value": "1"
+                    }
+                  ]
+                }
+              },
+              "description": "Invoice umumnya terbit OTOMATIS via event:\n- order takeaway baru     → invoice standalone (StandaloneOrderCreatedEvent)\n- order masuk ke dining   → invoice dining (DiningOrderAddedEvent, satu invoice per sesi)\nEndpoint di bawah untuk inspeksi & aksi kasir.\nfilter: keyword (invoiceNumber), status (OPEN|PARTIALLY_PAID|PAID|VOID), diningId, orderId\ndefault sort createdAt,desc; pagination standar page=&size="
+            },
+            {
+              "name": "Search - invoice satu sesi dining (1 sesi = 1 invoice)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/invoices?diningId=1",
+                  "query": [
+                    {
+                      "key": "diningId",
+                      "value": "1"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Get by ID",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/invoices/1"
+                }
+              },
+              "description": "customerId/customerName hanya terisi di invoice STANDALONE dengan order member\n(snapshot nama profil saat itu). Invoice dining selalu null — tagihan kolektif satu sesi."
+            },
+            {
+              "name": "Create (manual, jarang dipakai — invoice dining tanpa diningId akan dianggap standalone)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/invoices"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"diningId\": null,\n    \"items\": [\n        {\n            \"orderItemId\": 1,\n            \"orderId\": 1,\n            \"description\": \"Americano\",\n            \"quantity\": 2,\n            \"unitPrice\": 18000,\n            \"amount\": 36000\n        }\n    ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "description": "items.orderItemId harus unik per invoice; amount = quantity * unitPrice"
+            }
+          ]
+        },
+        {
+          "name": "VOID & DELETE",
+          "item": [
+            {
+              "name": "Void",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/invoices/1/void"
+                }
+              },
+              "description": "Invoice dining di-void → sesi masih bisa ditutup (guard close menerima VOID), addOrder ditolak.\nhanya untuk invoice OPEN/PARTIALLY_PAID tanpa... (PAID → 400 \"Cannot void a PAID invoice\")"
+            },
+            {
+              "name": "Delete (soft delete)",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/invoices/1"
+                }
+              },
+              "description": "Invalid juga jika invoice dining dan sesinya masih OPEN (400 \"Tutup sesi dulu sebelum menghapus tagihan\")\ninvalid jika PAID/PARTIALLY_PAID (400 \"Cannot delete an invoice with applied payment\")"
+            }
+          ]
+        },
+        {
+          "name": "VALIDATION",
+          "item": [
+            {
+              "name": "Not found (404)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/invoices/999"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Menu",
+      "item": [
+        {
+          "name": "MODIFIERS",
+          "item": [
+            {
+              "name": "Create",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/menus/modifiers"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"name\": \"Size\",\n    \"minSelection\": 1,\n    \"maxSelection\": 1,\n    \"options\": [\n        { \"name\": \"small\", \"additionalPrice\": 0 },\n        { \"name\": \"medium\", \"additionalPrice\": 500 },\n        { \"name\": \"big\", \"additionalPrice\": 1000 }\n    ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Get",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/menus/modifiers/1"
+                }
+              }
+            },
+            {
+              "name": "Search active or GetAll",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/menus/modifiers"
+                }
+              }
+            },
+            {
+              "name": "Update",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/menus/modifiers/2"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"name\": \"size\",\n    \"minSelection\": 1,\n    \"maxSelection\": 1,\n    \"options\": [\n        { \"name\": \"small\", \"additionalPrice\": 0 },\n        { \"name\": \"medium\", \"additionalPrice\": 500 },\n        { \"name\": \"large\", \"additionalPrice\": 1000 }\n    ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Delete",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/menus/modifiers/2"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "MENU CATEGORIES",
+          "item": [
+            {
+              "name": "Create",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/menus/categories"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"displayName\": \"coffee\",\n    \"categoryCode\": \"coffee\",\n    \"displayOrder\": 1\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Get",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/menus/categories/1"
+                }
+              }
+            },
+            {
+              "name": "Search active or GetAll",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/menus/categories?displayName=cof&showDeleted=false",
+                  "query": [
+                    {
+                      "key": "displayName",
+                      "value": "cof"
+                    },
+                    {
+                      "key": "showDeleted",
+                      "value": "false"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Update",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/menus/categories/1"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"displayName\": \"Hot Beverages\",\n    \"categoryCode\": \"COffee\",\n    \"displayOrder\": 1\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Delete",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/menus/categories/2"
+                }
+              }
+            },
+            {
+              "name": "Restore",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/menus/categories/1/restore"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "MENUS",
+          "item": [
+            {
+              "name": "Create",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/menus"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"name\": \"Americano\",\n    \"categoryIds\": [1],\n    \"description\": \"Strong coffee shot\",\n    \"imageUrls\": [\"/assets/images/menus/coffee/americano.jpg\"],\n    \"basePrice\": 7000,\n    \"isAvailable\": true,\n    \"modifierTypeIds\": [1]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Create - legacy field name (masih diterima via @JsonAlias, tapi DEPRECATED — pakai modifierTypeIds)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/menus"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"name\": \"Latte\",\n    \"categoryIds\": [1],\n    \"description\": \"Espresso with steamed milk\",\n    \"imageUrls\": [\"/assets/images/menus/coffee/latte.jpg\"],\n    \"basePrice\": 20000,\n    \"isAvailable\": true,\n    \"ModifierTypeIds\": [1]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Get by ID (PUBLIC - no auth needed)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/menus/1"
+                }
+              }
+            },
+            {
+              "name": "Search active or GetAll (PUBLIC - no auth needed)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/menus?categoryId=1&showDeleted=false",
+                  "query": [
+                    {
+                      "key": "categoryId",
+                      "value": "1"
+                    },
+                    {
+                      "key": "showDeleted",
+                      "value": "false"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Update",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/menus/1"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"name\": \"Cappuccino\",\n    \"categoryIds\": [1],\n    \"description\": \"Espresso with steamed milk and foam\",\n    \"imageUrls\": [\"/assets/images/menus/hot-drinks/cappuccino.jpg\"],\n    \"basePrice\": 22000,\n    \"isAvailable\": true,\n    \"modifierTypeIds\": [1]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Restore Deleted",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/menus/1/restore"
+                }
+              }
+            },
+            {
+              "name": "Delete",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/menus/1"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "MENUS V2 (CACHED)",
+          "item": [
+            {
+              "name": "Get by ID (PUBLIC - no auth needed)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrlV2}}/menus/1"
+                }
+              }
+            },
+            {
+              "name": "Search active or GetAll (PUBLIC - no auth needed)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrlV2}}/menus?categoryId=1",
+                  "query": [
+                    {
+                      "key": "categoryId",
+                      "value": "1"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Create",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrlV2}}/menus"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"name\": \"Americano\",\n    \"categoryIds\": [1],\n    \"description\": \"Strong coffee shot\",\n    \"imageUrls\": [\"/assets/images/menus/coffee/americano.jpg\"],\n    \"basePrice\": 7000,\n    \"isAvailable\": true,\n    \"modifierTypeIds\": [1]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "UPLOADS",
+          "item": [
+            {
+              "name": "Get Upload Auth",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/images/auth"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Orders",
+      "item": [
+        {
+          "name": "ORDERS",
+          "item": [
+            {
+              "name": "Create - invalid (exceeds max selection of a modifier type)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/orders"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"customerId\": 1,\n    \"items\": [\n        {\n            \"menuId\": 1,\n            \"quantity\": 1,\n            \"modifiers\": [\n                { \"modifierOptionId\": 1 },\n                { \"modifierOptionId\": 2 }\n            ]\n        }\n    ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "description": "customerId opsional; bila diisi HARUS ada di customers (404 \"Customer not found with id: N\").\nInvoice standalone untuk order member membawa snapshot customerId + customerName dari profil.\nTemperature (modifier type 1) has maxSelection = 1, so picking both hot(1) and ice(2) must be rejected."
+            },
+            {
+              "name": "Create - invalid (modifier option not attached to the menu)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/orders"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"customerId\": 1,\n    \"items\": [\n        {\n            \"menuId\": 1,\n            \"quantity\": 1,\n            \"modifiers\": [\n                { \"modifierOptionId\": 999 }\n            ]\n        }\n    ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Create - invalid (DINE_IN hanya boleh via POST /dinings/{id}/orders)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/orders"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"customerId\": 1,\n    \"type\": \"DINE_IN\",\n    \"items\": [\n        { \"menuId\": 2, \"quantity\": 1, \"modifiers\": [] }\n    ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Create - invalid (type wajib diisi)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/orders"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"customerId\": 1,\n    \"items\": [\n        { \"menuId\": 2, \"quantity\": 1, \"modifiers\": [] }\n    ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Create (TAKEAWAY)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/orders"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"customerId\": 1,\n    \"customerName\": \"Asep\",\n    \"type\": \"TAKEAWAY\",\n    \"notes\": \"Less sugar please\",\n    \"items\": [\n        {\n            \"menuId\": 2,\n            \"quantity\": 1,\n            \"modifiers\": [\n                {  \"modifierOptionId\": 6 },\n                {  \"modifierOptionId\": 2 },\n                {  \"modifierOptionId\": 13 },\n                {  \"modifierOptionId\": 12 }\n            ]\n        }\n    ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "description": "invoice standalone otomatis terbit via event"
+            },
+            {
+              "name": "Create - invalid: customerId tidak ada di customers (404)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/orders"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"customerId\": 9999,\n    \"type\": \"TAKEAWAY\",\n    \"items\": [\n        { \"menuId\": 2, \"quantity\": 1, \"modifiers\": [] }\n    ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Mark confirm (validasi status flow via OrderStatusFlowPolicy)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/orders/2/confirm"
+                }
+              }
+            },
+            {
+              "name": "Mark preparing",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/orders/2/prepare"
+                }
+              }
+            },
+            {
+              "name": "Mark ready",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/orders/2/ready"
+                }
+              }
+            },
+            {
+              "name": "Mark complete",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/orders/2/complete"
+                }
+              }
+            },
+            {
+              "name": "Mark cancel",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/orders/2/cancel"
+                }
+              },
+              "description": "invoice standalone unpaid ikut di-void via OrderCancelledEvent"
+            },
+            {
+              "name": "Get by ID",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/orders/1"
+                }
+              }
+            },
+            {
+              "name": "Search active or GetAll",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/orders?keyword=BUDI&status=CONFIRMED",
+                  "query": [
+                    {
+                      "key": "keyword",
+                      "value": "BUDI"
+                    },
+                    {
+                      "key": "status",
+                      "value": "CONFIRMED"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Get all statuses (status kosong = semua). `sort` dihormati (default createdAt,desc).",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/orders"
+                }
+              }
+            },
+            {
+              "name": "KITCHEN board",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/orders?status=CONFIRMED,PREPARING&sort=createdAt,asc&size=50",
+                  "query": [
+                    {
+                      "key": "status",
+                      "value": "CONFIRMED,PREPARING"
+                    },
+                    {
+                      "key": "sort",
+                      "value": "createdAt,asc"
+                    },
+                    {
+                      "key": "size",
+                      "value": "50"
+                    }
+                  ]
+                }
+              },
+              "description": "`status` menerima banyak nilai: dipisah koma atau diulang.\nantrian dapur: CONFIRMED + PREPARING, tertua dulu (1 request)"
+            },
+            {
+              "name": "KITCHEN board — alternatif bentuk diulang",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/orders?status=CONFIRMED&status=PREPARING&sort=createdAt,asc",
+                  "query": [
+                    {
+                      "key": "status",
+                      "value": "CONFIRMED"
+                    },
+                    {
+                      "key": "status",
+                      "value": "PREPARING"
+                    },
+                    {
+                      "key": "sort",
+                      "value": "createdAt,asc"
+                    }
+                  ]
+                }
+              },
+              "description": "alternatif bentuk diulang"
+            },
+            {
+              "name": "WAITER",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/orders?status=READY&sort=createdAt,asc",
+                  "query": [
+                    {
+                      "key": "status",
+                      "value": "READY"
+                    },
+                    {
+                      "key": "sort",
+                      "value": "createdAt,asc"
+                    }
+                  ]
+                }
+              },
+              "description": "order siap antar (READY), tertua dulu"
+            },
+            {
+              "name": "Alias status diterima: CREATE/CONFIRMED/PREPARE/READY/COMPLETE/CANCEL (case-insensitive)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/orders?status=prepare",
+                  "query": [
+                    {
+                      "key": "status",
+                      "value": "prepare"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Invalid status (400: \"Invalid order status: 'SERVED'. Allowed: CREATED, CONFIRMED, ...\")",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/orders?status=SERVED",
+                  "query": [
+                    {
+                      "key": "status",
+                      "value": "SERVED"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Update (PUT)",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/orders/1"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"customerId\": 1,\n    \"customerName\": \"Budi Santoso\",\n    \"type\": \"TAKEAWAY\",\n    \"notes\": \"No ice\",\n    \"items\": [\n        {\n            \"id\": 4,\n            \"menuId\": 1,\n            \"quantity\": 3,\n            \"modifiers\": [\n                { \"id\": 4, \"modifierOptionId\": 2 }\n            ]\n        }\n    ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "description": "Invoice OPEN unpaid ikut tersinkron (OrderItemsChangedEvent → rekonsiliasi baris invoice).\nItem & modifier IDs dipertahankan: echo id dari response GET agar row lama di-update in place.\n`type` WAJIB dikirim (@NotNull)."
+            },
+            {
+              "name": "Update (PUT) - add a new line (no id -> inserted with new id)",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/orders/1"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"customerId\": 1,\n    \"customerName\": \"Siapa ajaa...\",\n    \"type\": \"TAKEAWAY\",\n    \"notes\": \"No ice\",\n    \"items\": [\n        {\n            \"id\": 4,\n            \"menuId\": 1,\n            \"quantity\": 3,\n            \"modifiers\": [\n                { \"id\": 4, \"modifierOptionId\": 2 }\n            ]\n        },\n        {\n            \"menuId\": 1,\n            \"quantity\": 1,\n            \"modifiers\": [\n                { \"modifierOptionId\": 1 }\n            ]\n        }\n    ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Update (PUT) - invalid: mengubah type order DINE_IN (400)",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/orders/2"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"customerId\": 1,\n    \"type\": \"TAKEAWAY\",\n    \"items\": [\n        { \"menuId\": 1, \"quantity\": 1, \"modifiers\": [] }\n    ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "description": "Order dine-in dibuat via POST /dinings/{id}/orders; type-nya immutable."
+            },
+            {
+              "name": "Update (PUT) - invalid: order sudah punya pembayaran (400)",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/orders/1"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"customerId\": 1,\n    \"type\": \"TAKEAWAY\",\n    \"items\": [\n        { \"menuId\": 1, \"quantity\": 1, \"modifiers\": [] }\n    ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "description": "Invoice dengan paidAmount > 0 = frozen (tidak ada jalur koreksi di sistem)."
+            },
+            {
+              "name": "Patch - notes only (tanpa items/type)",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/orders/1"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"notes\": \"Take away\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "description": "masih diizinkan walau invoice sudah dibayar"
+            },
+            {
+              "name": "Patch - items (preserve item/modifier ids)",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/orders/1"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"items\": [\n        {\n            \"id\": 1,\n            \"menuId\": 1,\n            \"quantity\": 1,\n            \"modifiers\": [\n                { \"id\": 1, \"modifierOptionId\": 1 },\n                { \"id\": 2, \"modifierOptionId\": 3 }\n            ]\n        }\n    ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "description": "sync invoice, ditolak 400 jika ada applied payment"
+            },
+            {
+              "name": "Patch - type saja (TAKEAWAY → DINE_IN tidak boleh via endpoint ini; DINE_IN hanya via dining)",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/orders/1"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"type\": \"TAKEAWAY\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Delete",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/orders/1"
+                }
+              },
+              "description": "soft delete; invoice standalone unpaid ikut di-void via OrderDeletedEvent"
+            },
+            {
+              "name": "Delete - invalid: order sudah punya pembayaran (400, \"already has an applied payment\")",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/orders/1"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Payment",
+      "item": [
+        {
+          "name": "CREATE — jalur kasir yang benar (masuk sales.cash dashboard)",
+          "item": [
+            {
+              "name": "Create - INTERNAL / Cash (langsung PAID; invoice otomatis ter-update via PaymentSettledEvent)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/payments"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"invoiceId\": 1,\n    \"paymentProvider\": \"INTERNAL\",\n    \"paymentDetail\": \"CASH-001\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Create - XENDIT (async: status awal PENDING, tunggu webhook /payments/webhooks/xendit)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/payments"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"invoiceId\": 1,\n    \"paymentProvider\": \"XENDIT\",\n    \"paymentDetail\": \"Test XENDIT\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "description": "amount = remainingAmount invoice; invoiceUrl dikembalikan di response"
+            },
+            {
+              "name": "Create - partial pay: amount opsional, harus ≤ sisa tagihan (400 \"Payment amount exceeds remaining amount\" bila lebih)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/payments"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"invoiceId\": 1,\n    \"paymentProvider\": \"INTERNAL\",\n    \"paymentDetail\": \"DP meja 3\",\n    \"amount\": 20000\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Create - invalid: invoice sudah lunas (400 \"Invoice already paid\")",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/payments"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"invoiceId\": 1,\n    \"paymentProvider\": \"INTERNAL\",\n    \"paymentDetail\": \"double pay\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Create - invalid: sudah ada payment PENDING aktif untuk invoice ini (400 \"Invoice already has an active pending payment\")",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/payments"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"invoiceId\": 1,\n    \"paymentProvider\": \"XENDIT\",\n    \"paymentDetail\": \"QRIS dobel\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "READ",
+          "item": [
+            {
+              "name": "Get by ID",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/payments/1"
+                }
+              }
+            },
+            {
+              "name": "Search active or GetAll",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/payments?status=PENDING",
+                  "query": [
+                    {
+                      "key": "status",
+                      "value": "PENDING"
+                    }
+                  ]
+                }
+              },
+              "description": "filter: keyword, invoiceId, status (PENDING|PAID|EXPIRED|FAILED),\npaymentProvider (INTERNAL|XENDIT); default sort createdAt,desc"
+            },
+            {
+              "name": "Search - by invoice (cek semua payment satu tagihan)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/payments?invoiceId=1",
+                  "query": [
+                    {
+                      "key": "invoiceId",
+                      "value": "1"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Search - pagination",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/payments?page=0&size=5&sort=createdAt,desc",
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "0"
+                    },
+                    {
+                      "key": "size",
+                      "value": "5"
+                    },
+                    {
+                      "key": "sort",
+                      "value": "createdAt,desc"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "TRANSISI STATUS MANUAL (hanya expire / fail — PAID terminal)",
+          "item": [
+            {
+              "name": "Mark as expired (valid: PENDING → EXPIRED)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/payments/1/expire"
+                }
+              }
+            },
+            {
+              "name": "Mark as failed (valid: PENDING → FAILED)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/payments/1/fail"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "VALIDATION",
+          "item": [
+            {
+              "name": "Get by ID - not found (404)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/payments/999"
+                }
+              }
+            },
+            {
+              "name": "Expire - invalid: bukan PENDING lagi (400)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/payments/1/expire"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Report",
+      "item": [
+        {
+          "name": "REPORTS (authority: report.read — hanya ADMIN & CASHIER; WAITER/KITCHEN -> 403)",
+          "item": [
+            {
+              "name": "Dashboard summary - default (today, Asia/Jakarta)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/reports/dashboard/summary"
+                }
+              },
+              "description": "Report membaca langsung dari fakta domain (tanpa tabel projection / listener event):\nsales.cash.*    ← payment: applied_amount (uang masuk ke tagihan, SEMUA kanal: CASH/QRIS/XENDIT)\nsales.billing.* ← invoice: settled_amount saat lunas, piutang berjalan (snapshot, bukan periode)\ntopMenus        ← baris invoice dari invoice yang lunas (sejalan dengan settledAmount)\noperations      ← dining & order\nrecentActivity  ← 10 order terbaru LINTAS PERIODE + billingStatus dari invoice yang memuat order\nSatu-satunya jalur uang adalah POST /payments (B2 ditutup) — kas & billing bergerak dari jalur yang sama.\nParameter: from & to opsional (YYYY-MM-DD, default hari ini WIB), inklusif.\nValidasi: to < from -> 400; from di masa depan -> 400; to di masa depan boleh.\nFormat waktu: semua timestamp = LocalDateTime tanpa offset, wall clock Asia/Jakarta (WIB).\nFE harus parse sebagai '+07:00' (new Date(value + '+07:00')), bukan new Date(value)."
+            },
+            {
+              "name": "Dashboard summary - explicit range",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/reports/dashboard/summary?from=2026-09-01&to=2026-09-07",
+                  "query": [
+                    {
+                      "key": "from",
+                      "value": "2026-09-01"
+                    },
+                    {
+                      "key": "to",
+                      "value": "2026-09-07"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Dashboard summary - single day",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/reports/dashboard/summary?from=2026-09-07&to=2026-09-07",
+                  "query": [
+                    {
+                      "key": "from",
+                      "value": "2026-09-07"
+                    },
+                    {
+                      "key": "to",
+                      "value": "2026-09-07"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Dashboard summary - month to date (hanya 'from'; 'to' default = hari ini)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/reports/dashboard/summary?from=2026-09-01",
+                  "query": [
+                    {
+                      "key": "from",
+                      "value": "2026-09-01"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Dashboard summary - only 'to' ('from' default = hari ini; 200 walau to di masa depan)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/reports/dashboard/summary?to=2026-12-31",
+                  "query": [
+                    {
+                      "key": "to",
+                      "value": "2026-12-31"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Dashboard summary - range tanpa data (200, angka 0 dan array kosong)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/reports/dashboard/summary?from=2000-01-01&to=2000-01-02",
+                  "query": [
+                    {
+                      "key": "from",
+                      "value": "2000-01-01"
+                    },
+                    {
+                      "key": "to",
+                      "value": "2000-01-02"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Dashboard summary - invalid ('to' before 'from') (400: \"'to' date must not be before 'from' date\")",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/reports/dashboard/summary?from=2026-09-07&to=2026-09-01",
+                  "query": [
+                    {
+                      "key": "from",
+                      "value": "2026-09-07"
+                    },
+                    {
+                      "key": "to",
+                      "value": "2026-09-01"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Dashboard summary - invalid ('from' in the future) (400: \"'from' date must not be in the future\")",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/reports/dashboard/summary?from=2099-01-01&to=2099-01-02",
+                  "query": [
+                    {
+                      "key": "from",
+                      "value": "2099-01-01"
+                    },
+                    {
+                      "key": "to",
+                      "value": "2099-01-02"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Dashboard summary - invalid ('from' not a date) (400)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/reports/dashboard/summary?from=not-a-date",
+                  "query": [
+                    {
+                      "key": "from",
+                      "value": "not-a-date"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Dashboard summary - forbidden (403: akun tanpa report.read, mis. WAITER/KITCHEN)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/reports/dashboard/summary"
+                }
+              }
+            },
+            {
+              "name": "Dashboard summary - no auth (401)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/reports/dashboard/summary"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Xendit",
+      "item": [
+        {
+          "name": "PAYMENT WEBHOOKS (XENDIT)",
+          "item": [
+            {
+              "name": "Webhook - PAID (marks payment as paid)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-Callback-Token",
+                    "value": "{{xenditCallbackToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/payments/webhooks/xendit"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"id\": \"inv_6200-0001\",\n    \"external_id\": \"INV-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\",\n    \"status\": \"PAID\",\n    \"amount\": 22000,\n    \"paid_amount\": 22000,\n    \"payment_method\": \"QRIS\",\n    \"payment_channel\": \"QRIS\",\n    \"currency\": \"IDR\",\n    \"description\": \"Testing xendit\",\n    \"created\": \"2026-09-07T10:00:00.000Z\",\n    \"updated\": \"2026-09-07T10:01:00.000Z\",\n    \"merchant_name\": \"Rascal\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "description": "Simulates Xendit invoice callbacks. No Bearer token — auth is via X-Callback-Token.\nHandler: POST /api/v1/payments/webhooks/xendit (payment-xendit module)\nThe external_id must match an existing PENDING payment — copy the real value from the\ncreate payment response. status=PAID marks the payment as paid, applies the amount to the\ninvoice, and is read live by the dashboard (sales.cash / sales.billing / topMenus)."
+            },
+            {
+              "name": "Webhook - PENDING (no state change on payment)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-Callback-Token",
+                    "value": "{{xenditCallbackToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/payments/webhooks/xendit"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"external_id\": \"INV-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\",\n    \"status\": \"PENDING\",\n    \"amount\": 22000,\n    \"payment_method\": \"QRIS\",\n    \"payment_channel\": \"QRIS\",\n    \"currency\": \"IDR\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Webhook - EXPIRED",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-Callback-Token",
+                    "value": "{{xenditCallbackToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/payments/webhooks/xendit"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"external_id\": \"INV-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\",\n    \"status\": \"EXPIRED\",\n    \"amount\": 22000,\n    \"payment_method\": \"QRIS\",\n    \"payment_channel\": \"QRIS\",\n    \"currency\": \"IDR\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Webhook - unknown status (maps to FAILED on payment)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-Callback-Token",
+                    "value": "{{xenditCallbackToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/payments/webhooks/xendit"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"external_id\": \"INV-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\",\n    \"status\": \"WEIRD_STATUS\",\n    \"amount\": 22000,\n    \"currency\": \"IDR\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "description": "Webhook - REFUNDED: refund sudah dihapus dari model. Status ini jatuh ke FAILED;\ntransisinya ditolak flow policy, webhook di-ack tanpa efek (lihat PaymentApiImpl)."
+            },
+            {
+              "name": "Webhook - invalid callback token (401)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-Callback-Token",
+                    "value": "wrong-token"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/payments/webhooks/xendit"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"external_id\": \"INV-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\",\n    \"status\": \"PAID\",\n    \"amount\": 22000,\n    \"currency\": \"IDR\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Webhook - missing callback token (401)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/payments/webhooks/xendit"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"external_id\": \"INV-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\",\n    \"status\": \"PAID\",\n    \"amount\": 22000,\n    \"currency\": \"IDR\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Webhook - malformed JSON (400)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "X-Callback-Token",
+                    "value": "{{xenditCallbackToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/payments/webhooks/xendit"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{ \"external_id\": \"INV-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\", \"status\": \"PAID\",, }",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

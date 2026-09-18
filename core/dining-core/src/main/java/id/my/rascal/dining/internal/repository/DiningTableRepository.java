@@ -26,9 +26,13 @@ public interface DiningTableRepository extends JpaRepository<DiningTable, Long> 
         select t from DiningTable t
         where t.deletedAt is null
           and (:keyword is null or lower(t.tableNumber) like lower(concat('%', cast(:keyword as string), '%')))
-        order by t.tableNumber asc
+          and (:status is null or t.status = :status)
     """)
-    Page<DiningTable> searchActive(@Param("keyword") String keyword, Pageable pageable);
+    Page<DiningTable> searchActive(
+        @Param("keyword") String keyword,
+        @Param("status") TableStatus status,
+        Pageable pageable
+    );
 
     @Query("select t from DiningTable t where t.deletedAt is null and t.status = :status")
     List<DiningTable> findAllActiveByStatus(@Param("status") TableStatus status);

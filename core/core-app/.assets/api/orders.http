@@ -128,7 +128,32 @@ GET {{baseUrl}}/orders/1
 Authorization: Bearer {{token}}
 
 ### Search active or GetAll
-GET {{baseUrl}}/orders?keyword=BUDI&status=PENDING
+GET {{baseUrl}}/orders?keyword=BUDI&status=CONFIRMED
+Authorization: Bearer {{token}}
+
+### Get all statuses (status kosong = semua). `sort` dihormati (default createdAt,desc).
+GET {{baseUrl}}/orders
+Authorization: Bearer {{token}}
+
+### KITCHEN board — antrian dapur: CONFIRMED + PREPARING, tertua dulu (1 request)
+### `status` menerima banyak nilai: dipisah koma atau diulang.
+GET {{baseUrl}}/orders?status=CONFIRMED,PREPARING&sort=createdAt,asc&size=50
+Authorization: Bearer {{token}}
+
+### KITCHEN board — alternatif bentuk diulang
+GET {{baseUrl}}/orders?status=CONFIRMED&status=PREPARING&sort=createdAt,asc
+Authorization: Bearer {{token}}
+
+### WAITER — order siap antar (READY), tertua dulu
+GET {{baseUrl}}/orders?status=READY&sort=createdAt,asc
+Authorization: Bearer {{token}}
+
+### Alias status diterima: CREATE/CONFIRMED/PREPARE/READY/COMPLETE/CANCEL (case-insensitive)
+GET {{baseUrl}}/orders?status=prepare
+Authorization: Bearer {{token}}
+
+### Invalid status (400: "Invalid order status: 'SERVED'. Allowed: CREATED, CONFIRMED, ...")
+GET {{baseUrl}}/orders?status=SERVED
 Authorization: Bearer {{token}}
 
 

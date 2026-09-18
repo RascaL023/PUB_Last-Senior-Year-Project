@@ -117,12 +117,12 @@ public class OrderController {
     @PreAuthorize("hasAnyAuthority('order.read', 'order.*')")
     public ResponseEntity<SuccessPagedTemplate<List<OrderResponse>>> getAll(
         @RequestParam(required = false) String keyword,
-        @RequestParam(required = false) String status,
+        @RequestParam(required = false) List<String> status,
         @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
         Page<OrderResponse> page = orderQueryService.searchActive(
-            keyword, 
-            OrderStatus.fromString(status), 
+            keyword,
+            OrderStatus.fromStrings(status),
             pageable
         );
 

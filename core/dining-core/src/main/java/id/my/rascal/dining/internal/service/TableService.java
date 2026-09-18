@@ -48,9 +48,9 @@ public class TableService {
     }
 
     @Transactional(readOnly = true)
-    public Page<DiningTableResponse> search(String keyword, Pageable pageable) {
+    public Page<DiningTableResponse> search(String keyword, TableStatus status, Pageable pageable) {
         return diningTableRepository
-            .searchActive(StringUtil.normalizeSearch(keyword), pageable)
+            .searchActive(StringUtil.normalizeSearch(keyword), status, pageable)
             .map(this::toResponse);
     }
 

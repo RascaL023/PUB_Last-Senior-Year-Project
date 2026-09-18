@@ -14,11 +14,13 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import id.my.rascal.common.ApiResponse;
 import id.my.rascal.common.template.SuccessPagedTemplate;
 import id.my.rascal.common.template.SuccessTemplate;
+import id.my.rascal.dining.internal.entity.DiningStatus;
 import id.my.rascal.dining.internal.model.request.CreateDiningOrderRequest;
 import id.my.rascal.dining.internal.model.request.OpenDiningRequest;
 import id.my.rascal.dining.internal.model.response.DiningResponse;
@@ -50,9 +52,10 @@ public class DiningController {
     @GetMapping
     @PreAuthorize("hasAnyAuthority('dining.read', 'dining.*')")
     public ResponseEntity<SuccessPagedTemplate<List<DiningResponse>>> getAll(
+        @RequestParam(required = false) String status,
         @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        Page<DiningResponse> page = diningService.search(pageable);
+        Page<DiningResponse> page = diningService.search(DiningStatus.fromString(status), pageable);
 
         return ApiResponse.paged(
             HttpStatus.OK,

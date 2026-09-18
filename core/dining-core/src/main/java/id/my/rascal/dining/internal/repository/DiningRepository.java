@@ -33,9 +33,12 @@ public interface DiningRepository extends JpaRepository<Dining, Long> {
 
     @Query("""
         select d from Dining d
-        order by d.createdAt desc
+        where (:status is null or d.status = :status)
     """)
-    Page<Dining> findAllPaged(Pageable pageable);
+    Page<Dining> findAllPaged(
+        @Param("status") DiningStatus status,
+        Pageable pageable
+    );
 
     @Query("select d from Dining d where d.id in :ids")
     List<Dining> findAllByIds(@Param("ids") List<Long> ids);

@@ -24,6 +24,8 @@ import id.my.rascal.common.ApiResponse;
 import id.my.rascal.common.exception.BadRequestException;
 import id.my.rascal.common.template.SuccessPagedTemplate;
 import id.my.rascal.common.template.SuccessTemplate;
+import id.my.rascal.dining.internal.entity.TableStatus;
+import id.my.rascal.dining.internal.entity.TableStatus;
 import id.my.rascal.dining.internal.model.request.DiningTablePatchRequest;
 import id.my.rascal.dining.internal.model.request.DiningTablePutRequest;
 import id.my.rascal.dining.internal.model.request.DiningTableRequest;
@@ -57,9 +59,10 @@ public class TableController {
     @PreAuthorize("hasAnyAuthority('table.read', 'table.*')")
     public ResponseEntity<SuccessPagedTemplate<List<DiningTableResponse>>> getAll(
         @RequestParam(required = false) String keyword,
+        @RequestParam(required = false) String status,
         @PageableDefault(size = 10, sort = "tableNumber", direction = Sort.Direction.ASC) Pageable pageable
     ) {
-        Page<DiningTableResponse> page = tableService.search(keyword, pageable);
+        Page<DiningTableResponse> page = tableService.search(keyword, TableStatus.fromString(status), pageable);
 
         return ApiResponse.paged(
             HttpStatus.OK,

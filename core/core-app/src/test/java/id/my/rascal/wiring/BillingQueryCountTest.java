@@ -113,7 +113,7 @@ class BillingQueryCountTest {
         Statistics stats = statistics();
         stats.clear();
 
-        diningService.search(Pageable.ofSize(10));
+        diningService.search(null, Pageable.ofSize(10));
 
         assertTrue(stats.getQueryExecutionCount() <= 6,
             "Dining search took " + stats.getQueryExecutionCount() + " queries");

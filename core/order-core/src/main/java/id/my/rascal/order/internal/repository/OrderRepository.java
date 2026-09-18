@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.Optional;
 
 @Repository
@@ -27,12 +28,11 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
           and (:keyword is null or
                lower(o.orderNumber) like lower(concat('%', cast(:keyword as string), '%'))
                or (o.customerName is not null and lower(o.customerName) like lower(concat('%', cast(:keyword as string), '%'))))
-          and (:status is null or o.status = :status)
-        order by o.createdAt desc
+          and o.status in :statuses
     """)
     Page<Order> searchActive(
         @Param("keyword") String keyword,
-        @Param("status") OrderStatus status,
+        @Param("statuses") Collection<OrderStatus> statuses,
         Pageable pageable
     );
 

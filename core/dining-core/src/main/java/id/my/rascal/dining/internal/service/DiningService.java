@@ -184,8 +184,8 @@ public class DiningService {
     }
 
     @Transactional(readOnly = true)
-    public Page<DiningResponse> search(Pageable pageable) {
-        Page<Dining> dinings = diningRepository.findAllPaged(pageable);
+    public Page<DiningResponse> search(DiningStatus status, Pageable pageable) {
+        Page<Dining> dinings = diningRepository.findAllPaged(status, pageable);
         if (dinings.isEmpty())
             return new PageImpl<>(List.of(), pageable, 0);
 
