@@ -11,6 +11,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -35,5 +36,23 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
         @Param("statuses") Collection<OrderStatus> statuses,
         Pageable pageable
     );
+
+    @Query("""
+        select o from Order o
+        where o.deletedAt is null
+          and o.customerId = :customerId
+    """)
+    Page<Order> searchActiveByCustomerId(
+        @Param("customerId") Long customerId,
+        Pageable pageable
+    );
+
+    @Query("""
+        select o.id from Order o
+        where o.deletedAt is null
+          and o.customerId = :customerId
+        order by o.createdAt desc
+    """)
+    List<Long> findActiveOrderIdsByCustomerId(@Param("customerId") Long customerId);
 
 }

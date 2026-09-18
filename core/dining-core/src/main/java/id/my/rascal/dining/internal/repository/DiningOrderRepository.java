@@ -21,6 +21,9 @@ public interface DiningOrderRepository extends JpaRepository<DiningOrder, Long> 
     @Query("select do from DiningOrder do where do.diningId in :diningIds")
     List<DiningOrder> findAllByDiningIds(@Param("diningIds") Collection<Long> diningIds);
 
+    @Query("select do.diningId from DiningOrder do where do.orderId in :orderIds")
+    List<Long> findDiningIdsByOrderIds(@Param("orderIds") Collection<Long> orderIds);
+
     default Map<Long, List<Long>> findOrderIdsGroupedByDiningId(Collection<Long> diningIds) {
         if (diningIds == null || diningIds.isEmpty())
             return Map.of();

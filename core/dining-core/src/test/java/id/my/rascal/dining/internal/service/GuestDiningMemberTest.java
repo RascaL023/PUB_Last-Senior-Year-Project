@@ -10,6 +10,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -46,6 +47,7 @@ class GuestDiningMemberTest {
 
     private DiningRepository diningRepository;
     private DiningOrderRepository diningOrderRepository;
+    private DiningTableRepository diningTableRepository;
     private TableService tableService;
     private OrderApi orderApi;
     private InvoiceApi invoiceApi;
@@ -56,21 +58,24 @@ class GuestDiningMemberTest {
     void setUp() {
         diningRepository = mock(DiningRepository.class);
         diningOrderRepository = mock(DiningOrderRepository.class);
+        diningTableRepository = mock(DiningTableRepository.class);
         tableService = mock(TableService.class);
         orderApi = mock(OrderApi.class);
         invoiceApi = mock(InvoiceApi.class);
         customerApi = mock(CustomerApi.class);
 
         DiningService diningService = new DiningService(
-            diningRepository, diningOrderRepository, mock(DiningTableRepository.class),
+            diningRepository, diningOrderRepository, diningTableRepository,
             tableService, orderApi, invoiceApi,
             new DiningEventPublisherService(mock(ApplicationEventPublisher.class)),
             new GuestTokenGenerator(),
             customerApi
         );
         guestDiningService = new GuestDiningService(
-            diningRepository, diningService, orderApi, invoiceApi, customerApi
+            diningRepository, diningOrderRepository, diningTableRepository,
+            diningService, orderApi, invoiceApi, customerApi
         );
+        when(orderApi.getItemsByOrderIds(any())).thenReturn(Map.of());
     }
 
     @Test

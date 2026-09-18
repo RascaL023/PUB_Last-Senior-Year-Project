@@ -1,0 +1,329 @@
+### ================================================================
+### GUEST WORKFLOW — BUKTI E2E: TAMU PESAN & LACAK TANPA LOGIN
+### ================================================================
+### Tujuan  : membuktikan satu rangkaian — tamu scan QR → lihat menu →
+###           pesan → polling status → dibayar kasir → sesi ditutup,
+###           SEMUA tanpa tamu punya akun/token login.
+### Kontrak : API_CONTRACT.md §L2 (guest dining), §5.3 (permukaan publik)
+###
+### Prasyarat:
+###   1. App jalan di {{baseUrl}} (localhost:8081), DB fresh (drop-create).
+###   2. Ada minimal 1 meja (POST /tables di dining.http) dan data menu
+###      dev (menuId 1/2, modifierOptionId 13 dipakai di sini).
+###   3. Jalankan step BERURUTAN dari atas ke bawah. Setiap ID (dining,
+###      order, invoice) harap disesuaikan dengan hasil run lo.
+###   4. Copy guestToken + guestCode dari response STEP 0 ke environment
+###      (guestToken / guestCode di http-client.env.json).
+###
+### Yang DIBUKTIKAN di akhir file (checklist §CHECKLIST):
+###   [G1] Sesi meja diekspos ke tamu via token + kode
+###   [G2] Tamu anonim bisa menambah order (tanpa login, tanpa customerId)
+###   [G3] Anti-spoof: customerId yang diinject tamu diabaikan server
+###   [G4] Tamu bisa POLLING status sesi + isi order-nya (items[])
+###   [G5] TokenReusable: token sama dipakai berkali-kali dalam satu sesi
+###   [G6] Polling tetap hidup setelah sesi CLOSED (GET 200, POST ditolak)
+###   [G7] Member login bisa ikut serta lewat /my/dinings (identitas dari JWT)
+###   [G8] Member menemukan sesinya TANPA scan QR (GET /my/dinings)
+### ================================================================
+
+
+### ================================================================
+### PERSIAPAN (staf) — sekali di awal
+### ================================================================
+
+### STEP 0: Staf buka sesi meja (guestToken + guestCode ada di response)
+### → copy guestToken ke {{guestToken}}, guestCode ke {{guestCode}}
+### [G1] Dinings — catat diningId dari response
+POST {{baseUrl}}/dinings
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "tableId": 1
+}
+
+
+### ================================================================
+### TAHAP 1 — TAMU MELIHAT MENU (publik, tanpa login)
+### ================================================================
+
+### STEP 1: Tamu browse menu (endpoint publik — tidak butuh Authorization)
+GET {{baseUrl}}/menus?size=50
+
+### STEP 1b (opsional): kategori menu juga publik
+GET {{baseUrl}}/menus/categories
+
+### STEP 1c (opsional): detail satu menu (publik)
+GET {{baseUrl}}/menus/1
+
+
+### ================================================================
+### TAHAP 2 — TAMU MEMBUKA SESI & PESAN PERTAMA
+### ================================================================
+
+### STEP 2: Tamu buka halaman sesi dari QR (resolve by token)
+### Ekspektasi: 200, status OPEN, invoiceStatus null, orders []
+GET {{baseUrl}}/guest/dinings/{{guestToken}}
+
+### STEP 2b (fallback): QR gagal scan → resolve via kode 6 digit
+### Ekspektasi: 200, payload sama dengan STEP 2 (hanya sesi OPEN)
+GET {{baseUrl}}/guest/dinings/by-code/{{guestCode}}
+
+### STEP 3: Tamu pesan (ANONIM — tanpa header Authorization sama sekali)
+### Ekspektasi: 201, response = status sesi terbaru (sudah berisi order pertama)
+### [G2]
+POST {{baseUrl}}/guest/dinings/{{guestToken}}/orders
+Content-Type: application/json
+
+{
+    "customerName": "Tamu Meja 1",
+    "notes": "Pedas level 2, es terpisah",
+    "items": [
+        {
+            "menuId": 2,
+            "quantity": 1,
+            "modifiers": [
+                { "modifierOptionId": 14 }
+            ]
+        }
+    ]
+}
+
+
+### ================================================================
+### TAHAP 3 — TAMU POLLING STATUS (inti dari "track")
+### ================================================================
+### FE tamu disarankan GET ini tiap 5–10 detik selama sesi berjalan.
+### Perubahan yang terlihat antar poll:
+###   - orders[].status : CREATED → CONFIRMED → PREPARING → READY → COMPLETED
+###   - invoiceStatus   : null → OPEN → PARTIALLY_PAID → PAID
+###   - totalPrice      : naik setiap order baru masuk
+### [G4]
+
+### STEP 4: Poll #1 — setelah staf confirm (jalankan STEP 8 dulu bila mau lihat perubahan)
+GET {{baseUrl}}/guest/dinings/{{guestToken}}
+
+### STEP 4b: Poll #2 — setelah dapur prepare/ready (STEP 9/10)
+GET {{baseUrl}}/guest/dinings/{{guestToken}}
+
+
+### ================================================================
+### TAHAP 4 — TAMU PESAN LAGI (token yang sama, bukti reusable)
+### ================================================================
+
+### STEP 5: Tamu tambah order kedua — token TIDAK berubah sepanjang sesi
+### Ekspektasi: 201; di STEP 4b berikutnya orders[] bertambah jadi 2
+### [G5]
+POST {{baseUrl}}/guest/dinings/{{guestToken}}/orders
+Content-Type: application/json
+
+{
+    "customerName": "Tamu Meja 1",
+    "notes": "Round 2",
+    "items": [
+        { "menuId": 2, "quantity": 3, "modifiers": [] }
+    ]
+}
+
+### STEP 5b (ANTI-SPOOF): tamu mencoba menyelundupkan identitas member
+### Ekspektasi: 201 (bukan error) — field customerId TIDAK ADA di kontrak
+### GuestOrderRequest, diabaikan server; order tersimpan dengan customerId NULL.
+### [G3]
+POST {{baseUrl}}/guest/dinings/{{guestToken}}/orders
+Content-Type: application/json
+
+{
+    "customerId": 7,
+    "customerName": "Tamu Meja 1",
+    "items": [
+        { "menuId": 1, "quantity": 1, "modifiers": [] }
+    ]
+}
+
+### STEP 5c: Bukti anti-spoof dari sisi staf — cari order dari STEP 5b di
+### daftar order staf: customerId harus NULL meski body tamu mengirim 7
+GET {{baseUrl}}/orders?sort=createdAt,desc&size=10
+Authorization: Bearer {{token}}
+
+
+### ================================================================
+### TAHAP 5 — STAF/KITCHEN MEMPROSES (identitas staf, bukan tamu)
+### ================================================================
+
+### STEP 8: Confirm order pertama (bila step sebelumnya sudah jalan, sesuaikan orderId)
+POST {{baseUrl}}/orders/1/confirm
+Authorization: Bearer {{token}}
+
+### STEP 9: Prepare (bisa dilakukan role KITCHEN via /kitchen/orders + order.mark.preparing)
+POST {{baseUrl}}/orders/1/prepare
+Authorization: Bearer {{token}}
+
+### STEP 10: Ready → di poll tamu berikutnya status berubah READY
+POST {{baseUrl}}/orders/1/ready
+Authorization: Bearer {{token}}
+
+### STEP 10b: Complete (waiter mengantar)
+POST {{baseUrl}}/orders/1/complete
+Authorization: Bearer {{token}}
+
+
+### ================================================================
+### TAHAP 6 — TAGIHAN & PENUTUPAN SESI (kasir)
+### ================================================================
+
+### STEP 11: Kasir lihat invoice sesi (invoice dining terbit otomatis saat order pertama)
+GET {{baseUrl}}/invoices?diningId=1
+Authorization: Bearer {{token}}
+
+### STEP 12: Bayar invoice (amount kosong = lunas penuh)
+### → invoiceStatus di poll tamu berubah jadi PAID
+POST {{baseUrl}}/payments
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "invoiceId": 1,
+    "paymentProvider": "INTERNAL",
+    "paymentDetail": "CASH-GUEST-001"
+}
+
+### STEP 13: Tutup sesi — guard: semua order terminal & invoice lunas
+POST {{baseUrl}}/dinings/1/close
+Authorization: Bearer {{token}}
+
+
+### ================================================================
+### TAHAP 7 — TRACKING SETELAH SESI DITUTUP
+### ================================================================
+
+### STEP 14: Tamu masih bisa MELIHAT riwayat sesi (GET tetap 200)
+### Ekspektasi: status CLOSED, invoiceStatus PAID, seluruh orders[] utuh
+### [G6]
+GET {{baseUrl}}/guest/dinings/{{guestToken}}
+
+### STEP 14b: Tapi tidak bisa menambah order lagi (400 "closed")
+POST {{baseUrl}}/guest/dinings/{{guestToken}}/orders
+Content-Type: application/json
+
+{
+    "items": [
+        { "menuId": 1, "quantity": 1, "modifiers": [] }
+    ]
+}
+
+### STEP 14c: by-code ikut mati setelah close (hanya sesi OPEN)
+GET {{baseUrl}}/guest/dinings/by-code/{{guestCode}}
+
+
+### ================================================================
+### TAHAP 8 — VARIAN MEMBER (login, tanpa QR)
+### ================================================================
+### Register customer di customer.http → login di auth.http →
+### simpan accessToken ke {{customerToken}}.
+
+### STEP 15: Member ikut pesan di sesi yang sama — identitas dari JWT,
+### bukan dari body (GuestOrderRequest tidak punya customerId)
+### Ekspektasi: 201
+### [G7]
+POST {{baseUrl}}/my/dinings/{{guestToken}}/orders
+Authorization: Bearer {{customerToken}}
+Content-Type: application/json
+
+{
+    "customerName": "",
+    "notes": "Ikut sesi, dari member",
+    "items": [
+        { "menuId": 2, "quantity": 1, "modifiers": [] }
+    ]
+}
+
+### STEP 15b: Member menemukan sesi TANPA scan QR — menutup jalan buntu /my
+### Catatan: sesi di TAHAP 6 sudah CLOSED; pakai ?status=CLOSED untuk melihatnya.
+### Untuk melihat default (OPEN), ulangi alur ini di meja lain dengan member yang sama.
+### [G8]
+GET {{baseUrl}}/my/dinings?status=CLOSED
+Authorization: Bearer {{customerToken}}
+
+### STEP 15c: Deep-link member ke tampilan tamu — payload sama dengan guest
+GET {{baseUrl}}/my/dinings/{{guestToken}}
+Authorization: Bearer {{customerToken}}
+
+
+### ================================================================
+### NEGATIVE SUITE — penolakan yang diharapkan
+### ================================================================
+
+### Token salah (404 generik "Session not found" — tidak membocorkan apa pun)
+GET {{baseUrl}}/guest/dinings/wrongtoken123
+
+### Kode salah (404)
+GET {{baseUrl}}/guest/dinings/by-code/000000
+
+### Items kosong (400 "Order must have at least 1 item")
+POST {{baseUrl}}/guest/dinings/{{guestToken}}/orders
+Content-Type: application/json
+
+{
+    "items": []
+}
+
+### customerName > 50 char (400)
+POST {{baseUrl}}/guest/dinings/{{guestToken}}/orders
+Content-Type: application/json
+
+{
+    "customerName": "Nama panjang sekali loh ini melebihi lima puluh karakter deh sela",
+    "items": [
+        { "menuId": 1, "quantity": 1, "modifiers": [] }
+    ]
+}
+
+### menuId tidak ada (404 menu not found)
+POST {{baseUrl}}/guest/dinings/{{guestToken}}/orders
+Content-Type: application/json
+
+{
+    "items": [
+        { "menuId": 9999, "quantity": 1, "modifiers": [] }
+    ]
+}
+
+### Sesi lunas: order setelah PAID (400 "Sesi ini sudah lunas (INV-...)")
+### → jalankan SETELAH STEP 12 pada sesi yang masih OPEN (pakai meja lain
+###   bila sesi utama sudah ditutup di STEP 13)
+POST {{baseUrl}}/guest/dinings/{{guestToken}}/orders
+Content-Type: application/json
+
+{
+    "items": [
+        { "menuId": 1, "quantity": 1, "modifiers": [] }
+    ]
+}
+
+### Member tanpa profil customer memakai /my (403 "Customer profile not found...")
+### → pakai {{token}} staf (mis. admin@rascal.id)
+POST {{baseUrl}}/my/dinings/{{guestToken}}/orders
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "items": [
+        { "menuId": 1, "quantity": 1, "modifiers": [] }
+    ]
+}
+
+
+### ================================================================
+### CHECKLIST — centang setelah run
+### ================================================================
+### [G1] STEP 0  : response POST /dinings berisi guestToken + guestCode
+### [G2] STEP 3  : 201 tanpa header Authorization
+### [G3] STEP 5b : 201 dengan customerId injected; STEP 5c: customerId NULL
+### [G4] STEP 4  : orders[] berisi orderNumber, status, totalPrice, items[]
+### [G5] STEP 5  : order kedua masuk ke sesi yang sama via token yang sama
+### [G6] STEP 14 : GET 200 (status CLOSED) setelah close; 14b POST ditolak
+### [G7] STEP 15 : member order tanpa mengirim identitas di body
+### [G8] STEP 15b: sesi muncul di GET /my/dinings milik member
+###
+### Kalau 8/8 tercentang → workflow "guest order & track" TERBUKTI
+### end-to-end dengan kode saat ini, tanpa perubahan BE tambahan.

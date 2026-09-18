@@ -1,5 +1,8 @@
 package id.my.rascal.dining.internal.adapter;
 
+import java.util.Collection;
+import java.util.Map;
+
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,6 +36,12 @@ public class DiningReportApiImpl implements DiningReportApi {
     @Transactional(readOnly = true)
     public long countAvailableTables() {
         return diningReportRepository.countActiveByStatus(TableStatus.AVAILABLE);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Map<Long, String> tableNumbersByOrderIds(Collection<Long> orderIds) {
+        return diningReportRepository.findTableNumberMapByOrderIds(orderIds, DiningStatus.OPEN);
     }
 
 }

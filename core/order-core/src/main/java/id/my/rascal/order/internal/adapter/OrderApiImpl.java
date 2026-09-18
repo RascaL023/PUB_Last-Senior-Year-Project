@@ -2,6 +2,7 @@ package id.my.rascal.order.internal.adapter;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -9,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import id.my.rascal.order.api.OrderApi;
 import id.my.rascal.order.api.OrderApiCreateRequest;
 import id.my.rascal.order.api.OrderApiResponse;
+import id.my.rascal.order.api.OrderItemDetail;
 import id.my.rascal.order.api.event.dto.OrderItemSnapshot;
 import id.my.rascal.order.internal.model.mapper.OrderMapper;
 import id.my.rascal.order.internal.service.OrderQueryService;
@@ -41,6 +43,16 @@ public class OrderApiImpl implements OrderApi {
     @Override
     public List<OrderItemSnapshot> getOrderItems(Long orderId) {
         return orderQueryService.findActiveOrderItems(orderId);
+    }
+
+    @Override
+    public List<Long> findOrderIdsByCustomerId(Long customerId) {
+        return orderQueryService.findOrderIdsByCustomerId(customerId);
+    }
+
+    @Override
+    public Map<Long, List<OrderItemDetail>> getItemsByOrderIds(Collection<Long> orderIds) {
+        return orderQueryService.findItemsByOrderIds(orderIds);
     }
 
     @Override

@@ -1,0 +1,54 @@
+###### KITCHEN (authority: kitchen.read — ADMIN & KITCHEN) ######
+### Papan antrean dapur (KDS). Read-only; transisi tetap via POST /orders/{id}/prepare|ready.
+### Lihat API_CONTRACT.md §R.
+###
+### Default: status=CONFIRMED,PREPARING, urut TERTUA DULU (createdAt,asc), size 20 (maks 50).
+### tableNumber = nomor meja dari sesi dining OPEN yang memuat order; null untuk TAKEAWAY.
+### items[] = OrderItemResponse (termasuk modifiers) — sama dengan detail order.
+###
+### Pakai token akun kitchen@rascal.id (kitchen123) untuk request di bawah.
+### Token akun lain → 403 (mis. kasir/waiter tanpa kitchen.read).
+
+### Antrean default (CONFIRMED + PREPARING, tertua dulu)
+GET {{baseUrl}}/kitchen/orders
+Authorization: Bearer {{token}}
+
+### Antrean dengan ukuran lebih besar (di-cap di 50 walau minta 200)
+GET {{baseUrl}}/kitchen/orders?size=50
+Authorization: Bearer {{token}}
+
+### Hanya order yang belum di-confirm (biasanya kosong — kasir/waiter yang confirm dulu)
+GET {{baseUrl}}/kitchen/orders?status=CREATED
+Authorization: Bearer {{token}}
+
+### Satu status saja
+GET {{baseUrl}}/kitchen/orders?status=PREPARING
+Authorization: Bearer {{token}}
+
+### Multi-status (bentuk sama dengan GET /orders)
+GET {{baseUrl}}/kitchen/orders?status=CONFIRMED&status=PREPARING
+Authorization: Bearer {{token}}
+
+### Invalid status (400: "Invalid order status: 'BAKING'. Allowed: CREATED, CONFIRMED, ...")
+GET {{baseUrl}}/kitchen/orders?status=BAKING
+Authorization: Bearer {{token}}
+
+### Forbidden (403) — token tanpa kitchen.read
+GET {{baseUrl}}/kitchen/orders
+Authorization: Bearer {{token}}
+# ganti {{token}} dengan access token akun waiter/cashier untuk melihat 403
+
+### No auth (401)
+GET {{baseUrl}}/kitchen/orders
+
+### ========================================
+### MAJUKAN STATUS (endpoint yang sudah ada di §J — bukan milik kitchen.http)
+### ========================================
+
+### Mulai masak (CONFIRMED → PREPARING) — butuh order.mark.preparing
+POST {{baseUrl}}/orders/1/prepare
+Authorization: Bearer {{token}}
+
+### Selesai masak (PREPARING → READY) — butuh order.mark.ready
+POST {{baseUrl}}/orders/1/ready
+Authorization: Bearer {{token}}

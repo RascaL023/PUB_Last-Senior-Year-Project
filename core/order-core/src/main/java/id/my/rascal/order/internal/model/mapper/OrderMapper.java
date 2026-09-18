@@ -1,6 +1,7 @@
 package id.my.rascal.order.internal.model.mapper;
 
 import id.my.rascal.order.api.OrderApiResponse;
+import id.my.rascal.order.api.OrderItemDetail;
 import id.my.rascal.order.api.OrderTypeApiResponse;
 import id.my.rascal.order.internal.entity.Order;
 import id.my.rascal.order.internal.entity.OrderItem;
@@ -71,6 +72,26 @@ public class OrderMapper {
             .toList();
 
         return new OrderItemResponse(
+            item.getId(),
+            item.getMenuId(),
+            item.getItemName(),
+            item.getUnitPrice(),
+            item.getQuantity(),
+            item.getSubtotal(),
+            modifiers
+        );
+    }
+
+    public static OrderItemDetail toItemDetail(OrderItem item) {
+        List<OrderItemDetail.Modifier> modifiers = item.getModifiers().stream()
+            .map(modifier -> new OrderItemDetail.Modifier(
+                modifier.getModifierOptionId(),
+                modifier.getName(),
+                modifier.getAdditionalPrice()
+            ))
+            .toList();
+
+        return new OrderItemDetail(
             item.getId(),
             item.getMenuId(),
             item.getItemName(),

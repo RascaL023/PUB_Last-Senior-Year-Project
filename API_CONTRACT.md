@@ -6,6 +6,9 @@
 > - **Refund sudah dihapus dari model.** `PaymentStatus` enum hanya punya `PENDING`, `PAID`, `FAILED`, `EXPIRED`. Tidak ada `REFUNDED`. Payment yang `PAID` bersifat final.
 > - **Guest dining sudah ada.** Tamu (tanpa login) akses sesi via `guestToken`/`guestCode` — lihat §L2. Request tamu **tidak menerima `customerId`** (anti-spoof); identitas member di-attach server-side, integrasi customer menyusul.
 > - **`customerId` divalidasi server-side.** `POST /orders` dan `POST /dinings/{id}/orders` dengan `customerId` yang tidak ada → `404`. Member yang login bisa attach identitas via `/my/dinings/{guestToken}/orders` (lihat §L3).
+> - **Tracking tamu sudah membawa item.** `GET /guest/dinings/{guestToken}` mengembalikan `orders[].orderNumber` + `orders[].items[]` (termasuk modifiers) — tamu tahu apa yang ia pesan, bukan cuma totalnya (§L2).
+> - **Member punya pintu masuk sendiri.** `GET /my/dinings` (sesi member, `OPEN` default) + `GET /my/orders` (riwayat) — member tidak lagi harus memindai QR lebih dulu (§L3, §Q).
+> - **Kitchen punya endpoint sendiri.** `GET /kitchen/orders` (authority `kitchen.read`) mengembalikan tiket + `tableNumber` (§R).
 > - **Invoice standalone dengan member** membawa snapshot `customerId` + `customerName`; invoice dining selalu `null` (tagihan kolektif).
 > - **CORS ditangani oleh Vercel proxy** (`vercel.json` di FE). Tidak perlu explicit origin config di `SecurityConfig`.
 > - **Local `dev` sudah paling maju** (10 commit di depan `origin/dev`). `origin/shadow` sudah merge ke local `dev`. `feature/payment`, `feature/invoice`, `feature/report` adalah stale branches — work-nya sudah dipindah ke `shadow`.
@@ -495,7 +498,9 @@ Login ────────────────────────�
 | **Invoices** | `POST /`, `GET /`, `GET /{id}`, `void`, `DELETE /{id}` | `invoice.create` / `invoice.read` / `invoice.update` / `invoice.delete` / `invoice.*` (per operasi) |
 | **Dining** | `POST /` (open), `POST /{id}/orders`, `POST /{id}/close` | `dining.create` / `dining.update` / `dining.*` |
 | | `GET /`, `GET /{id}` | `dining.read` / `dining.*` |
-| **My Dining** | `GET /my/dinings/{guestToken}`, `POST /my/dinings/{guestToken}/orders` | Cukup login (`isAuthenticated()`) — identitas member diambil dari token; akun tanpa profil member → `403` |
+| **My Dining** | `GET /my/dinings`, `GET /my/dinings/{guestToken}`, `POST /my/dinings/{guestToken}/orders` | Cukup login (`isAuthenticated()`) — identitas member diambil dari JWT; akun tanpa profil member → `403` |
+| **My Orders** | `GET /my/orders` | Cukup login (`isAuthenticated()`) — riwayat order milik member |
+| **Kitchen** | `GET /kitchen/orders` | `kitchen.read` / `kitchen.*` (ADMIN & KITCHEN) |
 | **Tables** | CRUD | `table.create` / `table.read` / `table.update` / `table.delete` / `table.*` |
 | **Menus V1/V2** | `POST /`, `PUT /{id}`, `PATCH restore`, `DELETE` | `menu.create` / `menu.update` / `menu.delete` / `menu.*` |
 | **Categories** | `GET /`, `GET /{id}` publik (permitAll); CRUD authenticated | `menu-category.create` / `menu-category.read` / `menu-category.update` / `menu-category.delete` / `menu-category.*` |
@@ -534,19 +539,19 @@ BE **tidak** memaksakan satu halaman dashboard untuk semua role. Tiap role punya
 | **ADMIN** | `/reports` | `GET /reports/dashboard/summary`, semua modul | `report.read` + `*` |
 | **CASHIER** | `/reports` / `/orders` | `GET /reports/dashboard/summary`, `GET /orders`, `GET /dinings`, `POST /payments` | `report.read`, `payment.create` |
 | **WAITER** | `/floor` (denah meja) | `GET /tables?status=`, `GET /dinings?status=OPEN`, `GET /orders?status=READY&sort=createdAt,asc`, `POST /orders/{id}/confirm\|complete` | `dining.read`, `order.read` |
-| **KITCHEN** | `/kitchen` (papan antrian) | `GET /orders?status=CONFIRMED,PREPARING&sort=createdAt,asc`, `POST /orders/{id}/prepare`, `POST /orders/{id}/ready` | `kitchen.read`, `order.read` |
-| **CUSTOMER_BASE** | `/my` | `GET/POST /api/v1/my/dinings/{guestToken}` | cukup login |
+| **KITCHEN** | `/kitchen` (papan antrian) | `GET /kitchen/orders`, `POST /orders/{id}/prepare`, `POST /orders/{id}/ready` | `kitchen.read` |
+| **CUSTOMER_BASE** | `/my` | `GET /my/dinings`, `GET /my/dinings/{guestToken}`, `POST /my/dinings/{guestToken}/orders`, `GET /my/orders` | cukup login |
 
 Aturan gating yang disarankan:
 
 1. Gate menu & tombol dengan `authorities` (`session.hasAuthority('report.read')`), jangan `role === 'ADMIN'`.
 2. **`report.read` = data uang** (kas, tagihan, top menu, piutang) — hanya ADMIN & CASHIER. Jangan pakai sebagai penentu "punya dashboard".
 3. WAITER & KITCHEN **tidak** melihat angka penjualan; sembunyikan `/reports` untuk mereka.
-4. KITCHEN tidak punya `dining.read`/`table.read` → papan dapur tidak bisa menampilkan nomor meja (belum ada endpoint yang memberikannya). Tampilkan `orderNumber` + `type` (`DINE_IN`/`TAKEAWAY`) + `items`.
+4. Nomor meja untuk papan dapur datang dari `GET /kitchen/orders` (`tableNumber`, nullable) — KITCHEN **tidak** diberi `dining.read` karena `DiningResponse` membawa `guestToken`/`guestCode` (capability token), dan dapur tidak butuh itu.
 5. WAITER tidak punya `payment.create`/`invoice.*` → tombol bayar hanya CASHIER/ADMIN.
 6. Jika authority tidak dimiliki, BE membalas `403 FORBIDDEN`. FE cukup sembunyikan aksinya — tidak perlu tahu daftar role.
 
-> **Catatan:** endpoint `/reports/*` sengaja tidak dibuka untuk WAITER/KITCHEN, dan `kitchen.*` sampai sekarang belum dipakai controller mana pun (kode dapur berjalan lewat `/orders`). Lihat `AGENT-ROADMAP.md` Phase 7 untuk rencana kitchen board khusus.
+> **Catatan:** endpoint `/reports/*` sengaja tidak dibuka untuk WAITER/KITCHEN. `kitchen.read` sekarang **dipakai** oleh `GET /kitchen/orders` (§R) — bukan dead authority lagi.
 
 ---
 
@@ -1228,13 +1233,33 @@ Validasi sama dengan request staf (`customerName` max 50, `notes` max 255, `item
   "totalPrice": 54000,
   "invoiceStatus": "OPEN",
   "orders": [
-    { "status": "CREATED", "totalPrice": 54000, "createdAt": "2026-08-23T14:30:00Z" }
+    {
+      "orderNumber": "ORD-20260918-001",
+      "status": "PREPARING",
+      "totalPrice": 54000,
+      "createdAt": "2026-08-23T14:30:00Z",
+      "items": [
+        {
+          "orderItemId": 11,
+          "menuId": 1,
+          "itemName": "Nasi Goreng",
+          "unitPrice": 25000,
+          "quantity": 2,
+          "subtotal": 50000,
+          "modifiers": [
+            { "modifierOptionId": 13, "modifierName": "Regular", "additionalPrice": 0 }
+          ]
+        }
+      ]
+    }
   ]
 }
 ```
 
 - `invoiceStatus`: `null` (belum ada tagihan) \| `OPEN` \| `PARTIALLY_PAID` \| `PAID` \| `VOID` — FE tamu cukup polling endpoint ini untuk tahu state pembayaran.
-- Tanpa ID internal (`diningId`, order id) dan tanpa nominal invoice rinci — minimal surface.
+- **Tamu bisa melacak pesanannya:** tiap order membawa `orderNumber` + `items` (nama, qty, subtotal, **modifiers**) — jadi tamu tahu apa yang ia pesan, bukan cuma jumlahnya. Order `CANCELLED` tetap muncul dengan statusnya.
+- Item diambil **sekali batch** per request (bukan per order) — aman untuk polling 5–10 detik.
+- Tanpa ID internal sesi (`diningId`) dan tanpa nominal invoice rinci — minimal surface. `guestToken` **tidak** dikembalikan di payload (hanya dipakai di path).
 - `totalPrice` = jumlah order non-`CANCELLED` (live).
 
 ---
@@ -1245,8 +1270,34 @@ Varian untuk **member yang login** (`CUSTOMER_BASE` cukup — tanpa authority st
 
 | Method | Path | Keterangan |
 |---|---|---|
+| `GET /` | **Daftar sesi milik member** (menutup jalan buntu "login tanpa scan QR") | Query `status` opsional (`OPEN` default \| `CLOSED`). Maks **10** sesi terbaru. Akun tanpa profil member → `403 FORBIDDEN` |
 | `GET /{guestToken}` | Status sesi | Payload sama dengan §L2 |
 | `POST /{guestToken}/orders` | Member menambah item; `customerId` = profil member-nya otomatis | Response `201`; sesi harus `OPEN`; akun tanpa profil member → `403 FORBIDDEN` |
+
+**Response `GET /` (`MyDiningResponse`)** — item per elemen:
+
+```json
+{
+  "isSuccess": true,
+  "message": "My dining sessions successfully retrieved",
+  "data": [
+    {
+      "diningId": 20,
+      "guestToken": "xK9dQ2f...",
+      "tableNumber": "4",
+      "status": "OPEN",
+      "totalPrice": 54000,
+      "invoiceStatus": "OPEN",
+      "orders": [ { "orderNumber": "ORD-20260918-001", "status": "PREPARING", "totalPrice": 54000, "createdAt": "...", "items": [] } ]
+    }
+  ],
+  "meta": { "timestamp": "..." }
+}
+```
+
+- Sesi di-resolve lewat **order milik member** (`orders.customer_id`), bukan lewat kepemilikan token — itu inti perbaikannya.
+- `guestToken` **dikembalikan** di sini supaya FE bisa deep-link ke detail `/my/dinings/{guestToken}`.
+- Order yang dibuat **guest anonim** di sesi yang sama **tidak** ikut (memang bukan miliknya).
 
 Body: `GuestOrderRequest` yang sama dengan §L2 (`customerId` **tidak diterima** — identitas dari token, bukan body).
 
@@ -1488,6 +1539,65 @@ Catatan penting:
 
 ---
 
+### Q. My Orders (`/api/v1/my/orders`) — authenticated
+
+Riwayat pesanan **milik member yang login** (tanpa authority staf). Identitas diambil server-side dari JWT (`sub` = `userAuthId` → `customers.id`) — **tidak ada** `customerId` yang bisa dikirim dari client.
+
+| Method | Path | Keterangan |
+|---|---|---|
+| `GET /` | Daftar order milik member | Pagination standar (default `sort=createdAt,desc`). Order yang dibuat tamu anonim (`customerId=null`) **tidak** muncul. Akun tanpa profil member → `403 FORBIDDEN` |
+
+Response memakai `OrderResponse` yang sama dengan §J (termasuk `items[]`).
+
+> Dipakai untuk landing role `CUSTOMER_BASE` (`/my`): sesi aktif dari §L3 + riwayat dari sini.
+
+---
+
+### R. Kitchen (`/api/v1/kitchen`) — authority `kitchen.read`
+
+Papan antrean dapur (KDS). Read-only; transisi status tetap lewat `POST /orders/{id}/prepare` dan `/ready` (§J).
+
+| Method | Path | Keterangan |
+|---|---|---|
+| `GET /orders` | Antrean tiket dapur | Default `status=CONFIRMED,PREPARING`, urut **tertua dulu** (`createdAt,asc`) |
+
+**Parameter query:**
+
+| Param | Tipe | Wajib | Default | Keterangan |
+|---|---|---|---|
+| `status` | string | Tidak | `CONFIRMED,PREPARING` | Multi-nilai (koma/diulang), alias sama dengan §J. Kosong → semua status |
+| `size` | int | Tidak | `20` | Maksimum **50** (di-cap otomatis) |
+
+**Response `200` — `KitchenTicketResponse[]`:**
+
+```json
+{
+  "isSuccess": true,
+  "message": "Kitchen queue successfully retrieved",
+  "data": [
+    {
+      "orderId": 12,
+      "orderNumber": "ORD-20260918-001",
+      "type": "DINE_IN",
+      "status": "CONFIRMED",
+      "tableNumber": "4",
+      "notes": "Pedas sedang",
+      "createdAt": "2026-09-18T11:02:00",
+      "items": [
+        { "id": 11, "menuId": 1, "itemName": "Nasi Goreng", "unitPrice": 25000, "quantity": 2, "subtotal": 50000, "modifiers": [] }
+      ]
+    }
+  ],
+  "meta": { "timestamp": "..." }
+}
+```
+
+- `tableNumber` = nomor meja dari **sesi dining `OPEN`** yang memuat order tersebut; `null` untuk `TAKEAWAY` atau bila sesinya sudah tertutup.
+- `items[]` memakai bentuk `OrderItemResponse` (termasuk `modifiers`) — sama dengan detail order, jadi FE tidak perlu model baru.
+- Order `CREATED` **tidak** masuk default: kasir/waiter yang `confirm` dulu (lihat §J). Untuk melihatnya, kirim `?status=CREATED`.
+
+---
+
 ## 7. Error Codes Reference
 
 | ErrorCode | HTTP Status | Keterangan |
@@ -1610,7 +1720,7 @@ GET    /api/v1/images/auth
 
 ORDERS
 POST   /api/v1/orders
-GET    /api/v1/orders?page=&size=&keyword=&status=
+GET    /api/v1/orders?page=&size=&keyword=&status=CONFIRMED,PREPARING&sort=createdAt,asc
 GET    /api/v1/orders/{id}
 PUT    /api/v1/orders/{id}
 PATCH  /api/v1/orders/{id}
@@ -1652,8 +1762,15 @@ GET    /api/v1/guest/dinings/by-code/{guestCode}
 POST   /api/v1/guest/dinings/{guestToken}/orders
 
 MY DINING (authenticated, identitas member dari JWT)
+GET    /api/v1/my/dinings?status=OPEN|CLOSED
 GET    /api/v1/my/dinings/{guestToken}
 POST   /api/v1/my/dinings/{guestToken}/orders
+
+MY ORDERS (authenticated, riwayat order milik member)
+GET    /api/v1/my/orders?page=&size=
+
+KITCHEN (kitchen.read — ADMIN & KITCHEN)
+GET    /api/v1/kitchen/orders?status=CONFIRMED,PREPARING&size=20
 
 CUSTOMERS
 POST   /api/v1/customers/register   (public, member + akun)

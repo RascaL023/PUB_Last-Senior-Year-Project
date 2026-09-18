@@ -71,8 +71,6 @@ Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-    "customerId": 1,
-    "customerName": "Asep",
     "type": "TAKEAWAY",
     "notes": "Less sugar please",
     "items": [
@@ -80,10 +78,7 @@ Content-Type: application/json
             "menuId": 2,
             "quantity": 1,
             "modifiers": [
-                {  "modifierOptionId": 6 },
-                {  "modifierOptionId": 2 },
-                {  "modifierOptionId": 13 },
-                {  "modifierOptionId": 12 }
+                {  "modifierOptionId": 13 }
             ]
         }
     ]
@@ -155,6 +150,25 @@ Authorization: Bearer {{token}}
 ### Invalid status (400: "Invalid order status: 'SERVED'. Allowed: CREATED, CONFIRMED, ...")
 GET {{baseUrl}}/orders?status=SERVED
 Authorization: Bearer {{token}}
+
+
+###### MY ORDERS (authenticated; identitas member dari JWT — bukan customerId dari client) ######
+### Riwayat pesanan milik member yang login (API_CONTRACT.md §Q).
+### 403 bila akun login belum punya profil member. Order tamu anonim tidak muncul.
+### Pakai {{customerToken}} (login akun customer), bukan token staf.
+GET {{baseUrl}}/my/orders
+Authorization: Bearer {{customerToken}}
+
+### Riwayat dengan pagination
+GET {{baseUrl}}/my/orders?page=0&size=5&sort=createdAt,desc
+Authorization: Bearer {{customerToken}}
+
+### Forbidden (403) — token akun tanpa profil member (mis. staf)
+GET {{baseUrl}}/my/orders
+Authorization: Bearer {{token}}
+
+### No auth (401)
+GET {{baseUrl}}/my/orders
 
 
 ### Update (PUT) — `type` WAJIB dikirim (@NotNull).

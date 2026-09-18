@@ -344,7 +344,9 @@ POST {{baseUrl}}/dinings
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
-{}### ========================================
+{}
+
+### ========================================
 ### VALIDATION — Dining
 ### ========================================
 
@@ -478,6 +480,8 @@ Authorization: Bearer {{token}}
 
 ### Guest: lihat status sesi (dipakai juga untuk polling FE tamu)
 ### invoiceStatus: null | OPEN | PARTIALLY_PAID | PAID | VOID
+### orders[] sekarang membawa orderNumber + items[] (nama, qty, subtotal, modifiers)
+### → tamu bisa melacak APA yang ia pesan, bukan cuma totalnya.
 GET {{baseUrl}}/guest/dinings/{{guestToken}}
 
 ### Guest: resolve via kode 6 digit (fallback QR gagal scan; hanya sesi OPEN)
@@ -524,6 +528,19 @@ Content-Type: application/json
 ### Login dulu sebagai customer (register di customer.http, lalu login di auth.http),
 ### simpan accessToken-nya ke {{customerToken}}.
 ### ========================================
+
+### Member: daftar sesi milik sendiri — menutup jalan buntu "login tanpa scan QR"
+### status opsional (default OPEN). Maks 10 sesi terbaru. Bawa guestToken untuk deep-link.
+### 403 bila akun tanpa profil member.
+GET {{baseUrl}}/my/dinings?status=OPEN
+Authorization: Bearer {{customerToken}}
+
+### Member: riwayat sesi yang sudah ditutup
+GET {{baseUrl}}/my/dinings?status=CLOSED
+Authorization: Bearer {{customerToken}}
+
+### Member: daftar ini kosong bila belum pernah order di sesi mana pun (200, [])
+### → tampilkan empty state "pindai QR di meja", bukan error
 
 ### Member: lihat status sesi (payload sama dengan guest)
 GET {{baseUrl}}/my/dinings/{{guestToken}}

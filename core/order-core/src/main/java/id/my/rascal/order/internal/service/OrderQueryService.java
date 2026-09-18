@@ -1,13 +1,19 @@
 package id.my.rascal.order.internal.service;
 
+import id.my.rascal.common.exception.ForbiddenException;
 import id.my.rascal.common.exception.NotFoundException;
 import id.my.rascal.common.util.StringUtil;
+import id.my.rascal.customer.api.CustomerApi;
+import id.my.rascal.customer.api.CustomerApiResponse;
 import id.my.rascal.order.api.OrderApiResponse;
+import id.my.rascal.order.api.OrderItemDetail;
 import id.my.rascal.order.api.event.dto.OrderItemSnapshot;
 import id.my.rascal.order.internal.entity.Order;
+import id.my.rascal.order.internal.entity.OrderItem;
 import id.my.rascal.order.internal.model.enums.OrderStatus;
 import id.my.rascal.order.internal.model.mapper.OrderMapper;
 import id.my.rascal.order.internal.model.response.OrderResponse;
+import id.my.rascal.order.internal.repository.OrderItemRepository;
 import id.my.rascal.order.internal.repository.OrderRepository;
 
 import org.springframework.data.domain.Page;
@@ -15,7 +21,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -25,9 +33,17 @@ import java.util.stream.Collectors;
 public class OrderQueryService {
 
     private final OrderRepository orderRepository;
+    private final OrderItemRepository orderItemRepository;
+    private final CustomerApi customerApi;
 
-    public OrderQueryService(OrderRepository orderRepository) {
+    public OrderQueryService(
+        OrderRepository orderRepository,
+        OrderItemRepository orderItemRepository,
+        CustomerApi customerApi
+    ) {
         this.orderRepository = orderRepository;
+        this.orderItemRepository = orderItemRepository;
+        this.customerApi = customerApi;
     }
 
     @Transactional(readOnly = true)
@@ -78,6 +94,39 @@ public class OrderQueryService {
         return orderRepository
             .searchActive(StringUtil.normalizeSearch(keyword), effectiveStatuses, pageable)
             .map(OrderMapper::toResponse);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<OrderResponse> findMyOrders(Long userAuthId, Pageable pageable) {
+        Long customerId = requireCustomerId(userAuthId);
+        return orderRepository
+            .searchActiveByCustomerId(customerId, pageable)
+            .map(OrderMapper::toResponse);
+    }
+
+    @Transactional(readOnly = true)
+    public Long requireCustomerId(Long userAuthId) {
+        return customerApi.getByUserAuthId(userAuthId)
+            .map(CustomerApiResponse::id)
+            .orElseThrow(() -> new ForbiddenException("Customer profile not found for this account"));
+    }
+
+    @Transactional(readOnly = true)
+    public List<Long> findOrderIdsByCustomerId(Long customerId) {
+        return orderRepository.findActiveOrderIdsByCustomerId(customerId);
+    }
+
+    @Transactional(readOnly = true)
+    public Map<Long, List<OrderItemDetail>> findItemsByOrderIds(Collection<Long> orderIds) {
+        if (orderIds == null || orderIds.isEmpty()) return Map.of();
+
+        Map<Long, List<OrderItemDetail>> itemsByOrderId = new LinkedHashMap<>();
+        for (OrderItem item : orderItemRepository.findActiveByOrderIds(orderIds)) {
+            itemsByOrderId
+                .computeIfAbsent(item.getOrder().getId(), orderId -> new ArrayList<>())
+                .add(OrderMapper.toItemDetail(item));
+        }
+        return itemsByOrderId;
     }
 
     private Order findActiveOrder(Long id) {

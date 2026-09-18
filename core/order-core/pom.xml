@@ -41,6 +41,12 @@
             <artifactId>customer-api</artifactId>
         </dependency>
 
+        <!-- Dining API (nomor meja untuk papan antrean dapur) -->
+        <dependency>
+            <groupId>id.my.rascal</groupId>
+            <artifactId>dining-api</artifactId>
+        </dependency>
+
         <!-- Starter Web -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

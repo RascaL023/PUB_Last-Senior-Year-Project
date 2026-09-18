@@ -1,5 +1,7 @@
 package id.my.rascal.dining.internal.controller;
 
+import java.util.List;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -9,12 +11,15 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import id.my.rascal.common.ApiResponse;
 import id.my.rascal.common.template.SuccessTemplate;
+import id.my.rascal.dining.internal.entity.DiningStatus;
 import id.my.rascal.dining.internal.model.request.GuestOrderRequest;
 import id.my.rascal.dining.internal.model.response.GuestDiningResponse;
+import id.my.rascal.dining.internal.model.response.MyDiningResponse;
 import id.my.rascal.dining.internal.service.GuestDiningService;
 import jakarta.validation.Valid;
 
@@ -27,6 +32,21 @@ public class MyDiningController {
 
     public MyDiningController(GuestDiningService guestDiningService) {
         this.guestDiningService = guestDiningService;
+    }
+
+    @GetMapping
+    public ResponseEntity<SuccessTemplate<List<MyDiningResponse>>> getMySessions(
+        Authentication authentication,
+        @RequestParam(required = false) String status
+    ) {
+        return ApiResponse.success(
+            HttpStatus.OK,
+            "My dining sessions successfully retrieved",
+            guestDiningService.findMySessions(
+                Long.valueOf(authentication.getName()),
+                DiningStatus.fromString(status)
+            )
+        );
     }
 
     @GetMapping("/{guestToken}")
