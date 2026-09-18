@@ -13,5 +13,7 @@ public record InvoiceApiResponse(
     Integer remainingAmount,
     LocalDateTime issuedAt,
     LocalDateTime createdAt,
+    Long customerId,
+    String customerName,
     List<InvoiceItemApiResponse> items
 ) {}

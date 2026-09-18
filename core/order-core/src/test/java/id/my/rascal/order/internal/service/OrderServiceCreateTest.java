@@ -25,7 +25,8 @@ class OrderServiceCreateTest {
             mock(OrderItemService.class),
             mock(OrderStatusFlowPolicy.class),
             mock(OrderEventPublisherService.class),
-            mock(id.my.rascal.invoice.api.InvoiceApi.class)
+            mock(id.my.rascal.invoice.api.InvoiceApi.class),
+            mock(id.my.rascal.customer.api.CustomerApi.class)
         );
 
         OrderRequest request = new OrderRequest(null, null, null, OrderType.DINE_IN, List.of());

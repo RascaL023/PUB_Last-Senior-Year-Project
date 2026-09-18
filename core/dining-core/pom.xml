@@ -35,6 +35,12 @@
             <artifactId>invoice-api</artifactId>
         </dependency>
 
+        <!-- Customer API (customer validation + member identity) -->
+        <dependency>
+            <groupId>id.my.rascal</groupId>
+            <artifactId>customer-api</artifactId>
+        </dependency>
+
         <!-- Starter Web -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

@@ -52,7 +52,7 @@ class InvoiceServiceTest {
         diningApi = mock(id.my.rascal.dining.api.DiningApi.class);
         when(invoiceRepository.existsByInvoiceNumber(any())).thenReturn(false);
         when(invoiceRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
-        invoiceService = new InvoiceService(invoiceRepository, invoiceEventPublisherService, diningApi);
+        invoiceService = new InvoiceService(invoiceRepository, invoiceEventPublisherService, diningApi, mock(id.my.rascal.customer.api.CustomerApi.class));
     }
 
     @Test
@@ -477,7 +477,7 @@ class InvoiceServiceTest {
     }
 
     private CreateInvoiceRequest requestOf(Long diningId, Long orderId, int amount) {
-        return new CreateInvoiceRequest(diningId, List.of(
+        return new CreateInvoiceRequest(diningId, null, null, List.of(
             new InvoiceItemRequest(1L, orderId, 10L, "Nasi Goreng", 1, amount, amount)
         ));
     }

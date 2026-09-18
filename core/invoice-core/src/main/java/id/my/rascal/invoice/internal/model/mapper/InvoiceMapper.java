@@ -52,6 +52,8 @@ public class InvoiceMapper {
             invoice.getRemainingAmount(),
             invoice.getIssuedAt(),
             invoice.getCreatedAt(),
+            invoice.getCustomerId(),
+            invoice.getCustomerName(),
             invoice.getItems().stream().map(InvoiceMapper::toItemApiResponse).toList()
         );
     }
@@ -67,6 +69,8 @@ public class InvoiceMapper {
             response.remainingAmount(),
             response.issuedAt(),
             response.createdAt(),
+            response.customerId(),
+            response.customerName(),
             response.items().stream().map(InvoiceMapper::toItemApiResponse).toList()
         );
     }
@@ -87,6 +91,8 @@ public class InvoiceMapper {
             invoice.getIssuedAt(),
             invoice.getCreatedAt(),
             invoice.getUpdatedAt(),
+            invoice.getCustomerId(),
+            invoice.getCustomerName(),
             items
         );
     }

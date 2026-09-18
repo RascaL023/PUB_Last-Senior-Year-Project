@@ -15,6 +15,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import id.my.rascal.common.exception.BadRequestException;
+import id.my.rascal.customer.api.CustomerApi;
 import id.my.rascal.invoice.api.InvoiceApi;
 import id.my.rascal.order.internal.entity.Order;
 import id.my.rascal.order.internal.model.enums.OrderStatus;
@@ -40,7 +41,8 @@ class OrderServiceUpdateTest {
             orderItemService,
             mock(OrderStatusFlowPolicy.class),
             mock(OrderEventPublisherService.class),
-            invoiceApi
+            invoiceApi,
+            mock(CustomerApi.class)
         );
     }
 

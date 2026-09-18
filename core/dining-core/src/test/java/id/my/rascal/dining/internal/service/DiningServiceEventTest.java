@@ -68,7 +68,8 @@ class DiningServiceEventTest {
 
         DiningService diningService = new DiningService(
             diningRepository, diningOrderRepository, mock(DiningTableRepository.class),
-            tableService, orderApi, mock(InvoiceApi.class), new DiningEventPublisherService(eventPublisher)
+            tableService, orderApi, mock(InvoiceApi.class), new DiningEventPublisherService(eventPublisher),
+            new GuestTokenGenerator(), mock(id.my.rascal.customer.api.CustomerApi.class)
         );
 
         diningService.addOrder(20L, new CreateDiningOrderRequest(
@@ -103,12 +104,13 @@ class DiningServiceEventTest {
 
         when(invoiceApi.getDiningInvoice(20L)).thenReturn(new InvoiceApiResponse(
             900L, "INV-08092026-AAAAAA", 20L, "PAID", 80000, 80000, 0,
-            LocalDateTime.now(), LocalDateTime.now(), List.of()
+            LocalDateTime.now(), LocalDateTime.now(), null, null, List.of()
         ));
 
         DiningService diningService = new DiningService(
             diningRepository, mock(DiningOrderRepository.class), mock(DiningTableRepository.class),
-            mock(TableService.class), orderApi, invoiceApi, new DiningEventPublisherService(eventPublisher)
+            mock(TableService.class), orderApi, invoiceApi, new DiningEventPublisherService(eventPublisher),
+            new GuestTokenGenerator(), mock(id.my.rascal.customer.api.CustomerApi.class)
         );
 
         BadRequestException thrown = assertThrows(BadRequestException.class, () ->
@@ -138,12 +140,13 @@ class DiningServiceEventTest {
 
         when(invoiceApi.getDiningInvoice(20L)).thenReturn(new InvoiceApiResponse(
             900L, "INV-08092026-AAAAAA", 20L, "VOID", 80000, 0, 0,
-            LocalDateTime.now(), LocalDateTime.now(), List.of()
+            LocalDateTime.now(), LocalDateTime.now(), null, null, List.of()
         ));
 
         DiningService diningService = new DiningService(
             diningRepository, mock(DiningOrderRepository.class), mock(DiningTableRepository.class),
-            mock(TableService.class), orderApi, invoiceApi, new DiningEventPublisherService(eventPublisher)
+            mock(TableService.class), orderApi, invoiceApi, new DiningEventPublisherService(eventPublisher),
+            new GuestTokenGenerator(), mock(id.my.rascal.customer.api.CustomerApi.class)
         );
 
         BadRequestException thrown = assertThrows(BadRequestException.class, () ->

@@ -63,7 +63,7 @@ class PaymentSettlementParityTest {
     void cashPayment_publishesSettledEventWithTargetFacts() {
         when(invoiceApi.getInvoice(900L)).thenReturn(new InvoiceApiResponse(
             900L, "INV-08092026-AAAAAA", null, "OPEN", 58000, 0, 58000,
-            LocalDateTime.now(), LocalDateTime.now(), List.of()
+            LocalDateTime.now(), LocalDateTime.now(), null, null, List.of()
         ));
         when(paymentRepository.existsActivePendingByInvoiceId(900L)).thenReturn(false);
 
@@ -82,7 +82,7 @@ class PaymentSettlementParityTest {
     void paidInvoice_rejectsNewPayment() {
         when(invoiceApi.getInvoice(900L)).thenReturn(new InvoiceApiResponse(
             900L, "INV-08092026-AAAAAA", null, "PAID", 58000, 58000, 0,
-            LocalDateTime.now(), LocalDateTime.now(), List.of()
+            LocalDateTime.now(), LocalDateTime.now(), null, null, List.of()
         ));
         when(paymentRepository.existsActivePendingByInvoiceId(900L)).thenReturn(false);
 
@@ -97,7 +97,7 @@ class PaymentSettlementParityTest {
     void partialPayment_billsRequestedAmountNotFullRemaining() {
         when(invoiceApi.getInvoice(900L)).thenReturn(new InvoiceApiResponse(
             900L, "INV-08092026-AAAAAA", null, "PARTIALLY_PAID", 50000, 20000, 30000,
-            LocalDateTime.now(), LocalDateTime.now(), List.of()
+            LocalDateTime.now(), LocalDateTime.now(), null, null, List.of()
         ));
         when(paymentRepository.existsActivePendingByInvoiceId(900L)).thenReturn(false);
 
@@ -114,7 +114,7 @@ class PaymentSettlementParityTest {
     void partialPayment_overRemaining_rejected() {
         when(invoiceApi.getInvoice(900L)).thenReturn(new InvoiceApiResponse(
             900L, "INV-08092026-AAAAAA", null, "PARTIALLY_PAID", 50000, 20000, 30000,
-            LocalDateTime.now(), LocalDateTime.now(), List.of()
+            LocalDateTime.now(), LocalDateTime.now(), null, null, List.of()
         ));
         when(paymentRepository.existsActivePendingByInvoiceId(900L)).thenReturn(false);
 
@@ -143,7 +143,7 @@ class PaymentSettlementParityTest {
     void processorInfrastructureFailure_propagatesUnwrappedNotAsBadRequest() {
         when(invoiceApi.getInvoice(900L)).thenReturn(new InvoiceApiResponse(
             900L, "INV-08092026-AAAAAA", null, "OPEN", 50000, 0, 50000,
-            LocalDateTime.now(), LocalDateTime.now(), List.of()
+            LocalDateTime.now(), LocalDateTime.now(), null, null, List.of()
         ));
         when(paymentRepository.existsActivePendingByInvoiceId(900L)).thenReturn(false);
 

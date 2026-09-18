@@ -35,6 +35,12 @@
             <artifactId>dining-api</artifactId>
         </dependency>
 
+        <!-- Customer API (customer snapshot) -->
+        <dependency>
+            <groupId>id.my.rascal</groupId>
+            <artifactId>customer-api</artifactId>
+        </dependency>
+
         <!-- Payment API (event listener) -->
         <dependency>
             <groupId>id.my.rascal</groupId>

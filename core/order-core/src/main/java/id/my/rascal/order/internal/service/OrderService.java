@@ -4,6 +4,7 @@ import id.my.rascal.common.exception.BadRequestException;
 import id.my.rascal.common.exception.NotFoundException;
 import id.my.rascal.common.util.StringUtil;
 import id.my.rascal.invoice.api.InvoiceApi;
+import id.my.rascal.customer.api.CustomerApi;
 import id.my.rascal.order.internal.entity.Order;
 import id.my.rascal.order.internal.entity.OrderItem;
 import id.my.rascal.order.internal.model.enums.OrderStatus;
@@ -39,19 +40,22 @@ public class OrderService {
     private final OrderStatusFlowPolicy orderStatusFlowPolicy;
     private final OrderEventPublisherService orderEventPublisherService;
     private final InvoiceApi invoiceApi;
+    private final CustomerApi customerApi;
 
     public OrderService(
         OrderRepository orderRepository,
         OrderItemService orderItemService,
         OrderStatusFlowPolicy orderStatusFlowPolicy,
         OrderEventPublisherService orderEventPublisherService,
-        InvoiceApi invoiceApi
+        InvoiceApi invoiceApi,
+        CustomerApi customerApi
     ) {
         this.orderRepository = orderRepository;
         this.orderItemService = orderItemService;
         this.orderStatusFlowPolicy = orderStatusFlowPolicy;
         this.orderEventPublisherService = orderEventPublisherService;
         this.invoiceApi = invoiceApi;
+        this.customerApi = customerApi;
     }
 
     @Transactional
@@ -61,7 +65,7 @@ public class OrderService {
 
         Order order = new Order();
         order.setOrderNumber(generateOrderNumber());
-        // TODO(customer-module): validasi request.customerId() via customer-api setelah modulnya tersedia
+        ensureCustomerExists(request.customerId());
         applyCustomer(order, request.customerId(), request.customerName());
         applyNotes(order, request.notes());
 
@@ -84,6 +88,7 @@ public class OrderService {
         ensureDineInTypeImmutable(order, request.type());
         ensureNoAppliedPayment(order);
 
+        ensureCustomerExists(request.customerId());
         applyCustomer(order, request.customerId(), request.customerName());
         applyNotes(order, request.notes());
 
@@ -145,6 +150,7 @@ public class OrderService {
         if (request.type() == null) throw new BadRequestException("Order type cannot be null");
         Order order = new Order();
         order.setOrderNumber(generateOrderNumber());
+        ensureCustomerExists(request.customerId());
         applyCustomer(order, request.customerId(), request.customerName());
         applyNotes(order, request.notes());
 
@@ -248,6 +254,13 @@ public class OrderService {
     private void ensureNoAppliedPayment(Order order) {
         if (invoiceApi.hasAppliedPayment(order.getId()))
             throw new BadRequestException("Order already has an applied payment");
+    }
+
+    private void ensureCustomerExists(Long customerId) {
+        if (customerId == null)
+            return;
+        if (!customerApi.existsById(customerId))
+            throw new NotFoundException("Customer not found with id: " + customerId);
     }
 
     private void applyCustomer(Order order, Long customerId, String customerName) {

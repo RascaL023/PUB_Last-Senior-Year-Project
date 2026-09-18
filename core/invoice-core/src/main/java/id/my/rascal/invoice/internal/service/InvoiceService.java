@@ -3,6 +3,8 @@ package id.my.rascal.invoice.internal.service;
 import id.my.rascal.common.exception.NotFoundException;
 import id.my.rascal.common.exception.BadRequestException;
 import id.my.rascal.dining.api.DiningApi;
+import id.my.rascal.customer.api.CustomerApi;
+import id.my.rascal.customer.api.CustomerApiResponse;
 import id.my.rascal.invoice.internal.entity.Invoice;
 import id.my.rascal.invoice.internal.entity.InvoiceItem;
 import id.my.rascal.invoice.internal.entity.InvoiceStatus;
@@ -12,6 +14,7 @@ import id.my.rascal.invoice.internal.model.request.InvoiceItemRequest;
 import id.my.rascal.invoice.internal.model.response.InvoiceResponse;
 import id.my.rascal.invoice.internal.repository.InvoiceRepository;
 import id.my.rascal.invoice.internal.util.InvoiceNumberGenerator;
+import id.my.rascal.common.util.StringUtil;
 import id.my.rascal.dining.api.event.DiningOrderAddedEvent;
 import id.my.rascal.order.api.event.OrderCancelledEvent;
 import id.my.rascal.order.api.event.OrderDeletedEvent;
@@ -40,15 +43,18 @@ public class InvoiceService {
     private final InvoiceRepository invoiceRepository;
     private final InvoiceEventPublisherService invoiceEventPublisherService;
     private final DiningApi diningApi;
+    private final CustomerApi customerApi;
 
     public InvoiceService(
         InvoiceRepository invoiceRepository,
         InvoiceEventPublisherService invoiceEventPublisherService,
-        @Lazy DiningApi diningApi
+        @Lazy DiningApi diningApi,
+        CustomerApi customerApi
     ) {
         this.invoiceRepository = invoiceRepository;
         this.invoiceEventPublisherService = invoiceEventPublisherService;
         this.diningApi = diningApi;
+        this.customerApi = customerApi;
     }
 
     @Transactional
@@ -56,6 +62,8 @@ public class InvoiceService {
         Invoice invoice = new Invoice();
         invoice.setInvoiceNumber(InvoiceNumberGenerator.generateUniqueInvoiceNumber(invoiceRepository::existsByInvoiceNumber));
         invoice.setDiningId(request.diningId());
+        invoice.setCustomerId(request.customerId());
+        invoice.setCustomerName(StringUtil.safeIsBlank(request.customerName()) ? null : StringUtil.normalizeSpaces(request.customerName()));
 
         List<InvoiceItem> items = request.items().stream()
             .map(itemRequest -> InvoiceMapper.toItemEntity(invoice, itemRequest))
@@ -77,7 +85,6 @@ public class InvoiceService {
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public InvoiceResponse handleStandaloneOrderCreated(StandaloneOrderCreatedEvent event) {
-        // TODO(customer-module): tempelkan snapshot customer (dari event.customerId via customer-api)
         List<InvoiceItemRequest> freshItems = event.items().stream()
             .filter(item -> !invoiceRepository.existsByItemsOrderItemId(item.orderItemId()))
             .map(item -> toItemRequest(event.orderId(), item))
@@ -85,7 +92,16 @@ public class InvoiceService {
         if (freshItems.isEmpty())
             return null;
 
-        return create(new CreateInvoiceRequest(null, freshItems));
+        CustomerApiResponse customer = event.customerId() == null
+            ? null
+            : customerApi.getById(event.customerId()).orElse(null);
+
+        return create(new CreateInvoiceRequest(
+            null,
+            customer != null ? customer.id() : null,
+            customer != null ? customer.name() : null,
+            freshItems
+        ));
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)

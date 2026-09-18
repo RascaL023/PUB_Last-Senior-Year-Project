@@ -60,6 +60,7 @@ public class SecurityConfig {
                     "/api/v1/menus/categories",
                     "/api/v1/menus/categories/{id}"
                 ).permitAll()
+                .requestMatchers("/api/v1/guest/dinings/**").permitAll()
                 .anyRequest().authenticated()
                 // .anyRequest().permitAll()
             ).exceptionHandling(ex -> ex

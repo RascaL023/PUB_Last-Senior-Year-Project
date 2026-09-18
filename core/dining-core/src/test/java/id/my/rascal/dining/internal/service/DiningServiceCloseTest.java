@@ -49,7 +49,9 @@ class DiningServiceCloseTest {
         diningService = new DiningService(
             diningRepository, diningOrderRepository, mock(DiningTableRepository.class),
             tableService, orderApi, invoiceApi,
-            new DiningEventPublisherService(mock(ApplicationEventPublisher.class))
+            new DiningEventPublisherService(mock(ApplicationEventPublisher.class)),
+            new GuestTokenGenerator(),
+            mock(id.my.rascal.customer.api.CustomerApi.class)
         );
     }
 
@@ -72,7 +74,7 @@ class DiningServiceCloseTest {
         when(orderApi.getOrders(List.of(101L))).thenReturn(List.of(completedOrder(101L)));
         when(invoiceApi.getDiningInvoice(3L)).thenReturn(new InvoiceApiResponse(
             900L, "INV-1", 3L, "PAID", 50000, 50000, 0,
-            LocalDateTime.now(), LocalDateTime.now(), List.of()
+            LocalDateTime.now(), LocalDateTime.now(), null, null, List.of()
         ));
         when(diningRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
@@ -99,7 +101,7 @@ class DiningServiceCloseTest {
         when(orderApi.getOrders(List.of(101L))).thenReturn(List.of(completedOrder(101L)));
         when(invoiceApi.getDiningInvoice(3L)).thenReturn(new InvoiceApiResponse(
             900L, "INV-1", 3L, "VOID", 50000, 0, 0,
-            LocalDateTime.now(), LocalDateTime.now(), List.of()
+            LocalDateTime.now(), LocalDateTime.now(), null, null, List.of()
         ));
         when(diningRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
@@ -132,7 +134,7 @@ class DiningServiceCloseTest {
     private InvoiceApiResponse openInvoice(Long diningId) {
         return new InvoiceApiResponse(
             900L, "INV-OPEN", diningId, "OPEN", 50000, 0, 50000,
-            LocalDateTime.now(), LocalDateTime.now(), List.of()
+            LocalDateTime.now(), LocalDateTime.now(), null, null, List.of()
         );
     }
 }

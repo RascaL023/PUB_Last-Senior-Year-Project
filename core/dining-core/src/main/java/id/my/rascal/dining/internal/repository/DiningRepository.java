@@ -40,4 +40,16 @@ public interface DiningRepository extends JpaRepository<Dining, Long> {
     @Query("select d from Dining d where d.id in :ids")
     List<Dining> findAllByIds(@Param("ids") List<Long> ids);
 
+    @Query("select d from Dining d where d.guestToken = :guestToken")
+    Optional<Dining> findByGuestToken(@Param("guestToken") String guestToken);
+
+    @Query("select d from Dining d where d.guestCode = :guestCode and d.status = :status")
+    Optional<Dining> findByGuestCodeAndStatus(
+        @Param("guestCode") String guestCode,
+        @Param("status") DiningStatus status
+    );
+
+    @Query("select case when count(d) > 0 then true else false end from Dining d where d.guestCode = :guestCode")
+    boolean existsByGuestCode(@Param("guestCode") String guestCode);
+
 }

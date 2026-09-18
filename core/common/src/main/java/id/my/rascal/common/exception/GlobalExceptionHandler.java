@@ -53,6 +53,11 @@ public class GlobalExceptionHandler {
         return ApiResponse.error(HttpStatus.BAD_REQUEST, 400, "BAD_REQUEST", ex.getMessage());
     }
 
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<?> handleForbidden(ForbiddenException ex) {
+        return ApiResponse.error(HttpStatus.FORBIDDEN, 403, "FORBIDDEN", ex.getMessage());
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<?> handleValidation(MethodArgumentNotValidException ex) {
         var errorDetails = ex.getBindingResult().getFieldErrors()

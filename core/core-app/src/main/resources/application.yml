@@ -51,6 +51,9 @@ id:
         - /api/v1/menus/{id}
         - /api/v1/menus/categories
         - /api/v1/menus/categories/{id}
+        - /api/v1/guest/dinings/{guestToken}
+        - /api/v1/guest/dinings/{guestToken}/orders
+        - /api/v1/guest/dinings/by-code/{guestCode}
 logging.level.id.rascal.filter: ${SECURITY_FILTER_LOG_LEVEL:WARN}
 
 imagekit:

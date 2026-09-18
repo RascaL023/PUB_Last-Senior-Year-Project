@@ -24,6 +24,12 @@ public class Dining {
     @Column(name = "table_id", nullable = false)
     private Long tableId;
 
+    @Column(name = "guest_token", unique = true)
+    private String guestToken;
+
+    @Column(name = "guest_code", unique = true)
+    private String guestCode;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private DiningStatus status;

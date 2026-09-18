@@ -14,5 +14,7 @@ public record DiningResponse(
     List<DiningOrderSummary> orders,
     LocalDateTime createdAt,
     LocalDateTime updatedAt,
-    LocalDateTime closedAt
+    LocalDateTime closedAt,
+    String guestToken,
+    String guestCode
 ) {}

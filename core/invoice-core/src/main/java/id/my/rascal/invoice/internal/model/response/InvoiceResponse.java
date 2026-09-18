@@ -16,5 +16,7 @@ public record InvoiceResponse(
     LocalDateTime issuedAt,
     LocalDateTime createdAt,
     LocalDateTime updatedAt,
+    Long customerId,
+    String customerName,
     List<InvoiceItemResponse> items
 ) {}

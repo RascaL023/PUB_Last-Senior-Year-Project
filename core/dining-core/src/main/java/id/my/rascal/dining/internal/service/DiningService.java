@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import id.my.rascal.common.exception.BadRequestException;
 import id.my.rascal.common.exception.NotFoundException;
+import id.my.rascal.customer.api.CustomerApi;
 import id.my.rascal.dining.internal.entity.Dining;
 import id.my.rascal.dining.internal.entity.DiningOrder;
 import id.my.rascal.dining.internal.entity.DiningStatus;
@@ -39,6 +40,8 @@ import id.my.rascal.order.api.event.dto.OrderItemSnapshot;
 @Service
 public class DiningService {
 
+    private static final int GUEST_CODE_MAX_ATTEMPTS = 5;
+
     private final DiningRepository diningRepository;
     private final DiningOrderRepository diningOrderRepository;
     private final DiningTableRepository diningTableRepository;
@@ -46,6 +49,8 @@ public class DiningService {
     private final OrderApi orderApi;
     private final InvoiceApi invoiceApi;
     private final DiningEventPublisherService diningEventPublisherService;
+    private final GuestTokenGenerator guestTokenGenerator;
+    private final CustomerApi customerApi;
 
     public DiningService(
         DiningRepository diningRepository,
@@ -54,7 +59,9 @@ public class DiningService {
         TableService tableService,
         OrderApi orderApi,
         InvoiceApi invoiceApi,
-        DiningEventPublisherService diningEventPublisherService
+        DiningEventPublisherService diningEventPublisherService,
+        GuestTokenGenerator guestTokenGenerator,
+        CustomerApi customerApi
     ) {
         this.diningRepository = diningRepository;
         this.diningOrderRepository = diningOrderRepository;
@@ -63,6 +70,8 @@ public class DiningService {
         this.orderApi = orderApi;
         this.invoiceApi = invoiceApi;
         this.diningEventPublisherService = diningEventPublisherService;
+        this.guestTokenGenerator = guestTokenGenerator;
+        this.customerApi = customerApi;
     }
 
     @Transactional
@@ -76,6 +85,8 @@ public class DiningService {
 
         Dining dining = new Dining();
         dining.setTableId(request.tableId());
+        dining.setGuestToken(guestTokenGenerator.nextToken());
+        dining.setGuestCode(generateUniqueGuestCode());
         dining.markOpen();
         dining.setCreatedAt(LocalDateTime.now());
 
@@ -141,7 +152,9 @@ public class DiningService {
             throw new BadRequestException(
                 "Tagihan sesi ini sudah di-void (" + invoice.invoiceNumber() + "). Tutup sesi atau minta tagihan baru ke kasir");
 
-        // TODO(customer-module): validasi request.customerId() via customer-api
+        if (request.customerId() != null && !customerApi.existsById(request.customerId()))
+            throw new NotFoundException("Customer not found with id: " + request.customerId());
+
         OrderApiCreateRequest apiRequest = toApiCreateRequest(request);
         OrderApiResponse created = orderApi.createOrder(apiRequest);
 
@@ -215,7 +228,9 @@ public class DiningService {
                 toOrderSummaries(orders),
                 d.getCreatedAt(),
                 d.getUpdatedAt(),
-                d.getClosedAt()
+                d.getClosedAt(),
+                d.getGuestToken(),
+                d.getGuestCode()
             );
         });
     }
@@ -228,6 +243,14 @@ public class DiningService {
         List<DiningOrderSummary> summaries = toOrderSummaries(orders);
         int totalPrice = calculateTotalPrice(orders);
         return toResponse(dining, table, summaries, totalPrice);
+    }
+
+    public List<Long> getOrderIds(Long diningId) {
+        return diningOrderRepository.findOrderIdsByDiningId(diningId);
+    }
+
+    public String getTableNumber(Long tableId) {
+        return tableService.findActive(tableId).getTableNumber();
     }
 
     private Dining findDining(Long id) {
@@ -286,7 +309,18 @@ public class DiningService {
             summaries,
             dining.getCreatedAt(),
             dining.getUpdatedAt(),
-            dining.getClosedAt()
+            dining.getClosedAt(),
+            dining.getGuestToken(),
+            dining.getGuestCode()
         );
+    }
+
+    private String generateUniqueGuestCode() {
+        for (int attempt = 0; attempt < GUEST_CODE_MAX_ATTEMPTS; attempt++) {
+            String code = guestTokenGenerator.nextCode();
+            if (!diningRepository.existsByGuestCode(code))
+                return code;
+        }
+        throw new BadRequestException("Gagal membuat kode tamu, coba lagi");
     }
 }

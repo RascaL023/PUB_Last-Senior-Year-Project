@@ -34,6 +34,12 @@ public class Invoice {
     @Column(name = "dining_id", unique = true)
     private Long diningId;
 
+    @Column(name = "customer_id")
+    private Long customerId;
+
+    @Column(name = "customer_name")
+    private String customerName;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private InvoiceStatus status;

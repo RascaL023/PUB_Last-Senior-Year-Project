@@ -72,6 +72,7 @@ class InvoicePaymentEventListenerTest {
             900L, "INV-08092026-AAAAAA", null, InvoiceStatus.VOID,
             58000, 0, 58000,
             LocalDateTime.now(), LocalDateTime.now(), LocalDateTime.now(),
+            null, null,
             List.of()
         );
         when(invoiceQueryService.findActiveInvoiceById(900L)).thenReturn(voided);
@@ -109,6 +110,7 @@ class InvoicePaymentEventListenerTest {
             id, "INV-08092026-AAAAAA", null, InvoiceStatus.OPEN,
             total, paid, total - paid,
             LocalDateTime.now(), LocalDateTime.now(), null,
+            null, null,
             List.of(new InvoiceItemResponse(1L, 11L, 101L, "Nasi Goreng", 2, 25000, 50000))
         );
     }
@@ -118,6 +120,7 @@ class InvoicePaymentEventListenerTest {
             id, "INV-08092026-AAAAAA", null, InvoiceStatus.PAID,
             total, total, 0,
             LocalDateTime.now(), LocalDateTime.now(), LocalDateTime.now(),
+            null, null,
             List.of(new InvoiceItemResponse(1L, 11L, 101L, "Nasi Goreng", 2, 25000, 50000))
         );
     }
