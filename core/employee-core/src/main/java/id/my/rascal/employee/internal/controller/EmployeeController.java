@@ -73,16 +73,6 @@ public class EmployeeController {
         );
     }
 
-    @GetMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('employee.read', 'employee.*')")
-    public ResponseEntity<SuccessTemplate<EmployeeResponse>> getById(@PathVariable("id") Long id) {
-        return ApiResponse.success(
-            HttpStatus.OK,
-            DEFAULT_GET_SUCCESS_MESSAGE,
-            employeeService.getById(id)
-        );
-    }
-
     @GetMapping("/me")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<SuccessTemplate<EmployeeResponse>> getMe(Authentication authentication) {
@@ -105,6 +95,16 @@ public class EmployeeController {
             HttpStatus.OK,
             "Employee profile successfully updated",
             employeeService.updateMe(userAuthId, request)
+        );
+    }
+
+    @GetMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('employee.read', 'employee.*')")
+    public ResponseEntity<SuccessTemplate<EmployeeResponse>> getById(@PathVariable("id") Long id) {
+        return ApiResponse.success(
+            HttpStatus.OK,
+            DEFAULT_GET_SUCCESS_MESSAGE,
+            employeeService.getById(id)
         );
     }
 
