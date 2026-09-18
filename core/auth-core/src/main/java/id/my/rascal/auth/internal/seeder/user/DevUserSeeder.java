@@ -21,7 +21,7 @@ import id.my.rascal.common.seed.SeedType;
 public class DevUserSeeder implements Seeder {
 
     private static final List<UserSeed> USERS = List.of(
-        new UserSeed("admin@rascal.id", "admin123", List.of("ADMIN")),
+        new UserSeed("admin@rascal.id", "admin123", List.of("ADMIN", "EMPLOYEE")),
         new UserSeed("kasir@rascal.id", "kasir123", List.of("CASHIER")),
         new UserSeed("waiter@rascal.id", "waiter123", List.of("WAITER")),
         new UserSeed("kitchen@rascal.id", "kitchen123", List.of("KITCHEN"))

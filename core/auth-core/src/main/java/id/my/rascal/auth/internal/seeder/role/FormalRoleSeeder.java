@@ -30,6 +30,14 @@ public class FormalRoleSeeder implements Seeder {
             "customer_base",
             "Customer login identity without staff permissions",
             List.of()
+        ),
+        new RoleSeed(
+            "employee",
+            "Employee staff with employee management access",
+            List.of(
+                "employee.create", "employee.read", "employee.update",
+                "employee.delete", "employee.*"
+            )
         )
     );
 

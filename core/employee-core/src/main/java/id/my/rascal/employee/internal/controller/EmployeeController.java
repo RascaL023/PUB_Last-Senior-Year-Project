@@ -19,6 +19,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import org.springframework.security.core.Authentication;
+
 import id.my.rascal.common.ApiResponse;
 import id.my.rascal.common.template.SuccessPagedTemplate;
 import id.my.rascal.common.template.SuccessTemplate;
@@ -53,6 +55,7 @@ public class EmployeeController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyAuthority('employee.read', 'employee.*')")
     public ResponseEntity<SuccessPagedTemplate<List<EmployeeResponse>>> getAll(
         @RequestParam(required = false) String keyword,
         @PageableDefault(size = 10) Pageable pageable
@@ -71,11 +74,37 @@ public class EmployeeController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('employee.read', 'employee.*')")
     public ResponseEntity<SuccessTemplate<EmployeeResponse>> getById(@PathVariable("id") Long id) {
         return ApiResponse.success(
             HttpStatus.OK,
             DEFAULT_GET_SUCCESS_MESSAGE,
             employeeService.getById(id)
+        );
+    }
+
+    @GetMapping("/me")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<SuccessTemplate<EmployeeResponse>> getMe(Authentication authentication) {
+        Long userAuthId = Long.valueOf(authentication.getName());
+        return ApiResponse.success(
+            HttpStatus.OK,
+            "Employee profile successfully retrieved",
+            employeeService.getMe(userAuthId)
+        );
+    }
+
+    @PutMapping("/me")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<SuccessTemplate<EmployeeResponse>> updateMe(
+        Authentication authentication,
+        @Valid @RequestBody EmployeePutRequest request
+    ) {
+        Long userAuthId = Long.valueOf(authentication.getName());
+        return ApiResponse.success(
+            HttpStatus.OK,
+            "Employee profile successfully updated",
+            employeeService.updateMe(userAuthId, request)
         );
     }
 

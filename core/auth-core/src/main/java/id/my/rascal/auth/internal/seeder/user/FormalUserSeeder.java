@@ -21,7 +21,7 @@ import id.my.rascal.common.seed.SeedType;
 public class FormalUserSeeder implements Seeder {
 
     private static final List<UserSeed> USERS = List.of(
-        new UserSeed("admin@rascal.id", "admin123", List.of("ADMIN"))
+        new UserSeed("admin@rascal.id", "admin123", List.of("ADMIN", "EMPLOYEE"))
     );
 
     private final UserAuthRepository userAuthRepository;

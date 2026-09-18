@@ -128,6 +128,26 @@ public class EmployeeService {
     }
 
     @Transactional(readOnly = true)
+    public EmployeeResponse getMe(Long userAuthId) {
+        return EmployeeMapper.toResponse(employeeQueryService.findByUserAuthId(userAuthId));
+    }
+
+    @Transactional
+    public EmployeeResponse updateMe(Long userAuthId, EmployeePutRequest request) {
+        Employee employee = employeeQueryService.findByUserAuthId(userAuthId);
+
+        employee.setName(request.name());
+        employee.setPhone(request.phone());
+        if (request.status() != null) {
+            employee.setStatus(request.status());
+        }
+        employee.setUpdatedAt(LocalDateTime.now());
+
+        Employee updated = employeeRepository.save(employee);
+        return EmployeeMapper.toResponse(updated);
+    }
+
+    @Transactional(readOnly = true)
     public EmployeeResponse getById(Long id) {
         return EmployeeMapper.toResponse(employeeQueryService.findById(id));
     }
