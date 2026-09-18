@@ -246,7 +246,9 @@ Content-Type: application/json
         {
             "menuId": 2,
             "quantity": 1,
-            "modifiers": []
+            "modifiers": [
+                { "modifierOptionId": 13 }
+            ]
         }
     ]
 }
@@ -379,7 +381,7 @@ Content-Type: application/json
     "customerId": 9999,
     "customerName": "Test",
     "items": [
-        { "menuId": 1, "quantity": 1, "modifiers": [] }
+        { "menuId": 1, "quantity": 1, "modifiers": [{ "modifierOptionId": 13 }] }
     ]
 }
 
@@ -394,7 +396,7 @@ Content-Type: application/json
     "customerName": "Test",
     "notes": "Should fail",
     "items": [
-        { "menuId": 1, "quantity": 1, "modifiers": [] }
+        { "menuId": 1, "quantity": 1, "modifiers": [{ "modifierOptionId": 13 }] }
     ]
 }
 
@@ -409,7 +411,7 @@ Content-Type: application/json
     "customerName": "Test",
     "notes": "Should fail",
     "items": [
-        { "menuId": 1, "quantity": 1, "modifiers": [] }
+        { "menuId": 1, "quantity": 1, "modifiers": [{ "modifierOptionId": 13 }] }
     ]
 }
 
@@ -508,7 +510,7 @@ Content-Type: application/json
 
 {
     "items": [
-        { "menuId": 1, "quantity": 1, "modifiers": [] }
+        { "menuId": 1, "quantity": 1, "modifiers": [{ "modifierOptionId": 13 }] }
     ]
 }
 
@@ -518,7 +520,7 @@ Content-Type: application/json
 
 {
     "items": [
-        { "menuId": 1, "quantity": 1, "modifiers": [] }
+        { "menuId": 1, "quantity": 1, "modifiers": [{ "modifierOptionId": 13 }] }
     ]
 }
 
@@ -556,7 +558,7 @@ Content-Type: application/json
     "customerName": "",
     "notes": "Dari member",
     "items": [
-        { "menuId": 2, "quantity": 1, "modifiers": [] }
+        { "menuId": 2, "quantity": 1, "modifiers": [{ "modifierOptionId": 13 }] }
     ]
 }
 
@@ -568,7 +570,7 @@ Content-Type: application/json
 
 {
     "items": [
-        { "menuId": 2, "quantity": 1, "modifiers": [] }
+        { "menuId": 2, "quantity": 1, "modifiers": [{ "modifierOptionId": 13 }] }
     ]
 }
 
@@ -578,6 +580,6 @@ Content-Type: application/json
 
 {
     "items": [
-        { "menuId": 2, "quantity": 1, "modifiers": [] }
+        { "menuId": 2, "quantity": 1, "modifiers": [{ "modifierOptionId": 13 }] }
     ]
 }

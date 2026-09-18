@@ -42,7 +42,8 @@ class OrderServiceUpdateTest {
             mock(OrderStatusFlowPolicy.class),
             mock(OrderEventPublisherService.class),
             invoiceApi,
-            mock(CustomerApi.class)
+            mock(CustomerApi.class),
+            new TrackTokenGenerator()
         );
     }
 

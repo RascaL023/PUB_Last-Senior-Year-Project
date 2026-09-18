@@ -8,6 +8,7 @@
 > - **`customerId` divalidasi server-side.** `POST /orders` dan `POST /dinings/{id}/orders` dengan `customerId` yang tidak ada → `404`. Member yang login bisa attach identitas via `/my/dinings/{guestToken}/orders` (lihat §L3).
 > - **Tracking tamu sudah membawa item.** `GET /guest/dinings/{guestToken}` mengembalikan `orders[].orderNumber` + `orders[].items[]` (termasuk modifiers) — tamu tahu apa yang ia pesan, bukan cuma totalnya (§L2).
 > - **Member punya pintu masuk sendiri.** `GET /my/dinings` (sesi member, `OPEN` default) + `GET /my/orders` (riwayat) — member tidak lagi harus memindai QR lebih dulu (§L3, §Q).
+> - **Order standalone bisa dilacak tamu.** Setiap order bawa `trackToken` di `OrderResponse`; pembeli cek status via `GET /guest/orders/{trackToken}` — publik, read-only, tanpa login (§L4).
 > - **Kitchen punya endpoint sendiri.** `GET /kitchen/orders` (authority `kitchen.read`) mengembalikan tiket + `tableNumber` (§R).
 > - **Invoice standalone dengan member** membawa snapshot `customerId` + `customerName`; invoice dining selalu `null` (tagihan kolektif).
 > - **CORS ditangani oleh Vercel proxy** (`vercel.json` di FE). Tidak perlu explicit origin config di `SecurityConfig`.
@@ -1312,6 +1313,50 @@ Perilaku lain (guard invoice `PAID`/`VOID`, sesi `CLOSED` ditolak, polling) iden
 
 ---
 
+### L4. Guest Order Tracking (`/api/v1/guest/orders`) — publik
+
+Tracking **order standalone** (TAKEAWAY yang dibuat staf via `POST /orders`) untuk pembeli tanpa akun. Read-only — **tidak ada** endpoint tulis publik untuk order standalone.
+
+| Method | Path | Keterangan |
+|---|---|---|
+| `GET /{trackToken}` | Status + isi order | Token salah / order terhapus → `404` generik `"Order not found"`. Status terminal (`COMPLETED`/`CANCELLED`) tetap `200` (riwayat) |
+
+- `trackToken` (opaque, Base64URL 32 byte, generator sama dengan `guestToken` dining) di-generate di **kedua** jalur create (`POST /orders` dan jalur API dining) dan dikembalikan di `OrderResponse.trackToken` (lihat §J).
+- `invoiceStatus` diambil dari invoice yang memuat order ini (`null` bila belum ada). Pembayaran tetap lewat kasir (§P).
+- Publik via `permitAll` + `jwt-bypass-uris`, pola sama dengan §L2.
+
+**Response `200` — `GuestOrderTrackingResponse`:**
+
+```json
+{
+  "isSuccess": true,
+  "message": "Order successfully retrieved",
+  "data": {
+    "orderNumber": "ORD-20260918-001",
+    "type": "TAKEAWAY",
+    "status": "READY",
+    "totalPrice": 45000,
+    "createdAt": "2026-09-18T11:02:00",
+    "invoiceStatus": "PAID",
+    "items": [
+      {
+        "orderItemId": 11,
+        "menuId": 1,
+        "itemName": "Nasi Goreng",
+        "unitPrice": 25000,
+        "quantity": 2,
+        "subtotal": 50000,
+        "modifiers": [
+          { "modifierOptionId": 13, "modifierName": "Regular", "additionalPrice": 0 }
+        ]
+      }
+    ]
+  }
+}
+```
+
+---
+
 ### M1. Customers (`/api/v1/customers`)
 
 Member loyalty + akun login customer. `auth_users` adalah satu-satunya penegak
@@ -1547,7 +1592,7 @@ Riwayat pesanan **milik member yang login** (tanpa authority staf). Identitas di
 |---|---|---|
 | `GET /` | Daftar order milik member | Pagination standar (default `sort=createdAt,desc`). Order yang dibuat tamu anonim (`customerId=null`) **tidak** muncul. Akun tanpa profil member → `403 FORBIDDEN` |
 
-Response memakai `OrderResponse` yang sama dengan §J (termasuk `items[]`).
+Response memakai `OrderResponse` yang sama dengan §J (termasuk `items[]` dan `trackToken`).
 
 > Dipakai untuk landing role `CUSTOMER_BASE` (`/my`): sesi aktif dari §L3 + riwayat dari sini.
 
@@ -1760,6 +1805,9 @@ GUEST DINING (public, identifikasi via guestToken/guestCode)
 GET    /api/v1/guest/dinings/{guestToken}
 GET    /api/v1/guest/dinings/by-code/{guestCode}
 POST   /api/v1/guest/dinings/{guestToken}/orders
+
+GUEST ORDER TRACKING (public, read-only, identifikasi via trackToken)
+GET    /api/v1/guest/orders/{trackToken}
 
 MY DINING (authenticated, identitas member dari JWT)
 GET    /api/v1/my/dinings?status=OPEN|CLOSED

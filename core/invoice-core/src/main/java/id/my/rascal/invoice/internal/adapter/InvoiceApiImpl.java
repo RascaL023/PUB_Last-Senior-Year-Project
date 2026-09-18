@@ -41,4 +41,9 @@ public class InvoiceApiImpl implements InvoiceApi {
         return invoiceQueryService.hasAppliedPayment(orderId);
     }
 
+    @Override
+    public String findStatusByOrderId(Long orderId) {
+        return invoiceQueryService.findStatusByOrderId(orderId);
+    }
+
 }

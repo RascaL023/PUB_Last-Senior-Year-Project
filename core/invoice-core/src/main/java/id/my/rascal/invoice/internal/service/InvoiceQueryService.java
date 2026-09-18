@@ -63,6 +63,14 @@ public class InvoiceQueryService {
     }
 
     @Transactional(readOnly = true)
+    public String findStatusByOrderId(Long orderId) {
+        return invoiceRepository.findActiveByItemsOrderId(orderId).stream()
+            .findFirst()
+            .map(inv -> inv.getStatus().name())
+            .orElse(null);
+    }
+
+    @Transactional(readOnly = true)
     public Page<InvoiceResponse> searchActive(
         String keyword,
         InvoiceStatus status,

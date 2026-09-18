@@ -42,7 +42,8 @@ class OrderServiceCustomerValidationTest {
             mock(OrderStatusFlowPolicy.class),
             mock(OrderEventPublisherService.class),
             mock(InvoiceApi.class),
-            customerApi
+            customerApi,
+            new TrackTokenGenerator()
         );
         when(orderRepository.existsByOrderNumber(any())).thenReturn(false);
         when(orderRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));

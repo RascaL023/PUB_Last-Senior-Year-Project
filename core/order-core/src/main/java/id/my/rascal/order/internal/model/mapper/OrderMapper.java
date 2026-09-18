@@ -54,6 +54,7 @@ public class OrderMapper {
         return new OrderResponse(
             order.getId(),
             order.getOrderNumber(),
+            order.getTrackToken(),
             order.getStatus(),
             order.getType(),
             order.getCustomerId(),

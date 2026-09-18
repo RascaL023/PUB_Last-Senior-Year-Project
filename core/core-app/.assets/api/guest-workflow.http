@@ -10,6 +10,7 @@
 ###   1. App jalan di {{baseUrl}} (localhost:8081), DB fresh (drop-create).
 ###   2. Ada minimal 1 meja (POST /tables di dining.http) dan data menu
 ###      dev (menuId 1/2, modifierOptionId 13 dipakai di sini).
+###      CATATAN SEED: menuId 1 & 2 wajib modifier Size (option 13=Regular).
 ###   3. Jalankan step BERURUTAN dari atas ke bawah. Setiap ID (dining,
 ###      order, invoice) harap disesuaikan dengan hasil run lo.
 ###   4. Copy guestToken + guestCode dari response STEP 0 ke environment
@@ -121,7 +122,13 @@ Content-Type: application/json
     "customerName": "Tamu Meja 1",
     "notes": "Round 2",
     "items": [
-        { "menuId": 2, "quantity": 3, "modifiers": [] }
+        {
+            "menuId": 2,
+            "quantity": 1,
+            "modifiers": [
+                { "modifierOptionId": 14 }
+            ]
+        }
     ]
 }
 
@@ -136,7 +143,13 @@ Content-Type: application/json
     "customerId": 7,
     "customerName": "Tamu Meja 1",
     "items": [
-        { "menuId": 1, "quantity": 1, "modifiers": [] }
+        {
+            "menuId": 2,
+            "quantity": 1,
+            "modifiers": [
+                { "modifierOptionId": 14 }
+            ]
+        }
     ]
 }
 
@@ -207,7 +220,7 @@ Content-Type: application/json
 
 {
     "items": [
-        { "menuId": 1, "quantity": 1, "modifiers": [] }
+        { "menuId": 1, "quantity": 1, "modifiers": [{ "modifierOptionId": 13 }] }
     ]
 }
 
@@ -233,7 +246,7 @@ Content-Type: application/json
     "customerName": "",
     "notes": "Ikut sesi, dari member",
     "items": [
-        { "menuId": 2, "quantity": 1, "modifiers": [] }
+        { "menuId": 2, "quantity": 1, "modifiers": [{ "modifierOptionId": 13 }] }
     ]
 }
 
@@ -274,7 +287,7 @@ Content-Type: application/json
 {
     "customerName": "Nama panjang sekali loh ini melebihi lima puluh karakter deh sela",
     "items": [
-        { "menuId": 1, "quantity": 1, "modifiers": [] }
+        { "menuId": 1, "quantity": 1, "modifiers": [{ "modifierOptionId": 13 }] }
     ]
 }
 
@@ -284,7 +297,7 @@ Content-Type: application/json
 
 {
     "items": [
-        { "menuId": 9999, "quantity": 1, "modifiers": [] }
+        { "menuId": 9999, "quantity": 1, "modifiers": [{ "modifierOptionId": 13 }] }
     ]
 }
 
@@ -296,7 +309,7 @@ Content-Type: application/json
 
 {
     "items": [
-        { "menuId": 1, "quantity": 1, "modifiers": [] }
+        { "menuId": 1, "quantity": 1, "modifiers": [{ "modifierOptionId": 13 }] }
     ]
 }
 
@@ -308,7 +321,7 @@ Content-Type: application/json
 
 {
     "items": [
-        { "menuId": 1, "quantity": 1, "modifiers": [] }
+        { "menuId": 1, "quantity": 1, "modifiers": [{ "modifierOptionId": 13 }] }
     ]
 }
 

@@ -55,4 +55,12 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     """)
     List<Long> findActiveOrderIdsByCustomerId(@Param("customerId") Long customerId);
 
+    @Query("""
+        select o from Order o
+        where o.deletedAt is null
+          and o.trackToken = :trackToken
+    """)
+    @EntityGraph(attributePaths = "orderItems")
+    Optional<Order> findActiveByTrackToken(@Param("trackToken") String trackToken);
+
 }

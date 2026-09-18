@@ -6,7 +6,7 @@
   "variable": [
     {
       "key": "baseUrl",
-      "value": "https://dev.rascal.my.id/api/v1",
+      "value": "http://localhost:8081/api/v1",
       "type": "string"
     },
     {
@@ -1375,7 +1375,7 @@
                 },
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n    \"items\": [\n        {\n            \"id\": 3,\n            \"menuId\": 1,\n            \"quantity\": 3,\n            \"modifiers\": [\n                { \"id\": 5, \"modifierOptionId\": 2 }\n            ]\n        },\n        {\n            \"menuId\": 2,\n            \"quantity\": 1,\n            \"modifiers\": []\n        }\n    ]\n}",
+                  "raw": "{\n    \"items\": [\n        {\n            \"id\": 3,\n            \"menuId\": 1,\n            \"quantity\": 3,\n            \"modifiers\": [\n                { \"id\": 5, \"modifierOptionId\": 2 }\n            ]\n        },\n        {\n            \"menuId\": 2,\n            \"quantity\": 1,\n            \"modifiers\": [\n                { \"modifierOptionId\": 13 }\n            ]\n        }\n    ]\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -1638,10 +1638,10 @@
                 },
                 "body": {
                   "mode": "raw",
-                  "raw": "{}### ========================================",
+                  "raw": "{}",
                   "options": {
                     "raw": {
-                      "language": "text"
+                      "language": "json"
                     }
                   }
                 }
@@ -1699,7 +1699,7 @@
                 },
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n    \"customerId\": 9999,\n    \"customerName\": \"Test\",\n    \"items\": [\n        { \"menuId\": 1, \"quantity\": 1, \"modifiers\": [] }\n    ]\n}",
+                  "raw": "{\n    \"customerId\": 9999,\n    \"customerName\": \"Test\",\n    \"items\": [\n        { \"menuId\": 1, \"quantity\": 1, \"modifiers\": [{ \"modifierOptionId\": 13 }] }\n    ]\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -1727,7 +1727,7 @@
                 },
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n    \"customerId\": 1,\n    \"customerName\": \"Test\",\n    \"notes\": \"Should fail\",\n    \"items\": [\n        { \"menuId\": 1, \"quantity\": 1, \"modifiers\": [] }\n    ]\n}",
+                  "raw": "{\n    \"customerId\": 1,\n    \"customerName\": \"Test\",\n    \"notes\": \"Should fail\",\n    \"items\": [\n        { \"menuId\": 1, \"quantity\": 1, \"modifiers\": [{ \"modifierOptionId\": 13 }] }\n    ]\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -1756,7 +1756,7 @@
                 },
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n    \"customerId\": 1,\n    \"customerName\": \"Test\",\n    \"notes\": \"Should fail\",\n    \"items\": [\n        { \"menuId\": 1, \"quantity\": 1, \"modifiers\": [] }\n    ]\n}",
+                  "raw": "{\n    \"customerId\": 1,\n    \"customerName\": \"Test\",\n    \"notes\": \"Should fail\",\n    \"items\": [\n        { \"menuId\": 1, \"quantity\": 1, \"modifiers\": [{ \"modifierOptionId\": 13 }] }\n    ]\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -2012,7 +2012,7 @@
                   "raw": "{{baseUrl}}/guest/dinings/{{guestToken}}"
                 }
               },
-              "description": "invoiceStatus: null | OPEN | PARTIALLY_PAID | PAID | VOID"
+              "description": "invoiceStatus: null | OPEN | PARTIALLY_PAID | PAID | VOID\norders[] sekarang membawa orderNumber + items[] (nama, qty, subtotal, modifiers)\n→ tamu bisa melacak APA yang ia pesan, bukan cuma totalnya."
             },
             {
               "name": "Guest: resolve via kode 6 digit (fallback QR gagal scan; hanya sesi OPEN)",
@@ -2073,7 +2073,7 @@
                 },
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n    \"items\": [\n        { \"menuId\": 1, \"quantity\": 1, \"modifiers\": [] }\n    ]\n}",
+                  "raw": "{\n    \"items\": [\n        { \"menuId\": 1, \"quantity\": 1, \"modifiers\": [{ \"modifierOptionId\": 13 }] }\n    ]\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -2097,7 +2097,7 @@
                 },
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n    \"items\": [\n        { \"menuId\": 1, \"quantity\": 1, \"modifiers\": [] }\n    ]\n}",
+                  "raw": "{\n    \"items\": [\n        { \"menuId\": 1, \"quantity\": 1, \"modifiers\": [{ \"modifierOptionId\": 13 }] }\n    ]\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -2112,6 +2112,49 @@
           "name": "MY DINING — MEMBER LOGIN (identitas dari JWT; API_CONTRACT.md §L3)",
           "item": [
             {
+              "name": "Member: daftar sesi milik sendiri",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{customerToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/my/dinings?status=OPEN",
+                  "query": [
+                    {
+                      "key": "status",
+                      "value": "OPEN"
+                    }
+                  ]
+                }
+              },
+              "description": "status opsional (default OPEN). Maks 10 sesi terbaru. Bawa guestToken untuk deep-link.\n403 bila akun tanpa profil member.\nmenutup jalan buntu \"login tanpa scan QR\""
+            },
+            {
+              "name": "Member: riwayat sesi yang sudah ditutup",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{customerToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/my/dinings?status=CLOSED",
+                  "query": [
+                    {
+                      "key": "status",
+                      "value": "CLOSED"
+                    }
+                  ]
+                }
+              }
+            },
+            {
               "name": "Member: lihat status sesi (payload sama dengan guest)",
               "request": {
                 "method": "GET",
@@ -2124,7 +2167,8 @@
                 "url": {
                   "raw": "{{baseUrl}}/my/dinings/{{guestToken}}"
                 }
-              }
+              },
+              "description": "Member: daftar ini kosong bila belum pernah order di sesi mana pun (200, [])\n→ tampilkan empty state \"pindai QR di meja\", bukan error"
             },
             {
               "name": "Member: tambah order",
@@ -2145,7 +2189,7 @@
                 },
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n    \"customerName\": \"\",\n    \"notes\": \"Dari member\",\n    \"items\": [\n        { \"menuId\": 2, \"quantity\": 1, \"modifiers\": [] }\n    ]\n}",
+                  "raw": "{\n    \"customerName\": \"\",\n    \"notes\": \"Dari member\",\n    \"items\": [\n        { \"menuId\": 2, \"quantity\": 1, \"modifiers\": [{ \"modifierOptionId\": 13 }] }\n    ]\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -2174,7 +2218,7 @@
                 },
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n    \"items\": [\n        { \"menuId\": 2, \"quantity\": 1, \"modifiers\": [] }\n    ]\n}",
+                  "raw": "{\n    \"items\": [\n        { \"menuId\": 2, \"quantity\": 1, \"modifiers\": [{ \"modifierOptionId\": 13 }] }\n    ]\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -2199,7 +2243,7 @@
                 },
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n    \"items\": [\n        { \"menuId\": 2, \"quantity\": 1, \"modifiers\": [] }\n    ]\n}",
+                  "raw": "{\n    \"items\": [\n        { \"menuId\": 2, \"quantity\": 1, \"modifiers\": [{ \"modifierOptionId\": 13 }] }\n    ]\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -2456,6 +2500,655 @@
       ]
     },
     {
+      "name": "Guest Workflow",
+      "item": [
+        {
+          "name": "PERSIAPAN (staf) — sekali di awal",
+          "item": [
+            {
+              "name": "STEP 0: Staf buka sesi meja (guestToken + guestCode ada di response)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/dinings"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"tableId\": 1\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "description": "→ copy guestToken ke {{guestToken}}, guestCode ke {{guestCode}}\n[G1] Dinings — catat diningId dari response"
+            }
+          ]
+        },
+        {
+          "name": "TAHAP 1 — TAMU MELIHAT MENU (publik, tanpa login)",
+          "item": [
+            {
+              "name": "STEP 1: Tamu browse menu (endpoint publik — tidak butuh Authorization)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/menus?size=50",
+                  "query": [
+                    {
+                      "key": "size",
+                      "value": "50"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "STEP 1b (opsional): kategori menu juga publik",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/menus/categories"
+                }
+              }
+            },
+            {
+              "name": "STEP 1c (opsional): detail satu menu (publik)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/menus/1"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "TAHAP 2 — TAMU MEMBUKA SESI & PESAN PERTAMA",
+          "item": [
+            {
+              "name": "STEP 2: Tamu buka halaman sesi dari QR (resolve by token)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/guest/dinings/{{guestToken}}"
+                }
+              },
+              "description": "Ekspektasi: 200, status OPEN, invoiceStatus null, orders []"
+            },
+            {
+              "name": "STEP 2b (fallback): QR gagal scan → resolve via kode 6 digit",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/guest/dinings/by-code/{{guestCode}}"
+                }
+              },
+              "description": "Ekspektasi: 200, payload sama dengan STEP 2 (hanya sesi OPEN)"
+            },
+            {
+              "name": "STEP 3: Tamu pesan (ANONIM — tanpa header Authorization sama sekali)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/guest/dinings/{{guestToken}}/orders"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"customerName\": \"Tamu Meja 1\",\n    \"notes\": \"Pedas level 2, es terpisah\",\n    \"items\": [\n        {\n            \"menuId\": 2,\n            \"quantity\": 1,\n            \"modifiers\": [\n                { \"modifierOptionId\": 14 }\n            ]\n        }\n    ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "description": "Ekspektasi: 201, response = status sesi terbaru (sudah berisi order pertama)\n[G2]"
+            }
+          ]
+        },
+        {
+          "name": "TAHAP 3 — TAMU POLLING STATUS (inti dari \"track\")",
+          "item": [
+            {
+              "name": "FE tamu disarankan GET ini tiap 5–10 detik selama sesi berjalan.",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/guest/dinings/{{guestToken}}"
+                }
+              },
+              "description": "Perubahan yang terlihat antar poll:\n- orders[].status : CREATED → CONFIRMED → PREPARING → READY → COMPLETED\n- invoiceStatus   : null → OPEN → PARTIALLY_PAID → PAID\n- totalPrice      : naik setiap order baru masuk\n[G4]\nSTEP 4: Poll #1 — setelah staf confirm (jalankan STEP 8 dulu bila mau lihat perubahan)"
+            },
+            {
+              "name": "STEP 4b: Poll #2",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/guest/dinings/{{guestToken}}"
+                }
+              },
+              "description": "setelah dapur prepare/ready (STEP 9/10)"
+            }
+          ]
+        },
+        {
+          "name": "TAHAP 4 — TAMU PESAN LAGI (token yang sama, bukti reusable)",
+          "item": [
+            {
+              "name": "STEP 5: Tamu tambah order kedua",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/guest/dinings/{{guestToken}}/orders"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"customerName\": \"Tamu Meja 1\",\n    \"notes\": \"Round 2\",\n    \"items\": [\n        {\n            \"menuId\": 2,\n            \"quantity\": 1,\n            \"modifiers\": [\n                { \"modifierOptionId\": 14 }\n            ]\n        }\n    ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "description": "Ekspektasi: 201; di STEP 4b berikutnya orders[] bertambah jadi 2\n[G5]\ntoken TIDAK berubah sepanjang sesi"
+            },
+            {
+              "name": "STEP 5b (ANTI-SPOOF): tamu mencoba menyelundupkan identitas member",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/guest/dinings/{{guestToken}}/orders"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"customerId\": 7,\n    \"customerName\": \"Tamu Meja 1\",\n    \"items\": [\n        {\n            \"menuId\": 2,\n            \"quantity\": 1,\n            \"modifiers\": [\n                { \"modifierOptionId\": 14 }\n            ]\n        }\n    ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "description": "Ekspektasi: 201 (bukan error) — field customerId TIDAK ADA di kontrak\nGuestOrderRequest, diabaikan server; order tersimpan dengan customerId NULL.\n[G3]"
+            },
+            {
+              "name": "STEP 5c: Bukti anti-spoof dari sisi staf",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/orders?sort=createdAt,desc&size=10",
+                  "query": [
+                    {
+                      "key": "sort",
+                      "value": "createdAt,desc"
+                    },
+                    {
+                      "key": "size",
+                      "value": "10"
+                    }
+                  ]
+                }
+              },
+              "description": "daftar order staf: customerId harus NULL meski body tamu mengirim 7\ncari order dari STEP 5b di"
+            }
+          ]
+        },
+        {
+          "name": "TAHAP 5 — STAF/KITCHEN MEMPROSES (identitas staf, bukan tamu)",
+          "item": [
+            {
+              "name": "STEP 8: Confirm order pertama (bila step sebelumnya sudah jalan, sesuaikan orderId)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/orders/1/confirm"
+                }
+              }
+            },
+            {
+              "name": "STEP 9: Prepare (bisa dilakukan role KITCHEN via /kitchen/orders + order.mark.preparing)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/orders/1/prepare"
+                }
+              }
+            },
+            {
+              "name": "STEP 10: Ready → di poll tamu berikutnya status berubah READY",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/orders/1/ready"
+                }
+              }
+            },
+            {
+              "name": "STEP 10b: Complete (waiter mengantar)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/orders/1/complete"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "TAHAP 6 — TAGIHAN & PENUTUPAN SESI (kasir)",
+          "item": [
+            {
+              "name": "STEP 11: Kasir lihat invoice sesi (invoice dining terbit otomatis saat order pertama)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/invoices?diningId=1",
+                  "query": [
+                    {
+                      "key": "diningId",
+                      "value": "1"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "STEP 12: Bayar invoice (amount kosong = lunas penuh)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/payments"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"invoiceId\": 1,\n    \"paymentProvider\": \"INTERNAL\",\n    \"paymentDetail\": \"CASH-GUEST-001\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "description": "→ invoiceStatus di poll tamu berubah jadi PAID"
+            },
+            {
+              "name": "STEP 13: Tutup sesi",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/dinings/1/close"
+                }
+              },
+              "description": "guard: semua order terminal & invoice lunas"
+            }
+          ]
+        },
+        {
+          "name": "TAHAP 7 — TRACKING SETELAH SESI DITUTUP",
+          "item": [
+            {
+              "name": "STEP 14: Tamu masih bisa MELIHAT riwayat sesi (GET tetap 200)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/guest/dinings/{{guestToken}}"
+                }
+              },
+              "description": "Ekspektasi: status CLOSED, invoiceStatus PAID, seluruh orders[] utuh\n[G6]"
+            },
+            {
+              "name": "STEP 14b: Tapi tidak bisa menambah order lagi (400 \"closed\")",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/guest/dinings/{{guestToken}}/orders"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"items\": [\n        { \"menuId\": 1, \"quantity\": 1, \"modifiers\": [{ \"modifierOptionId\": 13 }] }\n    ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "STEP 14c: by-code ikut mati setelah close (hanya sesi OPEN)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/guest/dinings/by-code/{{guestCode}}"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "TAHAP 8 — VARIAN MEMBER (login, tanpa QR)",
+          "item": [
+            {
+              "name": "Register customer di customer.http → login di auth.http →",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{customerToken}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/my/dinings/{{guestToken}}/orders"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"customerName\": \"\",\n    \"notes\": \"Ikut sesi, dari member\",\n    \"items\": [\n        { \"menuId\": 2, \"quantity\": 1, \"modifiers\": [{ \"modifierOptionId\": 13 }] }\n    ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "description": "simpan accessToken ke {{customerToken}}.\nSTEP 15: Member ikut pesan di sesi yang sama — identitas dari JWT,\nbukan dari body (GuestOrderRequest tidak punya customerId)\nEkspektasi: 201\n[G7]"
+            },
+            {
+              "name": "STEP 15b: Member menemukan sesi TANPA scan QR",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{customerToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/my/dinings?status=CLOSED",
+                  "query": [
+                    {
+                      "key": "status",
+                      "value": "CLOSED"
+                    }
+                  ]
+                }
+              },
+              "description": "Catatan: sesi di TAHAP 6 sudah CLOSED; pakai ?status=CLOSED untuk melihatnya.\nUntuk melihat default (OPEN), ulangi alur ini di meja lain dengan member yang sama.\n[G8]\nmenutup jalan buntu /my"
+            },
+            {
+              "name": "STEP 15c: Deep-link member ke tampilan tamu",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{customerToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/my/dinings/{{guestToken}}"
+                }
+              },
+              "description": "payload sama dengan guest"
+            }
+          ]
+        },
+        {
+          "name": "NEGATIVE SUITE — penolakan yang diharapkan",
+          "item": [
+            {
+              "name": "Token salah (404 generik \"Session not found\" — tidak membocorkan apa pun)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/guest/dinings/wrongtoken123"
+                }
+              }
+            },
+            {
+              "name": "Kode salah (404)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/guest/dinings/by-code/000000"
+                }
+              }
+            },
+            {
+              "name": "Items kosong (400 \"Order must have at least 1 item\")",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/guest/dinings/{{guestToken}}/orders"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"items\": []\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "customerName > 50 char (400)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/guest/dinings/{{guestToken}}/orders"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"customerName\": \"Nama panjang sekali loh ini melebihi lima puluh karakter deh sela\",\n    \"items\": [\n        { \"menuId\": 1, \"quantity\": 1, \"modifiers\": [{ \"modifierOptionId\": 13 }] }\n    ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "menuId tidak ada (404 menu not found)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/guest/dinings/{{guestToken}}/orders"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"items\": [\n        { \"menuId\": 9999, \"quantity\": 1, \"modifiers\": [{ \"modifierOptionId\": 13 }] }\n    ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Sesi lunas: order setelah PAID (400 \"Sesi ini sudah lunas (INV-...)\")",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/guest/dinings/{{guestToken}}/orders"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"items\": [\n        { \"menuId\": 1, \"quantity\": 1, \"modifiers\": [{ \"modifierOptionId\": 13 }] }\n    ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "description": "→ jalankan SETELAH STEP 12 pada sesi yang masih OPEN (pakai meja lain\nbila sesi utama sudah ditutup di STEP 13)"
+            },
+            {
+              "name": "Member tanpa profil customer memakai /my (403 \"Customer profile not found...\")",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/my/dinings/{{guestToken}}/orders"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"items\": [\n        { \"menuId\": 1, \"quantity\": 1, \"modifiers\": [{ \"modifierOptionId\": 13 }] }\n    ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "description": "→ pakai {{token}} staf (mis. admin@rascal.id)"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "Invoice",
       "item": [
         {
@@ -2613,6 +3306,204 @@
                   "raw": "{{baseUrl}}/invoices/999"
                 }
               }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Kitchen",
+      "item": [
+        {
+          "name": "KITCHEN (authority: kitchen.read — ADMIN & KITCHEN)",
+          "item": [
+            {
+              "name": "Papan antrean dapur (KDS). Read-only; transisi tetap via POST /orders/{id}/prepare|ready.",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/kitchen/orders"
+                }
+              },
+              "description": "Lihat API_CONTRACT.md §R.\nDefault: status=CONFIRMED,PREPARING, urut TERTUA DULU (createdAt,asc), size 20 (maks 50).\ntableNumber = nomor meja dari sesi dining OPEN yang memuat order; null untuk TAKEAWAY.\nitems[] = OrderItemResponse (termasuk modifiers) — sama dengan detail order.\nPakai token akun kitchen@rascal.id (kitchen123) untuk request di bawah.\nToken akun lain → 403 (mis. kasir/waiter tanpa kitchen.read).\nAntrean default (CONFIRMED + PREPARING, tertua dulu)"
+            },
+            {
+              "name": "Antrean dengan ukuran lebih besar (di-cap di 50 walau minta 200)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/kitchen/orders?size=50",
+                  "query": [
+                    {
+                      "key": "size",
+                      "value": "50"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Hanya order yang belum di-confirm (biasanya kosong — kasir/waiter yang confirm dulu)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/kitchen/orders?status=CREATED",
+                  "query": [
+                    {
+                      "key": "status",
+                      "value": "CREATED"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Satu status saja",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/kitchen/orders?status=PREPARING",
+                  "query": [
+                    {
+                      "key": "status",
+                      "value": "PREPARING"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Multi-status (bentuk sama dengan GET /orders)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/kitchen/orders?status=CONFIRMED&status=PREPARING",
+                  "query": [
+                    {
+                      "key": "status",
+                      "value": "CONFIRMED"
+                    },
+                    {
+                      "key": "status",
+                      "value": "PREPARING"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Invalid status (400: \"Invalid order status: 'BAKING'. Allowed: CREATED, CONFIRMED, ...\")",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/kitchen/orders?status=BAKING",
+                  "query": [
+                    {
+                      "key": "status",
+                      "value": "BAKING"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Forbidden (403)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/kitchen/orders"
+                }
+              },
+              "description": "token tanpa kitchen.read"
+            },
+            {
+              "name": "No auth (401)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/kitchen/orders"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "MAJUKAN STATUS (endpoint yang sudah ada di §J — bukan milik kitchen.http)",
+          "item": [
+            {
+              "name": "Mulai masak (CONFIRMED → PREPARING)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/orders/1/prepare"
+                }
+              },
+              "description": "butuh order.mark.preparing"
+            },
+            {
+              "name": "Selesai masak (PREPARING → READY)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/orders/1/ready"
+                }
+              },
+              "description": "butuh order.mark.ready"
             }
           ]
         }
@@ -3170,7 +4061,7 @@
                 },
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n    \"customerId\": 1,\n    \"type\": \"DINE_IN\",\n    \"items\": [\n        { \"menuId\": 2, \"quantity\": 1, \"modifiers\": [] }\n    ]\n}",
+                  "raw": "{\n    \"customerId\": 1,\n    \"type\": \"DINE_IN\",\n    \"items\": [\n        { \"menuId\": 2, \"quantity\": 1, \"modifiers\": [{ \"modifierOptionId\": 13 }] }\n    ]\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -3198,7 +4089,7 @@
                 },
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n    \"customerId\": 1,\n    \"items\": [\n        { \"menuId\": 2, \"quantity\": 1, \"modifiers\": [] }\n    ]\n}",
+                  "raw": "{\n    \"customerId\": 1,\n    \"items\": [\n        { \"menuId\": 2, \"quantity\": 1, \"modifiers\": [{ \"modifierOptionId\": 13 }] }\n    ]\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -3226,7 +4117,7 @@
                 },
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n    \"customerId\": 1,\n    \"customerName\": \"Asep\",\n    \"type\": \"TAKEAWAY\",\n    \"notes\": \"Less sugar please\",\n    \"items\": [\n        {\n            \"menuId\": 2,\n            \"quantity\": 1,\n            \"modifiers\": [\n                {  \"modifierOptionId\": 6 },\n                {  \"modifierOptionId\": 2 },\n                {  \"modifierOptionId\": 13 },\n                {  \"modifierOptionId\": 12 }\n            ]\n        }\n    ]\n}",
+                  "raw": "{\n    \"type\": \"TAKEAWAY\",\n    \"notes\": \"Less sugar please\",\n    \"items\": [\n        {\n            \"menuId\": 2,\n            \"quantity\": 1,\n            \"modifiers\": [\n                {  \"modifierOptionId\": 13 }\n            ]\n        }\n    ]\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -3255,7 +4146,7 @@
                 },
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n    \"customerId\": 9999,\n    \"type\": \"TAKEAWAY\",\n    \"items\": [\n        { \"menuId\": 2, \"quantity\": 1, \"modifiers\": [] }\n    ]\n}",
+                  "raw": "{\n    \"customerId\": 9999,\n    \"type\": \"TAKEAWAY\",\n    \"items\": [\n        { \"menuId\": 2, \"quantity\": 1, \"modifiers\": [{ \"modifierOptionId\": 13 }] }\n    ]\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -3522,6 +4413,82 @@
                   ]
                 }
               }
+            }
+          ]
+        },
+        {
+          "name": "MY ORDERS (authenticated; identitas member dari JWT — bukan customerId dari client)",
+          "item": [
+            {
+              "name": "Riwayat pesanan milik member yang login (API_CONTRACT.md §Q).",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{customerToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/my/orders"
+                }
+              },
+              "description": "403 bila akun login belum punya profil member. Order tamu anonim tidak muncul.\nPakai {{customerToken}} (login akun customer), bukan token staf."
+            },
+            {
+              "name": "Riwayat dengan pagination",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{customerToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/my/orders?page=0&size=5&sort=createdAt,desc",
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "0"
+                    },
+                    {
+                      "key": "size",
+                      "value": "5"
+                    },
+                    {
+                      "key": "sort",
+                      "value": "createdAt,desc"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Forbidden (403)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/my/orders"
+                }
+              },
+              "description": "token akun tanpa profil member (mis. staf)"
+            },
+            {
+              "name": "No auth (401)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/my/orders"
+                }
+              }
             },
             {
               "name": "Update (PUT)",
@@ -3599,7 +4566,7 @@
                 },
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n    \"customerId\": 1,\n    \"type\": \"TAKEAWAY\",\n    \"items\": [\n        { \"menuId\": 1, \"quantity\": 1, \"modifiers\": [] }\n    ]\n}",
+                  "raw": "{\n    \"customerId\": 1,\n    \"type\": \"TAKEAWAY\",\n    \"items\": [\n        { \"menuId\": 1, \"quantity\": 1, \"modifiers\": [{ \"modifierOptionId\": 13 }] }\n    ]\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -3628,7 +4595,7 @@
                 },
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n    \"customerId\": 1,\n    \"type\": \"TAKEAWAY\",\n    \"items\": [\n        { \"menuId\": 1, \"quantity\": 1, \"modifiers\": [] }\n    ]\n}",
+                  "raw": "{\n    \"customerId\": 1,\n    \"type\": \"TAKEAWAY\",\n    \"items\": [\n        { \"menuId\": 1, \"quantity\": 1, \"modifiers\": [{ \"modifierOptionId\": 13 }] }\n    ]\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -4304,6 +5271,255 @@
                 "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/reports/dashboard/summary"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Takeaway Workflow",
+      "item": [
+        {
+          "name": "TAHAP 1 — STAF MEMBUAT ORDER TAKEAWAY",
+          "item": [
+            {
+              "name": "STEP 1: Kasir catat order takeaway (staf, order.create)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/orders"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"type\": \"TAKEAWAY\",\n    \"customerName\": \"Bu Tejo\",\n    \"notes\": \"Dibungkus kardus\",\n    \"items\": [\n        {\n            \"menuId\": 1,\n            \"quantity\": 2,\n            \"modifiers\": [\n                { \"modifierOptionId\": 13 }\n            ]\n        },\n        {\n            \"menuId\": 2,\n            \"quantity\": 1,\n            \"modifiers\": [\n                { \"modifierOptionId\": 13 }\n            ]\n        }\n    ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "description": "Ekspektasi: 201; response OrderResponse berisi trackToken\n→ copy trackToken ke {{trackToken}}, catat orderId-nya\n[T1]"
+            },
+            {
+              "name": "STEP 1b: Kasir confirm → antrean dapur",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/orders/1/confirm"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "TAHAP 2 — PEMBELI TRACK (PUBLIK, TANPA LOGIN SAMA SEKALI)",
+          "item": [
+            {
+              "name": "STEP 2: Pembeli buka link tracking (mis. dari WA/struk — FE: /guest/track/{trackToken})",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/guest/orders/{{trackToken}}"
+                }
+              },
+              "description": "Ekspektasi: 200 — orderNumber, type=TAKEAWAY, status=CONFIRMED,\ntotalPrice, items[] (+ modifiers), invoiceStatus=OPEN\n[T2]"
+            },
+            {
+              "name": "STEP 2b: Polling",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/guest/orders/{{trackToken}}"
+                }
+              },
+              "description": "(jalankan STEP 4 dulu, lalu GET ini lagi → status PREPARING)\ndapur mulai masak"
+            },
+            {
+              "name": "STEP 2c: Polling",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/guest/orders/{{trackToken}}"
+                }
+              },
+              "description": "(jalankan STEP 5 dulu, lalu GET ini lagi → status READY)\n[T3]\nmakanan siap diambil"
+            }
+          ]
+        },
+        {
+          "name": "TAHAP 3 — DAPUR MEMPROSES (identitas staf/kitchen)",
+          "item": [
+            {
+              "name": "STEP 4: Prepare (kitchen — order.mark.preparing)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/orders/1/prepare"
+                }
+              }
+            },
+            {
+              "name": "STEP 5: Ready (kitchen — order.mark.ready)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/orders/1/ready"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "TAHAP 4 — KASIR MENAGIH & MENERIMA PEMBAYARAN",
+          "item": [
+            {
+              "name": "STEP 6: Kasir cari invoice order ini (query orderId — lihat §P)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/invoices?orderId=1",
+                  "query": [
+                    {
+                      "key": "orderId",
+                      "value": "1"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "STEP 7: Bayar (kasir — payment.create). amount kosong = lunas penuh",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/payments"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"invoiceId\": 1,\n    \"paymentProvider\": \"INTERNAL\",\n    \"paymentDetail\": \"CASH-TAKEAWAY-001\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "STEP 7b: Pembeli track lagi → invoiceStatus kini PAID",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/guest/orders/{{trackToken}}"
+                }
+              },
+              "description": "[T4]"
+            }
+          ]
+        },
+        {
+          "name": "TAHAP 5 — SELESAI & RIWAYAT",
+          "item": [
+            {
+              "name": "STEP 8: Kasir complete (pesanan sudah diambil)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/orders/1/complete"
+                }
+              }
+            },
+            {
+              "name": "STEP 8b: Track setelah terminal",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/guest/orders/{{trackToken}}"
+                }
+              },
+              "description": "[T5]\ntetap 200, status COMPLETED (riwayat)"
+            }
+          ]
+        },
+        {
+          "name": "NEGATIVE SUITE",
+          "item": [
+            {
+              "name": "Token salah (404 generik \"Order not found\" — tidak membocorkan apa pun)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/guest/orders/wrongtoken123"
+                }
+              },
+              "description": "[T6]"
+            },
+            {
+              "name": "Tanpa token (404 — path tidak match, bukan 401/403)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/guest/orders/"
                 }
               }
             }

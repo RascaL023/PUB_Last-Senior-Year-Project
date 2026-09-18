@@ -19,6 +19,7 @@ import org.springframework.data.domain.Pageable;
 
 import id.my.rascal.common.exception.BadRequestException;
 import id.my.rascal.customer.api.CustomerApi;
+import id.my.rascal.invoice.api.InvoiceApi;
 import id.my.rascal.order.internal.model.enums.OrderStatus;
 import id.my.rascal.order.internal.repository.OrderItemRepository;
 import id.my.rascal.order.internal.repository.OrderRepository;
@@ -34,7 +35,8 @@ class OrderQueryServiceStatusFilterTest {
         orderQueryService = new OrderQueryService(
             orderRepository,
             mock(OrderItemRepository.class),
-            mock(CustomerApi.class)
+            mock(CustomerApi.class),
+            mock(InvoiceApi.class)
         );
         when(orderRepository.searchActive(any(), any(), any()))
             .thenReturn(new PageImpl<>(List.of()));

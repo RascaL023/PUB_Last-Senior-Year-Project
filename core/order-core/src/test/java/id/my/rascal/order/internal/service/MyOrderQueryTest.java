@@ -17,6 +17,7 @@ import org.springframework.data.domain.Pageable;
 import id.my.rascal.common.exception.ForbiddenException;
 import id.my.rascal.customer.api.CustomerApi;
 import id.my.rascal.customer.api.CustomerApiResponse;
+import id.my.rascal.invoice.api.InvoiceApi;
 import id.my.rascal.order.internal.repository.OrderItemRepository;
 import id.my.rascal.order.internal.repository.OrderRepository;
 
@@ -36,7 +37,8 @@ class MyOrderQueryTest {
         orderQueryService = new OrderQueryService(
             orderRepository,
             mock(OrderItemRepository.class),
-            customerApi
+            customerApi,
+            mock(InvoiceApi.class)
         );
     }
 

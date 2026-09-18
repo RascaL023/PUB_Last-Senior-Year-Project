@@ -32,6 +32,9 @@ public class Order {
     @Column(name = "order_number", nullable = false, unique = true)
     private String orderNumber;
 
+    @Column(name = "track_token", nullable = false, unique = true)
+    private String trackToken;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private OrderStatus status;

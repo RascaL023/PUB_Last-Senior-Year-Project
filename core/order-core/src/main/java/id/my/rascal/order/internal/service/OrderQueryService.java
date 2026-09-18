@@ -5,6 +5,7 @@ import id.my.rascal.common.exception.NotFoundException;
 import id.my.rascal.common.util.StringUtil;
 import id.my.rascal.customer.api.CustomerApi;
 import id.my.rascal.customer.api.CustomerApiResponse;
+import id.my.rascal.invoice.api.InvoiceApi;
 import id.my.rascal.order.api.OrderApiResponse;
 import id.my.rascal.order.api.OrderItemDetail;
 import id.my.rascal.order.api.event.dto.OrderItemSnapshot;
@@ -12,6 +13,7 @@ import id.my.rascal.order.internal.entity.Order;
 import id.my.rascal.order.internal.entity.OrderItem;
 import id.my.rascal.order.internal.model.enums.OrderStatus;
 import id.my.rascal.order.internal.model.mapper.OrderMapper;
+import id.my.rascal.order.internal.model.response.GuestOrderTrackingResponse;
 import id.my.rascal.order.internal.model.response.OrderResponse;
 import id.my.rascal.order.internal.repository.OrderItemRepository;
 import id.my.rascal.order.internal.repository.OrderRepository;
@@ -35,15 +37,18 @@ public class OrderQueryService {
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
     private final CustomerApi customerApi;
+    private final InvoiceApi invoiceApi;
 
     public OrderQueryService(
         OrderRepository orderRepository,
         OrderItemRepository orderItemRepository,
-        CustomerApi customerApi
+        CustomerApi customerApi,
+        InvoiceApi invoiceApi
     ) {
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
         this.customerApi = customerApi;
+        this.invoiceApi = invoiceApi;
     }
 
     @Transactional(readOnly = true)
@@ -127,6 +132,24 @@ public class OrderQueryService {
                 .add(OrderMapper.toItemDetail(item));
         }
         return itemsByOrderId;
+    }
+
+    @Transactional(readOnly = true)
+    public GuestOrderTrackingResponse findActiveByTrackToken(String trackToken) {
+        Order order = orderRepository.findActiveByTrackToken(trackToken)
+            .orElseThrow(() -> new NotFoundException("Order not found"));
+
+        return new GuestOrderTrackingResponse(
+            order.getOrderNumber(),
+            order.getType().name(),
+            order.getStatus().name(),
+            order.getTotalPrice(),
+            order.getCreatedAt(),
+            invoiceApi.findStatusByOrderId(order.getId()),
+            order.getOrderItems().stream()
+                .map(OrderMapper::toItemDetail)
+                .toList()
+        );
     }
 
     private Order findActiveOrder(Long id) {

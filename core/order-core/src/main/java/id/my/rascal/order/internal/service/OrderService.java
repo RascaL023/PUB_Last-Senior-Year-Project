@@ -41,6 +41,7 @@ public class OrderService {
     private final OrderEventPublisherService orderEventPublisherService;
     private final InvoiceApi invoiceApi;
     private final CustomerApi customerApi;
+    private final TrackTokenGenerator trackTokenGenerator;
 
     public OrderService(
         OrderRepository orderRepository,
@@ -48,7 +49,8 @@ public class OrderService {
         OrderStatusFlowPolicy orderStatusFlowPolicy,
         OrderEventPublisherService orderEventPublisherService,
         InvoiceApi invoiceApi,
-        CustomerApi customerApi
+        CustomerApi customerApi,
+        TrackTokenGenerator trackTokenGenerator
     ) {
         this.orderRepository = orderRepository;
         this.orderItemService = orderItemService;
@@ -56,6 +58,7 @@ public class OrderService {
         this.orderEventPublisherService = orderEventPublisherService;
         this.invoiceApi = invoiceApi;
         this.customerApi = customerApi;
+        this.trackTokenGenerator = trackTokenGenerator;
     }
 
     @Transactional
@@ -65,6 +68,7 @@ public class OrderService {
 
         Order order = new Order();
         order.setOrderNumber(generateOrderNumber());
+        order.setTrackToken(trackTokenGenerator.nextToken());
         ensureCustomerExists(request.customerId());
         applyCustomer(order, request.customerId(), request.customerName());
         applyNotes(order, request.notes());
@@ -150,6 +154,7 @@ public class OrderService {
         if (request.type() == null) throw new BadRequestException("Order type cannot be null");
         Order order = new Order();
         order.setOrderNumber(generateOrderNumber());
+        order.setTrackToken(trackTokenGenerator.nextToken());
         ensureCustomerExists(request.customerId());
         applyCustomer(order, request.customerId(), request.customerName());
         applyNotes(order, request.notes());

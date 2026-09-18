@@ -9,5 +9,6 @@ public interface InvoiceApi {
     List<InvoiceApiResponse> getInvoices(Collection<Long> ids);
     InvoiceApiResponse getDiningInvoice(Long diningId);
     boolean hasAppliedPayment(Long orderId);
+    String findStatusByOrderId(Long orderId);
 
 }

@@ -1,0 +1,173 @@
+### ================================================================
+### TAKEAWAY WORKFLOW — BUKTI E2E: PEMBELI TRACK ORDER TANPA LOGIN
+### ================================================================
+### Tujuan  : membuktikan order standalone (TAKEAWAY, dibuat staf)
+###           bisa dilacak pembeli via trackToken — tanpa akun,
+###           tanpa QR meja, read-only.
+### Kontrak : API_CONTRACT.md §L4 (Guest Order Tracking), §J (orders)
+###
+### Prasyarat:
+###   1. App jalan di {{baseUrl}} (localhost:8081), DB fresh (drop-create).
+###   2. Data menu dev tersedia (menuId 1/2, modifierOptionId 13).
+###      CATATAN SEED: menuId 1 & 2 punya modifierType "Size" (minSelection 1)
+###      → order item-nya WAJIB membawa option Size (mis. 13=Regular).
+###      Tanpa itu: 400 "Modifier type 4 requires at least 1 selection(s)".
+###   3. Jalankan step BERURUTAN. Sesuaikan ID/orderId dengan hasil run lo.
+###   4. Copy trackToken dari response STEP 1 ke {{trackToken}}
+###      (tambahkan variabel di http-client.env.json lokal).
+###
+### Yang DIBUKTIKAN (checklist §CHECKLIST):
+###   [T1] Setiap order bawa trackToken di OrderResponse
+###   [T2] Pembeli tanpa login bisa melihat status + isi order
+###   [T3] Status berubah terlihat lewat polling (CONFIRMED→PREPARING→READY)
+###   [T4] invoiceStatus terlihat tamu (OPEN → PAID setelah kasir bayar)
+###   [T5] Status terminal tetap terbaca (riwayat, bukan hilang)
+###   [T6] Token salah → 404 generik, tanpa bocor info
+
+
+### ================================================================
+### TAHAP 1 — STAF MEMBUAT ORDER TAKEAWAY
+### ================================================================
+
+### STEP 1: Kasir catat order takeaway (staf, order.create)
+### Ekspektasi: 201; response OrderResponse berisi trackToken
+### → copy trackToken ke {{trackToken}}, catat orderId-nya
+### [T1]
+POST {{baseUrl}}/orders
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "type": "TAKEAWAY",
+    "customerName": "Bu Tejo",
+    "notes": "Dibungkus kardus",
+    "items": [
+        {
+            "menuId": 1,
+            "quantity": 2,
+            "modifiers": [
+                { "modifierOptionId": 13 }
+            ]
+        },
+        {
+            "menuId": 2,
+            "quantity": 1,
+            "modifiers": [
+                { "modifierOptionId": 13 }
+            ]
+        }
+    ]
+}
+
+### STEP 1b: Kasir confirm → antrean dapur
+POST {{baseUrl}}/orders/1/confirm
+Authorization: Bearer {{token}}
+
+### (Invoice standalone sudah terbit otomatis saat create — event AFTER_COMMIT.
+###  Cek via endpoint staf bila mau: GET /invoices?orderId={{orderId}})
+
+
+### ================================================================
+### TAHAP 2 — PEMBELI TRACK (PUBLIK, TANPA LOGIN SAMA SEKALI)
+### ================================================================
+
+### STEP 2: Pembeli buka link tracking (mis. dari WA/struk — FE: /guest/track/{trackToken})
+### Ekspektasi: 200 — orderNumber, type=TAKEAWAY, status=CONFIRMED,
+###             totalPrice, items[] (+ modifiers), invoiceStatus=OPEN
+### [T2]
+GET {{baseUrl}}/guest/orders/{{trackToken}}
+
+### STEP 2b: Polling — dapur mulai masak
+### (jalankan STEP 4 dulu, lalu GET ini lagi → status PREPARING)
+GET {{baseUrl}}/guest/orders/{{trackToken}}
+
+### STEP 2c: Polling — makanan siap diambil
+### (jalankan STEP 5 dulu, lalu GET ini lagi → status READY)
+### [T3]
+GET {{baseUrl}}/guest/orders/{{trackToken}}
+
+
+### ================================================================
+### TAHAP 3 — DAPUR MEMPROSES (identitas staf/kitchen)
+### ================================================================
+
+### STEP 4: Prepare (kitchen — order.mark.preparing)
+POST {{baseUrl}}/orders/1/prepare
+Authorization: Bearer {{token}}
+
+### STEP 5: Ready (kitchen — order.mark.ready)
+POST {{baseUrl}}/orders/1/ready
+Authorization: Bearer {{token}}
+
+
+### ================================================================
+### TAHAP 4 — KASIR MENAGIH & MENERIMA PEMBAYARAN
+### ================================================================
+
+### STEP 6: Kasir cari invoice order ini (query orderId — lihat §P)
+GET {{baseUrl}}/invoices?orderId=1
+Authorization: Bearer {{token}}
+
+### STEP 7: Bayar (kasir — payment.create). amount kosong = lunas penuh
+POST {{baseUrl}}/payments
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "invoiceId": 1,
+    "paymentProvider": "INTERNAL",
+    "paymentDetail": "CASH-TAKEAWAY-001"
+}
+
+### STEP 7b: Pembeli track lagi → invoiceStatus kini PAID
+### [T4]
+GET {{baseUrl}}/guest/orders/{{trackToken}}
+
+
+### ================================================================
+### TAHAP 5 — SELESAI & RIWAYAT
+### ================================================================
+
+### STEP 8: Kasir complete (pesanan sudah diambil)
+POST {{baseUrl}}/orders/1/complete
+Authorization: Bearer {{token}}
+
+### STEP 8b: Track setelah terminal — tetap 200, status COMPLETED (riwayat)
+### [T5]
+GET {{baseUrl}}/guest/orders/{{trackToken}}
+
+
+### ================================================================
+### NEGATIVE SUITE
+### ================================================================
+
+### Token salah (404 generik "Order not found" — tidak membocorkan apa pun)
+### [T6]
+GET {{baseUrl}}/guest/orders/wrongtoken123
+
+### Tanpa token (404 — path tidak match, bukan 401/403)
+GET {{baseUrl}}/guest/orders/
+
+### POST tidak ada di jalur ini — tracking read-only.
+### Bila POST dicoba, hasilnya 401/403/405 (bukan akses yang sah).
+
+
+### ================================================================
+### CHECKLIST — centang setelah run
+### ================================================================
+### [T1] STEP 1  : OrderResponse.trackToken terisi (32 byte, Base64URL)
+### [T2] STEP 2  : 200 tanpa Authorization; payload lengkap + items[]
+### [T3] STEP 2c : status berubah CONFIRMED → PREPARING → READY via polling
+### [T4] STEP 7b : invoiceStatus OPEN → PAID setelah pembayaran kasir
+### [T5] STEP 8b : status COMPLETED masih terbaca (200)
+### [T6] NEGATIVE: token salah → 404 "Order not found"
+###
+### Kalau 6/6 tercentang → workflow "takeaway order & track" TERBUKTI
+### end-to-end dengan kode saat ini.
+###
+### Catatan tambahan:
+### - Order DINE_IN juga bawa trackToken (di-generate di semua jalur create),
+###   tapi tracking dine-in tetap disarankan via guestToken sesi (§L2) karena
+###   satu sesi bisa berisi banyak order.
+### - FE merender QR/link dari trackToken sama seperti guestToken —
+###   lihat FE-ROLE-INTEGRATION.md §3.6.
