@@ -33,4 +33,7 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
 
     boolean existsByEmail(String email);
 
+    @Query("select e from Employee e where e.email = :email and e.deletedAt is null")
+    Optional<Employee> findByEmail(@Param("email") String email);
+
 }

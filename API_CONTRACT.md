@@ -1069,6 +1069,8 @@ Status `PAID` dicapai lewat webhook Xendit atau langsung saat create dengan prov
 > **B2 ditutup — ini satu-satunya jalur uang.** Tidak ada lagi `POST /invoices/{id}/payments`; satu-satunya cara uang bergerak di invoice adalah melalui Payment record di sini, diteruskan via `PaymentSettledEvent`. Partial pay didukung lewat field `amount` opsional. Guard: hanya ada **satu payment `PENDING` aktif per invoice** (`400 "Invoice already has an active pending payment"`), dan `amount` > sisa ditolak (`400 "Payment amount exceeds remaining amount"`).
 >
 > **Alur settlement:** `PaymentSettledEvent` (berisi `paymentId`, `invoiceId`, `settledAmount`, `externalId`, `paidAt`) dikonsumsi oleh `InvoicePaymentEventListener` → `InvoiceService.applyPayment()`. Payment **tidak** langsung affect `Order` — `PaymentEffect` hanya set `paidAt` di Payment entity. `Order` tidak punya `paidStatus` field. `markPaid` tidak ada di `OrderService`.
+>
+> **Rencana redirect Xendit (BELUM diimplementasi — menunggu approve):** `XenditInvoiceRequest` sudah punya field `success_redirect_url`/`failure_redirect_url`, tapi `XenditService.initPayment` masih mengirim `null, null`. Rencana: env baru `XENDIT_SUCCESS_REDIRECT_URL` + `XENDIT_FAILURE_REDIRECT_URL` (pola sama dengan blok `xendit.*` di `config/native.env.example`) → di-inject ke request invoice. Halaman tujuan milik FE; kepastian pembayaran **tetap** dari webhook + polling FE (query param redirect bukan bukti bayar). Arahan lengkap untuk FE: `FE-XENDIT-REDIRECT.md`.
 
 | Dari | Ke | Syarat |
 |---|---|---|
@@ -1368,6 +1370,8 @@ menunjuk `customers.id` (bukan `UserAuth.id`); guest (`customerId=null`) tetap b
 | `POST /` | Register + buat akun | Publik | Body `{name, email, password(min 8), phone?}` → buat `auth_users` (role `CUSTOMER_BASE`) + profil; duplikat email → `409` |
 | `POST /` | Create member (tanpa login) | `customer.create` | Body `{name, email?, phone?, notes?}` → `userAuthId=null` |
 | `GET /` | List/search | `customer.read` | Filter `keyword` (name/email/phone), default `sort=createdAt,desc` |
+| `GET /me` | Profil member yang login | Cukup login (`isAuthenticated()`) | Identitas dari JWT (`sub` = `userAuthId`) — **bukan** path id. Response `CustomerResponse`. Akun staf tanpa profil member → `404 NOT_FOUND` ("Customer not found with userAuthId: N"); token tidak valid → `401` |
+| `PUT /me` | Update profil sendiri | Cukup login (`isAuthenticated()`) | Body `CustomerPutRequest` = `{name, phone?, notes?}` — **email tidak ada di model** (locked ke akun), **password tidak lewat sini** (hanya forgot/reset via email token). Field lain di body diabaikan server (terverifikasi live: inject `email`/`password` tidak berpengaruh) |
 | `GET /{id}` | Get by ID | `customer.read` | |
 | `PUT /{id}` | Full update | `customer.update` | Profil saja (tidak mengubah akun) |
 | `PATCH /{id}` | Partial update | `customer.update` | Minimal satu field terisi |
