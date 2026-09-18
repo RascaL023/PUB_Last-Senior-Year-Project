@@ -63,11 +63,12 @@ public class XenditService {
     public PaymentProcessorResponse initPayment(PaymentProcessorRequest request) {
         XenditInvoiceResponse invoice = xenditClient.createInvoice(
             new XenditInvoiceRequest(
-                request.externalId(), 
-                request.amount(), 
-                "IDR", 
-                request.description(), 
-                null, null
+                request.externalId(),
+                request.amount(),
+                "IDR",
+                request.description(),
+                xenditProperties.successRedirectUrl(),
+                xenditProperties.failureRedirectUrl()
             )
         );
 

@@ -10,17 +10,23 @@ public class XenditProperties {
     private final String publicKey;
     private final String callbackToken;
     private final String baseUrl;
+    private final String successRedirectUrl;
+    private final String failureRedirectUrl;
 
     public XenditProperties(
         @Value("${xendit.private-key:}") String privateKey,
         @Value("${xendit.public-key:}") String publicKey,
         @Value("${xendit.callback-token:}") String callbackToken,
-        @Value("${xendit.base-url:https://api.xendit.co}") String baseUrl
+        @Value("${xendit.base-url:https://api.xendit.co}") String baseUrl,
+        @Value("${xendit.success-redirect-url:}") String successRedirectUrl,
+        @Value("${xendit.failure-redirect-url:}") String failureRedirectUrl
     ) {
         this.privateKey = privateKey;
         this.publicKey = publicKey;
         this.callbackToken = callbackToken;
         this.baseUrl = baseUrl;
+        this.successRedirectUrl = successRedirectUrl;
+        this.failureRedirectUrl = failureRedirectUrl;
     }
 
     public String privateKey() {
@@ -37,6 +43,14 @@ public class XenditProperties {
 
     public String baseUrl() {
         return baseUrl;
+    }
+
+    public String successRedirectUrl() {
+        return successRedirectUrl;
+    }
+
+    public String failureRedirectUrl() {
+        return failureRedirectUrl;
     }
 
 }

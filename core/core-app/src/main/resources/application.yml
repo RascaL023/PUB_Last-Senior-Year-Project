@@ -67,10 +67,12 @@ imagekit:
     secret: ${IMAGEKIT_WEBHOOKS_SECRET:""}
 
 xendit:
-  base-url: ${XENDIT_BASE_URL:https://api.xendit.co}
-  private-key: ${XENDIT_PRIVATE_KEY:""}
-  public-key: ${XENDIT_PUBLIC_KEY:""}
-  callback-token: ${XENDIT_CALLBACK_TOKEN:""}
+   base-url: ${XENDIT_BASE_URL:https://api.xendit.co}
+   private-key: ${XENDIT_PRIVATE_KEY:""}
+   public-key: ${XENDIT_PUBLIC_KEY:""}
+   callback-token: ${XENDIT_CALLBACK_TOKEN:""}
+   success-redirect-url: ${XENDIT_SUCCESS_REDIRECT_URL:}
+   failure-redirect-url: ${XENDIT_FAILURE_REDIRECT_URL:}
 
 meilisearch:
   url: ${MEILISEARCH_URL:http://localhost:7700}
