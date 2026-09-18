@@ -15,11 +15,15 @@ public record EmployeePatchRequest(
     )
     String phone,
 
-    EmployeeStatus status
+    EmployeeStatus status,
+
+    @Size(max = 50, message = "Role name must not exceed 50 characters")
+    String roleName
 ) {
     public boolean isEmptyPatch() {
         return name == null
             && phone == null
-            && status == null;
+            && status == null
+            && roleName == null;
     }
 }

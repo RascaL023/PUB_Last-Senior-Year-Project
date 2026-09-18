@@ -81,6 +81,27 @@ public class AuthApiImpl implements AuthApi {
 
     @Override
     @Transactional
+    public UserAuthApiResponse updateAccountRole(Long userAuthId, String roleName) {
+        if (userAuthId == null || userAuthId <= 0)
+            throw new BadRequestException("Invalid userAuthId");
+        if (roleName == null || roleName.isBlank())
+            throw new BadRequestException("Role is required");
+        UserAuth userAuth = userAuthRepository.findActiveById(userAuthId)
+            .orElseThrow(() -> new NotFoundException("User auth not found with id: " + userAuthId));
+        Role role = roleRepository.findByName(roleName)
+            .filter(r -> r.getDeletedAt() == null)
+            .orElseThrow(() -> new NotFoundException("Role not found: " + roleName));
+        userAuth.setRoles(new HashSet<>(Set.of(role)));
+        userAuth.setUpdatedAt(LocalDateTime.now());
+        UserAuth saved = userAuthRepository.save(userAuth);
+        // Otoritas lama masih hidup di access token yang beredar (15 menit)
+        // dan di refresh token — cabut semuanya agar role baru langsung berlaku.
+        authService.logoutAll(saved.getId());
+        return new UserAuthApiResponse(saved.getId(), saved.getEmail());
+    }
+
+    @Override
+    @Transactional
     public void softDeleteAccount(Long userAuthId) {
         if (userAuthId == null || userAuthId <= 0)
             throw new BadRequestException("Invalid userAuthId");

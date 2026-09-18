@@ -93,98 +93,92 @@ Minimal halaman:
 
 ## 🛠️ BACKEND (Server Side)
 
-### 1. REST API `[ ]`
-- [ ] Method: GET, POST, PUT, PATCH, DELETE
-- [ ] Menggunakan HTTP Status Code yang sesuai
+### 1. REST API `[x]`
+- [x] Method: GET, POST, PUT, PATCH, DELETE
+- [x] Menggunakan HTTP Status Code yang sesuai
 
-### 2. Authentication & Authorization `[ ]`
-- [ ] Register
-- [ ] Login
-- [ ] Logout
-- [ ] Refresh Token *(opsional, nilai tambah)*
-- [ ] Forgot Password
-- [ ] Reset Password
+### 2. Authentication & Authorization `[x]`
+- [x] Register (`POST /api/v1/customers/register`)
+- [x] Login (`POST /api/v1/auths/login`)
+- [x] Logout (`POST /api/v1/auths/logout`, `POST /api/v1/auths/logout-all`)
+- [x] Refresh Token (`POST /api/v1/auths/refresh`)
+- [x] Forgot Password (`POST /api/v1/auths/forgot-password`)
+- [x] Reset Password (`POST /api/v1/auths/reset-password`)
 
-### 3. Role Based Access Control (RBAC) `[ ]`
-- [ ] Minimal 2 role (contoh: Admin, User)
-- [ ] Hak akses tiap role berbeda
+### 3. Role Based Access Control (RBAC) `[x]`
+- [x] Minimal 2 role (contoh: Admin, User) — ACTUAL: ADMIN, CASHIER, WAITER, KITCHEN, dll.
+- [x] Hak akses tiap role berbeda — diimplementasikan via `@PreAuthorize("hasAnyAuthority(...)")`
 
-### 4. CRUD Lengkap `[ ]`
-- [ ] Minimal **6 entitas utama**
-- [ ] Setiap entitas: Create, Read, Update, Delete
-- [ ] Tidak ada CRUD yang hanya dummy
+### 4. CRUD Lengkap `[x]`
+- [x] Minimal **6 entitas utama** — ACTUAL: 15+ entitas (UserAuth, Role, Authority, Employee, Customer, Menu, MenuCategory, ModifierType, Order, OrderItem, Dining, DiningTable, Invoice, InvoiceItem, Payment, dll.)
+- [x] Setiap entitas: Create, Read, Update, Delete
+- [x] Tidak ada CRUD yang hanya dummy
 
-### 5. Server Side Validation `[ ]`
-Semua endpoint POST & PUT wajib validasi, error dikembalikan **format JSON**:
-- [ ] Required
-- [ ] Email
-- [ ] Unique
-- [ ] Minimum
-- [ ] Maximum
-- [ ] Enum
-- [ ] Numeric
-- [ ] Date
+### 5. Server Side Validation `[x]`
+- [x] Required (`@NotBlank`, `@NotEmpty`)
+- [x] Email (`@Email`)
+- [x] Unique (`@Unique` constraint di entity, `DataIntegrityViolationException` handler)
+- [x] Minimum (`@Size(min=...)`, `@Min(...)`)
+- [x] Maximum (`@Size(max=...)`)
+- [x] Enum (`@Enumerated(EnumType.STRING)`, `fromString()` parsing)
+- [x] Numeric (`@Min`, `@NotNull`)
+- [x] Date (`@DateTimeFormat`)
+- [x] Pattern (`@Pattern` untuk phone number)
+- [x] Format JSON error dikembalikan via `GlobalExceptionHandler` + `ApiResponse`
 
-### 6. Upload File `[ ]`
-- [ ] Backend mendukung upload **Gambar** atau **PDF**
+### 6. Upload File `[x]`
+- [x] Backend mendukung upload **Gambar** via ImageKit (`ImageUploadAuthController` → `GET /api/v1/images/auth` menghasilkan authentication parameter untuk upload ke ImageKit)
+- Catatan: Upload tidak langsung via MultipartFile di BE, melainkan client upload langsung ke ImageKit menggunakan credential dari BE
 
-### 7. Global Error Handling `[ ]`
-Response konsisten untuk:
-- [ ] 400 Bad Request
-- [ ] 401 Unauthorized
-- [ ] 403 Forbidden
-- [ ] 404 Not Found
-- [ ] 422 Validation Error
-- [ ] 500 Internal Server Error
+### 7. Global Error Handling `[x]`
+- [x] 400 Bad Request (`BadRequestException`, `IllegalArgumentException`, `HttpMessageNotReadableException`, `MissingServletRequestParameterException`, `InvalidDataAccessApiUsageException`)
+- [x] 401 Unauthorized (`UnauthorizedException`)
+- [x] 403 Forbidden (`ForbiddenException`)
+- [x] 404 Not Found (`NotFoundException`, `NoResourceFoundException`)
+- [x] 409 Conflict (`ConflictException`, `DataIntegrityViolationException`)
+- [x] 415 Unsupported Media Type (`HttpMediaTypeNotSupportedException`)
+- [x] 422 Validation Error (`MethodArgumentNotValidException` → `ApiResponse.validationError()`)
+- [x] 500 Internal Server Error (`Exception` handler)
+- [x] Response konsisten via `ApiResponse` (error/success/paged templates)
 
-### 8. Database Relationship `[ ]`
-- [ ] Minimal **6 tabel utama**
-- [ ] Minimal **5 relasi**
-- [ ] Terdapat: One To One, One To Many, Many To One, Many To Many
+### 8. Database Relationship `[x]`
+- [x] Minimal **6 tabel utama** — ACTUAL: 20+ tabel (auth_users, auth_roles, auth_authorities, employees, customers, menus, menu_categories, modifier_types, modifier_options, orders, order_items, order_item_modifiers, dinings, dining_tables, dining_orders, invoices, invoice_items, payments, image_metadatas, refresh_tokens, password_reset_tokens, dll.)
+- [x] Minimal **5 relasi** — ACTUAL: 10+ relasi
+- [x] Terdapat: One To One (Employee↔UserAuth, Customer↔UserAuth), One To Many (Order↔OrderItem, Invoice↔InvoiceItem, OrderItem↔OrderItemModifier), Many To One (OrderItem↔Order, InvoiceItem↔Invoice, Payment↔Invoice), Many To Many (UserAuth↔Role, Role↔Authority, Menu↔MenuCategory, Menu↔ModifierType)
 
-### 9. Soft Delete `[ ]`
-- [ ] Diterapkan minimal pada **2 tabel**
-- [ ] Data yang dihapus tidak langsung hilang dari database
+### 9. Soft Delete `[x]`
+- [x] Diterapkan minimal pada **2 tabel** — ACTUAL: 10+ tabel (auth_users, auth_roles, auth_authorities, employees, customers, menus, menu_categories, orders, dining_tables, invoices, payments)
+- [x] Data yang dihapus tidak langsung hilang dari database (field `deleted_at` di set, query filter `deleted_at is null`)
 
 ### 10. API Documentation `[ ]`
-Salah satu berikut (dapat digunakan untuk uji seluruh endpoint):
 - [ ] Swagger
 - [ ] OpenAPI
 - [ ] Postman Collection
+- **Status**: BELUM TERCAPAI — Tidak ada dependency Swagger/OpenAPI di `pom.xml`, tidak ada konfigurasi, dan tidak ada Postman Collection di repo.
 
-### 11. Security `[ ]`
-Minimal terapkan **salah satu**:
-- [ ] Password Hashing
-- [ ] JWT Authentication
-- [ ] CORS
-- [ ] Request Validation
-- [ ] SQL Injection Prevention
-- [ ] XSS Protection *(nilai tambah)*
+### 11. Security `[x]`
+- [x] Password Hashing (`BCryptPasswordEncoder` dengan strength 10)
+- [x] JWT Authentication (`JwtAuthFilter` di `SecurityConfig`)
+- [x] CORS (ditangani oleh Vercel proxy, tidak perlu konfigurasi BE)
+- [x] Request Validation (`@Valid` pada semua endpoint POST/PUT)
+- [x] SQL Injection Prevention (parameterized queries via Spring Data JPA)
+- [x] XSS Protection (Spring Security default protection)
 
-### 12. Search, Filter & Pagination API `[ ]`
-Endpoint list wajib mendukung:
-- [ ] Search
-- [ ] Filter
-- [ ] Sorting
-- [ ] Pagination
-
-Contoh:
-```
-GET /products?page=1&limit=10
-GET /products?search=laptop
-GET /products?status=active
-GET /products?sort=name
-GET /products?category=1
-```
+### 12. Search, Filter & Pagination API `[x]`
+- [x] Search — keyword parameter pada endpoint: menus, orders, customers, payments, invoices, employees, roles, authorities, menu-categories, modifiers
+- [x] Filter — status, categoryId, minPrice/maxPrice, invoiceId, paymentProvider, paymentStatus, diningStatus, orderStatus, isAvailable, deletedScope
+- [x] Sorting — via `Pageable` dengan `Sort.Direction`
+- [x] Pagination — `@PageableDefault` pada semua endpoint list, response berisi `SuccessPagedTemplate` dengan metadata pagination
 
 ---
 
 ## 🗄️ DATABASE
 
-- [ ] Minimal **6 tabel utama**
-- [ ] Minimal **5 relasi** antar tabel
-- [ ] Memiliki **Primary Key** dan **Foreign Key**
-- [ ] Normalisasi minimal hingga **3NF**
-- [ ] Timestamp `created_at` & `updated_at` pada setiap tabel utama
-- [ ] Minimal **2 tabel** menerapkan **soft delete**
+- [x] Minimal **6 tabel utama** — ACTUAL: 20+ tabel
+- [x] Minimal **5 relasi** antar tabel — ACTUAL: 10+ relasi
+- [x] Memiliki **Primary Key** dan **Foreign Key** — semua entity memiliki `@Id @GeneratedValue`, relasi menggunakan `@JoinColumn`/`@ManyToOne`/`@OneToMany`
+- [x] Normalisasi minimal hingga **3NF** — tabel terpisah untuk entitas berbeda, tidak ada data redundan
+- [x] Timestamp `created_at` & `updated_at` pada setiap tabel utama
+- [x] Minimal **2 tabel** menerapkan **soft delete** — ACTUAL: 10+ tabel
 - [ ] Data awal (seed) minimal **20 data** per tabel utama agar aplikasi dapat diuji
+  - **Status**: BELUM TERCAPAI — Seeders DEV memiliki data terbatas (4 users, 10 dining tables, beberapa menu/categories/modifiers). Formal seeders hanya membuat 1-2 entri. Perlu ditambah agar mencapai 20 data per tabel utama.

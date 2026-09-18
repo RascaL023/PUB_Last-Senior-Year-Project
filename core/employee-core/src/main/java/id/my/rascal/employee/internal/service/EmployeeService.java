@@ -60,33 +60,41 @@ public class EmployeeService {
 
         Employee saved = employeeRepository.save(employee);
         return EmployeeMapper.toResponse(saved);
-    }
-
-    @Transactional
+    }    @Transactional
     public EmployeeResponse update(Long id, EmployeePutRequest request) {
         Employee employee = employeeQueryService.findById(id);
-
         employee.setName(request.name());
         employee.setPhone(request.phone());
         if (request.status() != null) {
             employee.setStatus(request.status());
         }
+        if (request.roleName() != null && !request.roleName().isBlank()) {
+            applyRole(employee, request.roleName());
+        }
         employee.setUpdatedAt(LocalDateTime.now());
-
         Employee updated = employeeRepository.save(employee);
         return EmployeeMapper.toResponse(updated);
+    }
+
+    /** Sinkronkan role karyawan dengan akun login-nya (bila punya). */
+    private void applyRole(Employee employee, String roleName) {
+        String normalized = roleName.trim().toUpperCase();
+        if (employee.getUserAuthId() != null) {
+            authApi.updateAccountRole(employee.getUserAuthId(), normalized);
+        }
+        employee.setRoleName(normalized);
     }
 
     @Transactional
     public EmployeeResponse patch(Long id, EmployeePatchRequest request) {
         if (request.isEmptyPatch()) throw new BadRequestException("PATCH cannot be empty!");
-        Employee employee = employeeQueryService.findById(id);
-
-        if (request.name() != null) employee.setName(request.name());
+        Employee employee = employeeQueryService.findById(id);        if (request.name() != null) employee.setName(request.name());
         if (request.phone() != null) employee.setPhone(request.phone());
         if (request.status() != null) employee.setStatus(request.status());
+        if (request.roleName() != null && !request.roleName().isBlank()) {
+            applyRole(employee, request.roleName());
+        }
         employee.setUpdatedAt(LocalDateTime.now());
-
         Employee patched = employeeRepository.save(employee);
         return EmployeeMapper.toResponse(patched);
     }
@@ -153,8 +161,15 @@ public class EmployeeService {
     }
 
     @Transactional(readOnly = true)
-    public Page<EmployeeResponse> getAllPaged(String keyword, Pageable pageable) {
-        return employeeQueryService.findAllPaged(keyword, pageable).map(EmployeeMapper::toResponse);
+    public Page<EmployeeResponse> getAllPaged(
+        String keyword,
+        EmployeeStatus status,
+        boolean includeDeleted,
+        Pageable pageable
+    ) {
+        return employeeQueryService
+            .findAllPaged(keyword, status, includeDeleted, pageable)
+            .map(EmployeeMapper::toResponse);
     }
 
 }

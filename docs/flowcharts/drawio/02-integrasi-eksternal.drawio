@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" agent="tools/diagram/mermaid-to-drawio.mjs" version="24.7.17">
+  <diagram id="02-integrasi-eksternal" name="02-integrasi-eksternal">
+    <mxGraphModel dx="1422" dy="798" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2369" pageHeight="712" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="Diagram 2 — Integrasi eksternal: Payment, Search, Image, Notification" style="text;html=1;fontSize=14;fontStyle=1;align=left;verticalAlign=middle;fontColor=#4527A0;" vertex="1" parent="1">
+          <mxGeometry x="20" y="8" width="2329" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="PAY_CORE" value="payment-core&lt;br/&gt;PaymentProcessorResolver" style="whiteSpace=wrap;html=1;fontSize=12;fontColor=#212121;fillColor=#EDE7F6;strokeColor=#4527A0;strokeWidth=1;shape=rectangle;" vertex="1" parent="1">
+          <mxGeometry x="69" y="68" width="191" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="XENDIT_AD" value="payment-xendit&lt;br/&gt;XenditService · XenditClient" style="whiteSpace=wrap;html=1;fontSize=12;fontColor=#212121;fillColor=#EDE7F6;strokeColor=#4527A0;strokeWidth=1;shape=rectangle;" vertex="1" parent="1">
+          <mxGeometry x="434" y="68" width="219" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="XENDIT_API" value="Xendit API" style="whiteSpace=wrap;html=1;fontSize=12;fontColor=#212121;fillColor=#EDE7F6;strokeColor=#4527A0;strokeWidth=1;shape=ellipse;" vertex="1" parent="1">
+          <mxGeometry x="898" y="74" width="120" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="XENDIT_WH" value="POST /api/v1/payments/webhooks/xendit&lt;br/&gt;header X-Callback-Token wajib cocok" style="whiteSpace=wrap;html=1;fontSize=12;fontColor=#212121;fillColor=#EDE7F6;strokeColor=#4527A0;strokeWidth=1;shape=rectangle;" vertex="1" parent="1">
+          <mxGeometry x="1210" y="68" width="282" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="PAY_API" value="payment-core PaymentApiImpl.handleWebhookRequest:&lt;br/&gt;idempoten, late settlement, publish PaymentSettledEvent" style="whiteSpace=wrap;html=1;fontSize=12;fontColor=#212121;fillColor=#EDE7F6;strokeColor=#4527A0;strokeWidth=1;shape=rectangle;rounded=1;arcSize=50;" vertex="1" parent="1">
+          <mxGeometry x="1564" y="68" width="360" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="MENU_CORE" value="menu-core&lt;br/&gt;MenuSearchService · index event" style="whiteSpace=wrap;html=1;fontSize=12;fontColor=#212121;fillColor=#EDE7F6;strokeColor=#4527A0;strokeWidth=1;shape=rectangle;" vertex="1" parent="1">
+          <mxGeometry x="44" y="200" width="240" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="MEILI_AD" value="search-meilisearch&lt;br/&gt;SearchApi impl + bootstrap settings" style="whiteSpace=wrap;html=1;fontSize=12;fontColor=#212121;fillColor=#EDE7F6;strokeColor=#4527A0;strokeWidth=1;shape=rectangle;" vertex="1" parent="1">
+          <mxGeometry x="409" y="200" width="268" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="MEILI_API" value="Meilisearch" style="whiteSpace=wrap;html=1;fontSize=12;fontColor=#212121;fillColor=#EDE7F6;strokeColor=#4527A0;strokeWidth=1;shape=ellipse;" vertex="1" parent="1">
+          <mxGeometry x="898" y="163" width="120" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="MENU_V2" value="GET /api/v2/menus — katalog publik cached (permitAll)" style="whiteSpace=wrap;html=1;fontSize=12;fontColor=#212121;fillColor=#EDE7F6;strokeColor=#4527A0;strokeWidth=1;shape=rectangle;rounded=1;arcSize=50;" vertex="1" parent="1">
+          <mxGeometry x="778" y="258" width="360" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="IMAGE_CORE" value="image-core — ImageUploadAuthController&lt;br/&gt;meminta authentication parameter" style="whiteSpace=wrap;html=1;fontSize=12;fontColor=#212121;fillColor=#EDE7F6;strokeColor=#4527A0;strokeWidth=1;shape=rectangle;" vertex="1" parent="1">
+          <mxGeometry x="20" y="342" width="288" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="IMG_REG" value="image-core ImageRegistryApi.registerOrUpdate&lt;br/&gt;atau resolveAndDelete metadata gambar" style="whiteSpace=wrap;html=1;fontSize=12;fontColor=#212121;fillColor=#EDE7F6;strokeColor=#4527A0;strokeWidth=1;shape=rectangle;rounded=1;arcSize=50;" vertex="1" parent="1">
+          <mxGeometry x="1979" y="400" width="330" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="IMG_AD" value="image-imagekit&lt;br/&gt;ImageKitService" style="whiteSpace=wrap;html=1;fontSize=12;fontColor=#212121;fillColor=#EDE7F6;strokeColor=#4527A0;strokeWidth=1;shape=rectangle;" vertex="1" parent="1">
+          <mxGeometry x="479" y="390" width="128" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="IK_API" value="ImageKit API" style="whiteSpace=wrap;html=1;fontSize=12;fontColor=#212121;fillColor=#EDE7F6;strokeColor=#4527A0;strokeWidth=1;shape=ellipse;" vertex="1" parent="1">
+          <mxGeometry x="898" y="395" width="120" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="IMG_AUTH" value="GET /api/v1/images/auth — authority image.create&lt;br/&gt;client upload langsung ke ImageKit" style="whiteSpace=wrap;html=1;fontSize=12;fontColor=#212121;fillColor=#EDE7F6;strokeColor=#4527A0;strokeWidth=1;shape=rectangle;rounded=1;arcSize=50;" vertex="1" parent="1">
+          <mxGeometry x="364" y="295" width="358" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="IMG_WH" value="POST /api/v1/images/imagekit/webhooks&lt;br/&gt;verifikasi signature, tolak 400 bila gagal" style="whiteSpace=wrap;html=1;fontSize=12;fontColor=#212121;fillColor=#EDE7F6;strokeColor=#4527A0;strokeWidth=1;shape=rectangle;" vertex="1" parent="1">
+          <mxGeometry x="1193" y="390" width="316" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="IMG_EVENT" value="ImageCreated/Updated/DeletedEvent" style="whiteSpace=wrap;html=1;fontSize=12;fontColor=#212121;fillColor=#EDE7F6;strokeColor=#4527A0;strokeWidth=1;shape=rectangle;" vertex="1" parent="1">
+          <mxGeometry x="1617" y="453" width="254" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="MENU_SYNC" value="menu-core MenuImageSyncListener&lt;br/&gt;sinkron relative path gambar menu" style="whiteSpace=wrap;html=1;fontSize=12;fontColor=#212121;fillColor=#EDE7F6;strokeColor=#4527A0;strokeWidth=1;shape=rectangle;rounded=1;arcSize=50;" vertex="1" parent="1">
+          <mxGeometry x="2017" y="495" width="254" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="NOTIF_CORE" value="notification-core&lt;br/&gt;NotificationService · EmailTemplate" style="whiteSpace=wrap;html=1;fontSize=12;fontColor=#212121;fillColor=#EDE7F6;strokeColor=#4527A0;strokeWidth=1;shape=rectangle;" vertex="1" parent="1">
+          <mxGeometry x="30" y="545" width="268" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="RESEND_AD" value="notification-resend&lt;br/&gt;ResendEmailSender" style="whiteSpace=wrap;html=1;fontSize=12;fontColor=#212121;fillColor=#EDE7F6;strokeColor=#4527A0;strokeWidth=1;shape=rectangle;" vertex="1" parent="1">
+          <mxGeometry x="465" y="597" width="156" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="RESEND_API" value="Resend API" style="whiteSpace=wrap;html=1;fontSize=12;fontColor=#212121;fillColor=#EDE7F6;strokeColor=#4527A0;strokeWidth=1;shape=ellipse;" vertex="1" parent="1">
+          <mxGeometry x="898" y="602" width="120" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="NOTE_JWT" value="Temuan: application.yml jwt-bypass-uris memuat&lt;br/&gt;/api/v1/images/webhooks/imagekit, sedangkan controller&lt;br/&gt;memetakan /api/v1/images/imagekit/webhooks.&lt;br/&gt;SecurityConfig sudah memakai path yang benar,&lt;br/&gt;daftar bypass belum disamakan" style="whiteSpace=wrap;html=1;fontSize=12;fontColor=#5D4037;fillColor=#FFF8E1;strokeColor=#F9A825;strokeWidth=1;shape=rectangle;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="1564" y="245" width="360" height="107" as="geometry" />
+        </mxCell>
+        <mxCell id="NOTE_NOTIF" value="Modul notification sudah terdaftar di core-app,&lt;br/&gt;tetapi NotificationApi belum dipakai consumer mana pun.&lt;br/&gt;PasswordResetService memakai link APP_DEV_BASE_URL" style="whiteSpace=wrap;html=1;fontSize=12;fontColor=#5D4037;fillColor=#FFF8E1;strokeColor=#F9A825;strokeWidth=1;shape=rectangle;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="363" y="485" width="360" height="72" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-0" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=blockThin;endFill=1;strokeColor=#4527A0;fontSize=11;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="PAY_CORE" target="XENDIT_AD">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=blockThin;endFill=1;strokeColor=#4527A0;fontSize=11;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="XENDIT_AD" target="XENDIT_API">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=blockThin;endFill=1;strokeColor=#4527A0;fontSize=11;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="XENDIT_API" target="XENDIT_WH">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-3" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=blockThin;endFill=1;strokeColor=#4527A0;fontSize=11;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="XENDIT_WH" target="PAY_API">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-4" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=blockThin;endFill=1;strokeColor=#4527A0;fontSize=11;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="MENU_CORE" target="MEILI_AD">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-5" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=blockThin;endFill=1;strokeColor=#4527A0;fontSize=11;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="MEILI_AD" target="MEILI_API">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-6" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=blockThin;endFill=1;strokeColor=#4527A0;fontSize=11;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="MEILI_AD" target="MENU_V2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-7" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=blockThin;endFill=1;strokeColor=#4527A0;fontSize=11;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="IMAGE_CORE" target="IMG_AD">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-8" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=blockThin;endFill=1;strokeColor=#4527A0;fontSize=11;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="IMG_AD" target="IK_API">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-9" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=blockThin;endFill=1;strokeColor=#4527A0;fontSize=11;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="IMAGE_CORE" target="IMG_AUTH">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-10" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=blockThin;endFill=1;strokeColor=#4527A0;fontSize=11;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="IK_API" target="IMG_WH">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-11" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=blockThin;endFill=1;strokeColor=#4527A0;fontSize=11;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="IMG_WH" target="IMG_EVENT">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-12" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=blockThin;endFill=1;strokeColor=#4527A0;fontSize=11;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="IMG_EVENT" target="IMG_REG">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-13" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=blockThin;endFill=1;strokeColor=#4527A0;fontSize=11;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="IMG_EVENT" target="MENU_SYNC">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-14" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=blockThin;endFill=1;strokeColor=#4527A0;fontSize=11;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="NOTIF_CORE" target="RESEND_AD">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-15" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=blockThin;endFill=1;strokeColor=#4527A0;fontSize=11;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="RESEND_AD" target="RESEND_API">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-16" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;dashed=1;endArrow=blockThin;endFill=1;strokeColor=#4527A0;fontSize=11;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="IMG_WH" target="NOTE_JWT">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-17" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;dashed=1;endArrow=blockThin;endFill=1;strokeColor=#4527A0;fontSize=11;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="NOTIF_CORE" target="NOTE_NOTIF">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

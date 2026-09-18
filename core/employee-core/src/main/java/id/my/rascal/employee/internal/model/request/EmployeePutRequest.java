@@ -17,5 +17,9 @@ public record EmployeePutRequest(
     )
     String phone,
 
-    EmployeeStatus status
+    EmployeeStatus status,
+
+    // Opsional: null = peran tidak diubah (PUT /me oleh karyawan sendiri).
+    @Size(max = 50, message = "Role name must not exceed 50 characters")
+    String roleName
 ) {}

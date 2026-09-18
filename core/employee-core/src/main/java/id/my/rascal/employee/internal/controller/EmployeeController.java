@@ -24,6 +24,7 @@ import org.springframework.security.core.Authentication;
 import id.my.rascal.common.ApiResponse;
 import id.my.rascal.common.template.SuccessPagedTemplate;
 import id.my.rascal.common.template.SuccessTemplate;
+import id.my.rascal.employee.internal.model.enums.EmployeeStatus;
 import id.my.rascal.employee.internal.model.request.EmployeePatchRequest;
 import id.my.rascal.employee.internal.model.request.EmployeePutRequest;
 import id.my.rascal.employee.internal.model.request.EmployeeRequest;
@@ -58,9 +59,11 @@ public class EmployeeController {
     @PreAuthorize("hasAnyAuthority('employee.read', 'employee.*')")
     public ResponseEntity<SuccessPagedTemplate<List<EmployeeResponse>>> getAll(
         @RequestParam(required = false) String keyword,
+        @RequestParam(required = false) EmployeeStatus status,
+        @RequestParam(defaultValue = "false") boolean includeDeleted,
         @PageableDefault(size = 10) Pageable pageable
     ) {
-        Page<EmployeeResponse> page = employeeService.getAllPaged(keyword, pageable);
+        Page<EmployeeResponse> page = employeeService.getAllPaged(keyword, status, includeDeleted, pageable);
         return ApiResponse.paged(
             HttpStatus.OK,
             DEFAULT_GET_SUCCESS_MESSAGE,

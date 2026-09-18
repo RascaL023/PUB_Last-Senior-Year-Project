@@ -35,7 +35,9 @@ public class ImageKitService implements ImageApi {
 
     private static final String HMAC_SHA1 = "HmacSHA1";
     private static final String HMAC_SHA256 = "HmacSHA256";
-    private static final long AUTH_TTL_SECONDS = 3600L;
+    // ImageKit menolak `expire` yang >= 1 jam ke depan ("invalid expire
+    // parameter") — pakai 30 menit agar aman dari skew jam server.
+    private static final long AUTH_TTL_SECONDS = 1800L;
     private static final Logger log = LoggerFactory.getLogger(ImageKitService.class);
 
     private final ImageKitProperties properties;

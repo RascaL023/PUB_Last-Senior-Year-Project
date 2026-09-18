@@ -11,6 +11,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import id.my.rascal.employee.internal.entity.Employee;
+import id.my.rascal.employee.internal.model.enums.EmployeeStatus;
 
 public interface EmployeeRepository extends JpaRepository<Employee, Long> {
 
@@ -18,9 +19,15 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
         select e from Employee e
         where (:keyword is null or lower(e.name) like lower(concat('%', cast(:keyword as string), '%'))
             or lower(e.email) like lower(concat('%', cast(:keyword as string), '%')))
-        order by e.name
+          and (:status is null or e.status = :status)
+          and (:includeDeleted = true or e.deletedAt is null)
     """)
-    Page<Employee> findByKeyword(@Param("keyword") String keyword, Pageable pageable);
+    Page<Employee> search(
+        @Param("keyword") String keyword,
+        @Param("status") EmployeeStatus status,
+        @Param("includeDeleted") boolean includeDeleted,
+        Pageable pageable
+    );
 
     @Query("select e from Employee e where e.id = :id and e.deletedAt is null")
     Optional<Employee> findActiveById(@Param("id") Long id);

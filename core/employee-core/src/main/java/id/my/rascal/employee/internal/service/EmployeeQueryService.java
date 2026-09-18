@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import id.my.rascal.common.exception.NotFoundException;
 import id.my.rascal.employee.internal.entity.Employee;
+import id.my.rascal.employee.internal.model.enums.EmployeeStatus;
 import id.my.rascal.employee.internal.repository.EmployeeRepository;
 
 @Service
@@ -34,8 +35,14 @@ public class EmployeeQueryService {
     }
 
     @Transactional(readOnly = true)
-    public Page<Employee> findAllPaged(String keyword, Pageable pageable) {
-        return employeeRepository.findByKeyword(keyword, pageable);
+    public Page<Employee> findAllPaged(
+        String keyword,
+        EmployeeStatus status,
+        boolean includeDeleted,
+        Pageable pageable
+    ) {
+        String normalizedKeyword = (keyword == null || keyword.isBlank()) ? null : keyword.trim();
+        return employeeRepository.search(normalizedKeyword, status, includeDeleted, pageable);
     }
 
     @Transactional(readOnly = true)
