@@ -1,5 +1,7 @@
 ###### CUSTOMER SELF-SERVICE ######
 ### Register (public, creates auth account + customer profile)
+### Setelah register: login di auth.http dengan email/password ini untuk dapat
+### accessToken customer (CUSTOMER_BASE) — dipakai untuk /my/dinings (dining.http §L3).
 POST {{baseUrl}}/customers/register
 Content-Type: application/json
 
@@ -44,6 +46,7 @@ GET {{baseUrl}}/customers?keyword=budi
 Authorization: Bearer {{token}}
 
 ### Get by ID
+### id ini yang dipakai sebagai customerId di orders.http / dining.http (harus ada, 404 bila tidak)
 GET {{baseUrl}}/customers/1
 Authorization: Bearer {{token}}
 

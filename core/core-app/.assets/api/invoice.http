@@ -15,6 +15,8 @@ GET {{baseUrl}}/invoices?diningId=1
 Authorization: Bearer {{token}}
 
 ### Get by ID
+### customerId/customerName hanya terisi di invoice STANDALONE dengan order member
+### (snapshot nama profil saat itu). Invoice dining selalu null — tagihan kolektif satu sesi.
 GET {{baseUrl}}/invoices/1
 Authorization: Bearer {{token}}
 

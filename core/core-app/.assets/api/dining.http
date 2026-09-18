@@ -53,6 +53,10 @@ Authorization: Bearer {{token}}
 ### ========================================
 ### Dinings — E2E Happy Path (dibayar via invoice)
 ### ========================================
+### Response POST /dinings menyertakan guestToken (opaque) + guestCode (6 digit).
+### Copy guestToken ke {{guestToken}} dan guestCode ke {{guestCode}} di environment
+### untuk dipakai di endpoint publik /guest/dinings dan /my/dinings (bawah).
+### customerId opsional; bila diisi HARUS ada di customers (404 bila tidak).
 
 ### Step 1: Open dining on table 1
 POST {{baseUrl}}/dinings
@@ -314,7 +318,7 @@ Content-Type: application/json
     "tableId": 999
 }
 
-### Table already occupied (409)
+### Table already occupied (400 "Table is already occupied")
 POST {{baseUrl}}/dinings
 Authorization: Bearer {{token}}
 Content-Type: application/json
@@ -328,14 +332,11 @@ POST {{baseUrl}}/dinings
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
-{}
-
-
-### ========================================
+{}### ========================================
 ### VALIDATION — Dining
 ### ========================================
 
-### Add order to closed dining (409)
+### Add order to closed dining (400 "Cannot add order to a closed dining")
 POST {{baseUrl}}/dinings/1/orders
 Authorization: Bearer {{token}}
 Content-Type: application/json
@@ -352,6 +353,19 @@ Content-Type: application/json
                 { "modifierOptionId": 1 }
             ]
         }
+    ]
+}
+
+### Add order - invalid: customerId tidak ada di customers (404 "Customer not found with id: N")
+POST {{baseUrl}}/dinings/2/orders
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "customerId": 9999,
+    "customerName": "Test",
+    "items": [
+        { "menuId": 1, "quantity": 1, "modifiers": [] }
     ]
 }
 
@@ -385,7 +399,7 @@ Content-Type: application/json
     ]
 }
 
-### Close dining already closed (409)
+### Close dining already closed (400 "Dining is not open")
 POST {{baseUrl}}/dinings/1/close
 Authorization: Bearer {{token}}
 
@@ -431,3 +445,98 @@ Authorization: Bearer {{token}}
 ### Table should be OCCUPIED (dining 3 still open)
 GET {{baseUrl}}/tables/4
 Authorization: Bearer {{token}}
+
+
+### ========================================
+### GUEST DINING — PUBLIK (tanpa login; identifikasi via guestToken)
+### Lihat API_CONTRACT.md §L2. Sesi CLOSED: GET masih 200, POST ditolak.
+### ========================================
+
+### Guest: lihat status sesi (dipakai juga untuk polling FE tamu)
+### invoiceStatus: null | OPEN | PARTIALLY_PAID | PAID | VOID
+GET {{baseUrl}}/guest/dinings/{{guestToken}}
+
+### Guest: resolve via kode 6 digit (fallback QR gagal scan; hanya sesi OPEN)
+GET {{baseUrl}}/guest/dinings/by-code/{{guestCode}}
+
+### Guest: tambah order (TANPA customerId — identitas tidak pernah diterima dari body publik)
+POST {{baseUrl}}/guest/dinings/{{guestToken}}/orders
+Content-Type: application/json
+
+{
+    "customerName": "Tamu Meja 1",
+    "notes": "Extra es",
+    "items": [
+        { "menuId": 1, "quantity": 2, "modifiers": [{ "modifierOptionId": 13 }] }
+    ]
+}
+
+### Guest - invalid: token salah (404 generik "Session not found")
+GET {{baseUrl}}/guest/dinings/wrongtoken123
+
+### Guest - invalid: sesi sudah CLOSED (400)
+POST {{baseUrl}}/guest/dinings/{{guestToken}}/orders
+Content-Type: application/json
+
+{
+    "items": [
+        { "menuId": 1, "quantity": 1, "modifiers": [] }
+    ]
+}
+
+### Guest - invalid: tagihan sesi sudah lunas (400 "Sesi ini sudah lunas (INV-...)")
+POST {{baseUrl}}/guest/dinings/{{guestToken}}/orders
+Content-Type: application/json
+
+{
+    "items": [
+        { "menuId": 1, "quantity": 1, "modifiers": [] }
+    ]
+}
+
+
+### ========================================
+### MY DINING — MEMBER LOGIN (identitas dari JWT; API_CONTRACT.md §L3)
+### Login dulu sebagai customer (register di customer.http, lalu login di auth.http),
+### simpan accessToken-nya ke {{customerToken}}.
+### ========================================
+
+### Member: lihat status sesi (payload sama dengan guest)
+GET {{baseUrl}}/my/dinings/{{guestToken}}
+Authorization: Bearer {{customerToken}}
+
+### Member: tambah order — customerId otomatis dari profil member
+### customerName kosong → nama profil; terisi → override (mis. "Budi +1")
+POST {{baseUrl}}/my/dinings/{{guestToken}}/orders
+Authorization: Bearer {{customerToken}}
+Content-Type: application/json
+
+{
+    "customerName": "",
+    "notes": "Dari member",
+    "items": [
+        { "menuId": 2, "quantity": 1, "modifiers": [] }
+    ]
+}
+
+### Member - invalid: akun tanpa profil customer (403 "Customer profile not found for this account")
+### (mis. login pakai akun staf admin@rascal.id — tidak punya profil member)
+POST {{baseUrl}}/my/dinings/{{guestToken}}/orders
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "items": [
+        { "menuId": 2, "quantity": 1, "modifiers": [] }
+    ]
+}
+
+### Member - invalid: tanpa token (401 standar — beda fail-mode dari jalur guest publik)
+POST {{baseUrl}}/my/dinings/{{guestToken}}/orders
+Content-Type: application/json
+
+{
+    "items": [
+        { "menuId": 2, "quantity": 1, "modifiers": [] }
+    ]
+}

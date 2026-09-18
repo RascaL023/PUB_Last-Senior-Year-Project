@@ -5,8 +5,12 @@
 ###         PENDING ──expire──> EXPIRED | PENDING ──fail──> FAILED
 ### Payment selalu menarget satu invoice (invoiceId) → nominal diteruskan via PaymentSettledEvent.
 ### Ini satu-satunya jalur uang (B2 ditutup): tidak ada lagi POST /invoices/{id}/payments.
-### Partial pay: kirim "amount" opsional (1..sisa tagihan); tanpa amount = lunasi seluruh sisa.
-### Guard: satu payment PENDING aktif per invoice (dua QRIS tidak boleh menagih tagihan yang sama).
+### Partial pay / split bill: kirim "amount" opsional (1..sisa tagihan); tanpa amount = lunasi sisa.
+### Bisa berkali-kali sampai invoice lunas (OPEN → PARTIALLY_PAID → PAID).
+### Guard: satu payment PENDING aktif per invoice (dua QRIS tidak boleh menagih tagihan yang sama)
+### dan invoice lunas ditolak ("Invoice already paid").
+### Catatan: payment TIDAK membawa identitas pembayar — split bill ber-identitas (siapa bayar
+### bagian mana) belum ada di model; yang tercatat hanya appliedAmount/excessAmount.
 ### Field response penting: invoiceId/invoiceNumber, amount (uang masuk),
 ### appliedAmount (nempel ke tagihan), excessAmount (parkir/kembalian), paidAt.
 

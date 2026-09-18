@@ -1,4 +1,6 @@
 ###### ORDERS ######
+### customerId opsional; bila diisi HARUS ada di customers (404 "Customer not found with id: N").
+### Invoice standalone untuk order member membawa snapshot customerId + customerName dari profil.
 ### Create - invalid (exceeds max selection of a modifier type)
 ### Temperature (modifier type 1) has maxSelection = 1, so picking both hot(1) and ice(2) must be rejected.
 POST {{baseUrl}}/orders
@@ -84,6 +86,19 @@ Content-Type: application/json
                 {  "modifierOptionId": 12 }
             ]
         }
+    ]
+}
+
+### Create - invalid: customerId tidak ada di customers (404)
+POST {{baseUrl}}/orders
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "customerId": 9999,
+    "type": "TAKEAWAY",
+    "items": [
+        { "menuId": 2, "quantity": 1, "modifiers": [] }
     ]
 }
 
