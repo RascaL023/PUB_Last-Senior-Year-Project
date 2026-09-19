@@ -1,0 +1,82 @@
+name: Backend CI
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+      - "feature/**"
+  pull_request:
+    branches:
+      - main
+      - dev
+  workflow_dispatch:
+
+concurrency:
+  group: backend-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  JAVA_VERSION: "21"
+  # Dummy values only: the Spring context loads @Validated @ConfigurationProperties
+  # (resend, imagekit) during tests, which fails when these are blank.
+  RESEND_BASE_URL: https://api.resend.com
+  RESEND_API_KEY: ci-dummy
+  RESEND_FROM_EMAIL: ci@example.com
+  RESEND_SENDER_NAME: CI
+  IMAGEKIT_URL_ENDPOINT: https://ik.imagekit.io/ci
+  IMAGEKIT_PUBLIC_KEY: ci-dummy
+  IMAGEKIT_PRIVATE_KEY: ci-dummy
+
+jobs:
+  build:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+
+    defaults:
+      run:
+        working-directory: core
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+          cache: maven
+
+      - name: Configure GitHub Packages credentials
+        run: |
+          mkdir -p ~/.m2
+          cat > ~/.m2/settings.xml <<'EOF'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <settings>
+            <servers>
+              <server>
+                <id>github</id>
+                <username>${{ github.actor }}</username>
+                <password>${{ secrets.PACKAGES_READ_TOKEN || secrets.GITHUB_TOKEN }}</password>
+              </server>
+            </servers>
+          </settings>
+          EOF
+
+      - name: Run tests
+        run: ./mvnw -B test
+
+      - name: Package (skip tests)
+        run: ./mvnw -B -DskipTests package
+
+      - name: Upload executable jar
+        uses: actions/upload-artifact@v4
+        with:
+          name: core-app-jar
+          path: core/core-app/target/*-exec.jar
+          retention-days: 7
+          if-no-files-found: error
