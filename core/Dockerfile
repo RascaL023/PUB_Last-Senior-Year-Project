@@ -45,6 +45,17 @@ COPY image-core/pom.xml             image-core/pom.xml
 COPY image-imagekit/pom.xml         image-imagekit/pom.xml
 COPY search-api/pom.xml             search-api/pom.xml
 COPY search-meilisearch/pom.xml     search-meilisearch/pom.xml
+COPY employee-api/pom.xml           employee-api/pom.xml
+COPY employee-core/pom.xml          employee-core/pom.xml
+COPY customer-api/pom.xml           customer-api/pom.xml
+COPY customer-core/pom.xml          customer-core/pom.xml
+COPY report-api/pom.xml             report-api/pom.xml
+COPY report-core/pom.xml            report-core/pom.xml
+COPY invoice-api/pom.xml            invoice-api/pom.xml
+COPY invoice-core/pom.xml           invoice-core/pom.xml
+COPY notification-api/pom.xml       notification-api/pom.xml
+COPY notification-core/pom.xml      notification-core/pom.xml
+COPY notification-resend/pom.xml    notification-resend/pom.xml
 COPY core-app/pom.xml               core-app/pom.xml
 
 # --- Layer 2: Resolve dependencies using persistent Maven cache ---
