@@ -692,7 +692,7 @@ Tanpa parameter `sort`, hasil list diurutkan berdasarkan ranking relevansi Meili
   "name": "Kopi Latte",
   "categoryIds": [1],
   "description": "Kopi dengan susu segar",
-  "imageUrls": ["https://image.url/latte.png"],
+  "imageUrls": ["/menus/latte.png"],
   "basePrice": 25000,
   "isAvailable": true,
   "ModifierTypeIds": [1]
@@ -711,7 +711,7 @@ Perhatikan: field `ModifierTypeIds` memakai huruf besar `M` sesuai source code. 
   "categories": [
     { "id": 1, "name": "Kopi", "categoryCode": "COFFEE", "displayOrder": 1 }
   ],
-  "imageUrls": ["https://image.url/latte.png"],
+  "imageUrls": ["https://ik.imagekit.io/rascal/menus/latte.png"],
   "basePrice": 25000,
   "isAvailable": true,
   "createdAt": "2026-08-23T00:00:00Z",
@@ -886,7 +886,8 @@ GET /api/v1/images/auth
     "publicKey": "public_xxxx",
     "token": "random_token_16char",
     "expire": 1787163445,
-    "signature": "hmac_sha1_signature"
+    "signature": "hmac_sha1_signature",
+    "uploadFolder": "/menus"
   },
   "meta": { "timestamp": "..." }
 }
@@ -895,9 +896,9 @@ GET /api/v1/images/auth
 **Alur upload gambar:**
 
 1. Frontend meminta kredensial ke `GET /api/v1/images/auth`.
-2. Frontend mengunggah langsung ke ImageKit memakai `publicKey`, `token`, `expire`, dan `signature`.
-3. ImageKit mengembalikan URL gambar.
-4. Frontend menyimpan URL tersebut di field `imageUrls` saat create atau update menu.
+2. Frontend mengunggah langsung ke ImageKit memakai `publicKey`, `token`, `expire`, `signature`, `folder` (dari `uploadFolder`), dan `useUniqueFileName=false`.
+3. ImageKit mengembalikan `filePath` (path relatif, mis. `/menus/test.png`).
+4. Frontend menyimpan **path** tersebut di field `imageUrls` saat create atau update menu — bukan URL. Backend yang me-resolve path ke URL siap tampil saat membangun response.
 
 ---
 

@@ -63,6 +63,27 @@ public class ImageKitService implements ImageApi {
             throw new IllegalArgumentException("File name cannot be blank");
 
         return folder + "/" + sanitizeFileName(name);
+    }    @Override
+    public String toPath(String urlOrPath) {
+        if (StringUtil.safeIsBlank(urlOrPath))
+            return null;
+
+        String trimmed = urlOrPath.trim();
+        if (!trimmed.startsWith("http://") && !trimmed.startsWith("https://"))
+            return trimmed; // sudah path — terima apa adanya
+
+        // URL milik provider ini: buang prefix urlEndpoint (dan query string
+        // seperti ?tr= karena transformasi tidak relevan untuk path).
+        String endpoint = trimTrailingSlash(properties.urlEndpoint());
+        if (!StringUtil.safeIsBlank(endpoint) && trimmed.startsWith(endpoint + "/")) {
+            String path = trimmed.substring(endpoint.length());
+            int query = path.indexOf('?');
+            if (query >= 0) path = path.substring(0, query);
+            return path.isEmpty() ? null : path;
+        }
+
+        // URL provider lain — tidak bisa di-resolve nanti, simpan utuh saja.
+        return trimmed;
     }
 
     @Override
@@ -71,6 +92,14 @@ public class ImageKitService implements ImageApi {
             return "";
 
         String endpoint = trimTrailingSlash(properties.urlEndpoint());
+        if (StringUtil.safeIsBlank(endpoint))
+            return path;
+
+        // Toleransi data legacy yang tersimpan sebagai URL penuh.
+        String endpointWithSlash = endpoint + "/";
+        if (path.startsWith("http://") || path.startsWith("https://") || path.startsWith(endpointWithSlash))
+            return path;
+
         return endpoint + (path.startsWith("/") ? path : "/" + path);
     }
 
@@ -91,7 +120,7 @@ public class ImageKitService implements ImageApi {
         long expire = Instant.now().getEpochSecond() + AUTH_TTL_SECONDS;
         String signature = hmacHex(HMAC_SHA1, properties.privateKey(), token + expire);
 
-        return new ImageUploadAuthApiResponse(properties.publicKey(), token, expire, signature);
+        return new ImageUploadAuthApiResponse(properties.publicKey(), token, expire, signature, normalizeFolder(properties.uploadFolder()));
     }
 
     public ImageWebhookApiPayload verifyAndParseWebhook(String rawPayload, Map<String, String> headers, String secret) {

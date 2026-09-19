@@ -62,6 +62,7 @@ imagekit:
   url-endpoint: ${IMAGEKIT_URL_ENDPOINT:""}
   public-key: ${IMAGEKIT_PUBLIC_KEY:""}
   private-key: ${IMAGEKIT_PRIVATE_KEY:""}
+  upload-folder: ${IMAGEKIT_UPLOAD_FOLDER:/menus}
   webhooks:
     endpoint: ${IMAGEKIT_WEBHOOKS_ENDPOINT:""}
     secret: ${IMAGEKIT_WEBHOOKS_SECRET:""}

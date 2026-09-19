@@ -4,5 +4,6 @@ public record ImageUploadAuthApiResponse(
     String publicKey,
     String token,
     long expire,
-    String signature
+    String signature,
+    String uploadFolder
 ) {}

@@ -12,6 +12,7 @@ public class ImageKitProperties {
     private final String privateKey;
     private final String webhooksEndpoint;
     private final String webhooksSecret;
+    private final String uploadFolder;
 
     public ImageKitProperties(
         @Value("${imagekit.base-url:}") String baseUrl,
@@ -19,7 +20,8 @@ public class ImageKitProperties {
         @Value("${imagekit.public-key:}") String publicKey,
         @Value("${imagekit.private-key:}") String privateKey,
         @Value("${imagekit.webhooks.endpoint:}") String webhooksEndpoint,
-        @Value("${imagekit.webhooks.secret:}") String webhooksSecret
+        @Value("${imagekit.webhooks.secret:}") String webhooksSecret,
+        @Value("${imagekit.upload-folder:/menus}") String uploadFolder
     ) {
         this.baseUrl = baseUrl;
         this.urlEndpoint = urlEndpoint;
@@ -27,6 +29,7 @@ public class ImageKitProperties {
         this.privateKey = privateKey;
         this.webhooksEndpoint = webhooksEndpoint;
         this.webhooksSecret = webhooksSecret;
+        this.uploadFolder = uploadFolder;
     }
 
     public String baseUrl() {
@@ -51,6 +54,10 @@ public class ImageKitProperties {
 
     public String webhooksSecret() {
         return webhooksSecret;
+    }
+
+    public String uploadFolder() {
+        return uploadFolder;
     }
 
 }

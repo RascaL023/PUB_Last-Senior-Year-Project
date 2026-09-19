@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import id.my.rascal.common.exception.NotFoundException;
 import id.my.rascal.common.util.StringUtil;
+import id.my.rascal.image.api.ImageApi;
 import id.my.rascal.menu.internal.entity.Menu;
 import id.my.rascal.menu.internal.entity.MenuCategory;
 import id.my.rascal.menu.internal.entity.ModifierType;
@@ -32,18 +33,20 @@ public class MenuService {
     private final MenuRepository menuRepository;
     private final ModifierHelper modifierHelper;
     private final MenuCategoryHelper menuCategoryHelper;
+    private final ImageApi imageService;
     private final ApplicationEventPublisher eventPublisher;
 
     public MenuService(
         MenuRepository menuRepository,
         ModifierHelper modifierHelper,
         MenuCategoryHelper menuCategoryHelper,
-        MenuSearchService menuSearchService,
+        ImageApi imageService,
         ApplicationEventPublisher eventPublisher
     ) {
         this.menuRepository = menuRepository;
         this.modifierHelper = modifierHelper;
         this.menuCategoryHelper = menuCategoryHelper;
+        this.imageService = imageService;
         this.eventPublisher = eventPublisher;
     }
 
@@ -205,11 +208,12 @@ public class MenuService {
         String normalizedDescription = StringUtil.normalizeSpaces(description);
         normalizedDescription = StringUtil.capitalize(normalizedDescription);
 
+        // Simpan sebagai path relatif (bebas provider); resolve ke URL hanya saat response dibangun.
         List<String> normalizedImageUrls = imageUrls == null
             ? List.of()
             : imageUrls.stream()
-                .map(path -> StringUtil.safeIsBlank(path) ? 
-                    null : StringUtil.normalizeSpaces(path).trim())
+                .map(StringUtil::normalizeSpaces)
+                .map(imageService::toPath)
                 .filter(Objects::nonNull)
                 .toList();
 
