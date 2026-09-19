@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - dev
+      - "feature/ci-cd"
     tags:
       - "v*.*.*"
   workflow_dispatch:
