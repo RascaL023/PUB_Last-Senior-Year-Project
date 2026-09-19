@@ -30,6 +30,12 @@
             <artifactId>image-api</artifactId>
         </dependency>
 
+        <!-- Invoice API (agregasi penjualan untuk menu terlaris) -->
+        <dependency>
+            <groupId>id.my.rascal</groupId>
+            <artifactId>invoice-api</artifactId>
+        </dependency>
+
         <!-- Search abstraction -->
         <dependency>
             <groupId>id.my.rascal</groupId>

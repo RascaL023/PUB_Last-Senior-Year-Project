@@ -27,6 +27,7 @@ import id.my.rascal.menu.internal.model.request.MenuRequest;
 import id.my.rascal.menu.internal.model.response.MenuResponse;
 import id.my.rascal.menu.internal.service.MenuV1ApplicationService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 
 @RestController
@@ -67,6 +68,26 @@ public class MenuController {
             HttpStatus.OK, 
             DEFAULT_GET_SUCCESS_MESSAGE, 
             page.getContent(), 
+            page.getNumber() + 1,
+            page.getSize(),
+            page.getTotalElements(),
+            page.hasNext(),
+            page.hasPrevious()
+        );
+    }
+
+    @GetMapping("/top")
+    // @PreAuthorize("hasAnyAuthority('menu.read', 'menu.*')")
+    public ResponseEntity<SuccessPagedTemplate<List<MenuResponse>>> getTop(
+        @RequestParam(required = false, defaultValue = "7") @Min(1) @Max(365) Integer days,
+        @PageableDefault(size = 6) Pageable pageable
+    ) {
+        Page<MenuResponse> page = menuV1Service.getTopMenusPaged(days, pageable);
+
+        return ApiResponse.paged(
+            HttpStatus.OK,
+            "Top menu successfully retrieved",
+            page.getContent(),
             page.getNumber() + 1,
             page.getSize(),
             page.getTotalElements(),

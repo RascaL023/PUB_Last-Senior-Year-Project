@@ -48,6 +48,7 @@ id:
         - /api/v1/auths/reset-password
         - /api/v1/customers/register
         - /api/v1/menus
+        - /api/v1/menus/top
         - /api/v1/menus/{id}
         - /api/v1/menus/categories
         - /api/v1/menus/categories/{id}
