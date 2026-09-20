@@ -213,7 +213,7 @@ jobs:
             '
               set -e
 
-              cd "${{ env.DEPLOY_DIR }}"
+              cd "$HOME/Projects/HysteriaCafeCD"
 
               echo "==> Pulling latest Docker image..."
               docker compose pull
