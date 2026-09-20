@@ -1,17 +1,16 @@
 name: Backend Docker Image
 
 on:
-  push:
-    branches:
-      - main
-      - dev
-      - "feature/ci-cd"
-    tags:
-      - "v*.*.*"
+  workflow_run:
+    workflows:
+      - Backend CI
+    types:
+      - completed
+
   workflow_dispatch:
 
 concurrency:
-  group: backend-image-${{ github.ref }}
+  group: backend-image-${{ github.event.workflow_run.head_branch || github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -23,9 +22,22 @@ jobs:
     name: Build & Push to GHCR
     runs-on: ubuntu-latest
 
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (
+        github.event.workflow_run.conclusion == 'success' &&
+        (
+          github.event.workflow_run.head_branch == 'main' ||
+          github.event.workflow_run.head_branch == 'dev' ||
+          github.event.workflow_run.head_branch == 'feature/ci-cd'
+        )
+      )
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - name: Compute image name
         run: |
