@@ -53,4 +53,4 @@ jobs:
             -i ~/.ssh/github-cd \
             -o StrictHostKeyChecking=yes \
             rascal-server@100.85.60.60 \
-            'cd ~/Projects/HysteriaCafeBE && docker compose pull && docker compose up -d'
+            'cd ~/Projects/HysteriaCafeBE && docker compose --env-file config/docker.env pull && docker compose --env-file config/docker.env up -d'
