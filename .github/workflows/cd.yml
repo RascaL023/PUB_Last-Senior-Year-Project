@@ -1,0 +1,56 @@
+name: Backend CD
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+      - "feature/ci-cd"
+  workflow_dispatch:
+
+concurrency:
+  group: backend-deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy to Debian
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Connect to Tailscale
+        uses: tailscale/github-action@v4
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:ci
+          ping: 100.85.60.60
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+
+          printf '%s\n' '${{ secrets.DEPLOY_SSH_KEY }}' > ~/.ssh/github-cd
+          chmod 600 ~/.ssh/github-cd
+
+          ssh-keyscan -H 100.85.60.60 >> ~/.ssh/known_hosts
+
+      - name: Test SSH connection
+        run: |
+          ssh \
+            -i ~/.ssh/github-cd \
+            -o StrictHostKeyChecking=yes \
+            rascal-server@100.85.60.60 \
+            'echo "SSH connection successful"'
+
+      - name: Deploy
+        run: |
+          ssh \
+            -i ~/.ssh/github-cd \
+            -o StrictHostKeyChecking=yes \
+            rascal-server@100.85.60.60 \
+            'cd ~/Projects/HysteriaCafeBE && docker compose pull && docker compose up -d'
